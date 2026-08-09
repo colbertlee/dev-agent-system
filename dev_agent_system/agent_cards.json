@@ -1,0 +1,62 @@
+{
+  "architect": {
+    "name": "Architect Agent",
+    "url": "http://localhost:8000/architect",
+    "skills": [
+      {"name": "system-design"},
+      {"name": "api-contract"},
+      {"name": "tech-stack"}
+    ],
+    "capabilities": {"streaming": false, "autonomy": "L2", "modalities": ["text", "code"]}
+  },
+  "coder": {
+    "name": "Coder Agent",
+    "url": "http://localhost:8000/coder",
+    "skills": [
+      {"name": "code-implementation"},
+      {"name": "refactor"},
+      {"name": "python"}
+    ],
+    "capabilities": {"streaming": false, "autonomy": "L2", "modalities": ["text", "code"]}
+  },
+  "tester": {
+    "name": "Tester Agent",
+    "url": "http://localhost:8000/tester",
+    "skills": [
+      {"name": "test-generation"},
+      {"name": "pytest"},
+      {"name": "coverage"}
+    ],
+    "capabilities": {"streaming": false, "autonomy": "L3", "modalities": ["text"]}
+  },
+  "reviewer": {
+    "name": "Reviewer Agent",
+    "url": "http://localhost:8000/reviewer",
+    "skills": [
+      {"name": "code-review"},
+      {"name": "security"},
+      {"name": "performance"}
+    ],
+    "capabilities": {"streaming": false, "autonomy": "L2", "modalities": ["text", "code"]}
+  },
+  "docs": {
+    "name": "Docs Agent",
+    "url": "http://localhost:8000/docs",
+    "skills": [
+      {"name": "documentation"},
+      {"name": "readme"},
+      {"name": "api-doc"}
+    ],
+    "capabilities": {"streaming": false, "autonomy": "L3", "modalities": ["text"]}
+  },
+  "devops": {
+    "name": "DevOps Agent",
+    "url": "http://localhost:8000/devops",
+    "skills": [
+      {"name": "docker"},
+      {"name": "ci-cd"},
+      {"name": "deployment"}
+    ],
+    "capabilities": {"streaming": false, "autonomy": "L2", "modalities": ["text", "code"]}
+  }
+}

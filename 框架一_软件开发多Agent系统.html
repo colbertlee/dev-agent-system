@@ -1,0 +1,2466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>软件开发多Agent协作框架 — 个人版 · Trae 驱动 · 完整学习包</title>
+<style>
+:root {
+  --bg: #0f1117; --bg-card: #1a1d29; --bg-card-hover: #22263a;
+  --border: #2d3148; --accent: #6366f1; --accent-light: #818cf8;
+  --accent-2: #22d3ee; --accent-3: #f59e0b; --accent-4: #10b981;
+  --accent-5: #ec4899; --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+  --radius: 12px; --shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.7; overflow-x: hidden;
+}
+.container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+/* Hero */
+.hero {
+  background: linear-gradient(135deg, #1e1b4b 0%, #0f1117 60%, #082f49 100%);
+  padding: 56px 0 44px; border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.hero::before {
+  content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(circle at 30% 50%, rgba(99,102,241,0.15) 0%, transparent 50%),
+              radial-gradient(circle at 70% 50%, rgba(34,211,238,0.1) 0%, transparent 50%);
+}
+.hero-inner { position: relative; z-index: 1; }
+.hero h1 {
+  font-size: 32px; font-weight: 800;
+  background: linear-gradient(135deg, #818cf8, #22d3ee);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px;
+}
+.hero .subtitle { font-size: 16px; color: var(--text-muted); margin-bottom: 16px; }
+.hero .badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 12px; border-radius: 16px; font-size: 12px; font-weight: 600; border: 1px solid;
+}
+.badge.a2a { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); color: #a5b4fc; }
+.badge.mcp { background: rgba(34,211,238,0.15); border-color: rgba(34,211,238,0.4); color: #67e8f9; }
+.badge.trae { background: rgba(245,158,11,0.15); border-color: rgba(245,158,11,0.4); color: #fcd34d; }
+.badge.personal { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.35); color: #6ee7b7; }
+.badge.career { background: rgba(236,72,153,0.12); border-color: rgba(236,72,153,0.35); color: #f9a8d4; }
+
+/* Section */
+section { padding: 44px 0; border-bottom: 1px solid var(--border); }
+section h2 { font-size: 26px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 10px; }
+section h2 .num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  font-size: 15px; color: white;
+}
+section .lead { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+
+/* Note Banner */
+.note-banner {
+  background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.3);
+  border-radius: var(--radius); padding: 16px 20px; margin-bottom: 24px;
+  font-size: 13px; color: var(--text-muted);
+}
+.note-banner strong { color: #fcd34d; }
+
+/* Learning Annotations */
+.annotation-box {
+  background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(34,211,238,0.04));
+  border-left: 3px solid var(--accent-2);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 14px 18px; margin: 16px 0; font-size: 13px;
+}
+.annotation-box .anno-title {
+  color: var(--accent-2); font-weight: 700; font-size: 12px;
+  text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+}
+.annotation-box p { color: var(--text-muted); margin: 0; }
+.annotation-box code {
+  background: rgba(34,211,238,0.12); color: #67e8f9; padding: 1px 6px;
+  border-radius: 3px; font-size: 12px; font-family: 'JetBrains Mono', monospace;
+}
+
+/* Arch Diagram */
+.arch-diagram {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 28px; overflow-x: auto;
+}
+.arch-diagram svg { display: block; margin: 0 auto; min-width: 850px; }
+
+/* Agent Cards */
+.agent-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.agent-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 22px; transition: all 0.25s;
+}
+.agent-card::before { content: ''; display: block; height: 3px; margin: -22px -22px 16px -22px; border-radius: 12px 12px 0 0; }
+.agent-card.c1::before { background: linear-gradient(90deg, #6366f1, #818cf8); }
+.agent-card.c2::before { background: linear-gradient(90deg, #22d3ee, #67e8f9); }
+.agent-card.c3::before { background: linear-gradient(90deg, #f59e0b, #fcd34d); }
+.agent-card.c4::before { background: linear-gradient(90deg, #10b981, #6ee7b7); }
+.agent-card.c5::before { background: linear-gradient(90deg, #ec4899, #f9a8d4); }
+.agent-card.c6::before { background: linear-gradient(90deg, #8b5cf6, #c4b5fd); }
+.agent-card:hover { background: var(--bg-card-hover); transform: translateY(-2px); box-shadow: var(--shadow); }
+.agent-card .agent-icon { font-size: 26px; margin-bottom: 8px; }
+.agent-card h3 { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.agent-card h3 .learn-star {
+  font-size: 11px; padding: 2px 6px; border-radius: 6px; font-weight: 600;
+  background: rgba(245,158,11,0.2); color: #fcd34d;
+}
+.agent-card .role-tag {
+  display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 8px;
+  margin: 6px 0 10px; font-weight: 600;
+}
+.agent-card.c1 .role-tag { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+.agent-card.c2 .role-tag { background: rgba(34,211,238,0.2); color: #67e8f9; }
+.agent-card.c3 .role-tag { background: rgba(245,158,11,0.2); color: #fcd34d; }
+.agent-card.c4 .role-tag { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+.agent-card.c5 .role-tag { background: rgba(236,72,153,0.2); color: #f9a8d4; }
+.agent-card.c6 .role-tag { background: rgba(139,92,246,0.2); color: #c4b5fd; }
+.agent-card ul { list-style: none; padding: 0; }
+.agent-card ul li { padding: 3px 0 3px 18px; position: relative; font-size: 13px; color: var(--text-muted); }
+.agent-card ul li::before { content: '▸'; position: absolute; left: 0; color: var(--accent-light); font-size: 11px; }
+.agent-card .tools { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 10px; }
+.agent-card .tool-chip {
+  font-size: 10px; padding: 2px 7px; border-radius: 5px;
+  background: rgba(255,255,255,0.05); color: var(--text-dim); border: 1px solid rgba(255,255,255,0.07);
+}
+
+/* Code Block */
+.code-block {
+  background: #0d0d12; border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px 22px; overflow-x: auto; margin: 14px 0;
+}
+.code-block pre {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 12.5px; line-height: 1.6;
+}
+.code-block .kw { color: #f472b6; }
+.code-block .str { color: #6ee7b7; }
+.code-block .comment { color: #64748b; }
+.code-block .fn { color: #67e8f9; }
+
+/* Learning Path */
+.learn-path { display: flex; flex-direction: column; gap: 0; }
+.learn-step {
+  display: flex; gap: 18px; padding: 16px 0; border-left: 2px solid var(--border);
+  padding-left: 24px; position: relative;
+}
+.learn-step::before {
+  content: ''; position: absolute; left: -6px; top: 20px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--accent-2); border: 2px solid var(--bg);
+}
+.learn-step .step-num {
+  min-width: 28px; height: 28px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 13px;
+  background: rgba(34,211,238,0.2); color: #67e8f9; margin-top: 2px;
+}
+.learn-step .step-content h4 { font-size: 15px; margin-bottom: 3px; }
+.learn-step .step-content p { font-size: 13px; color: var(--text-muted); }
+.learn-step .step-content .step-tags { display: flex; gap: 5px; margin-top: 6px; }
+.learn-step .step-content .step-tags span {
+  font-size: 10px; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04); color: var(--text-dim);
+}
+
+/* Protocol Grid */
+.proto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.proto-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 24px;
+}
+.proto-card h3 { font-size: 19px; margin-bottom: 10px; }
+.proto-card p { color: var(--text-muted); font-size: 13px; margin-bottom: 14px; }
+.proto-card ul { list-style: none; }
+.proto-card ul li { padding: 5px 0 5px 22px; position: relative; font-size: 13px; color: var(--text-muted); }
+.proto-card ul li::before { content: '✓'; position: absolute; left: 0; color: var(--accent-4); font-weight: 700; }
+
+/* Table */
+table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); font-size: 13px; }
+th { color: var(--accent-light); font-weight: 700; font-size: 12px; letter-spacing: 0.5px; }
+td { color: var(--text-muted); }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* Glossary Grid */
+.glossary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 14px; }
+.glossary-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px;
+}
+.glossary-card h4 { font-size: 15px; color: var(--accent-2); margin-bottom: 4px; }
+.glossary-card .gloss-en { font-size: 11px; color: var(--text-dim); margin-bottom: 8px; }
+.glossary-card .gloss-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+.glossary-card .gloss-tags span {
+  font-size: 10px; padding: 2px 7px; border-radius: 4px;
+  background: rgba(99,102,241,0.12); color: #a5b4fc;
+}
+.glossary-card p { font-size: 12.5px; color: var(--text-muted); line-height: 1.6; }
+.glossary-card p code {
+  background: rgba(34,211,238,0.1); color: #67e8f9;
+  padding: 1px 5px; border-radius: 3px; font-size: 11px; font-family: 'JetBrains Mono', monospace;
+}
+.glossary-card .gloss-level {
+  display: inline-block; font-size: 10px; padding: 2px 6px; border-radius: 4px;
+  font-weight: 600; margin-top: 4px;
+}
+.glossary-card .gloss-level.basic { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+.glossary-card .gloss-level.inter { background: rgba(245,158,11,0.15); color: #fcd34d; }
+.glossary-card .gloss-level.adv { background: rgba(236,72,153,0.15); color: #f9a8d4; }
+
+/* Career Roadmap */
+.career-roadmap { display: flex; flex-direction: column; gap: 0; position: relative; }
+.career-phase {
+  display: flex; gap: 20px; padding: 20px 0; border-left: 3px solid var(--border);
+  padding-left: 28px; position: relative;
+}
+.career-phase::before {
+  content: ''; position: absolute; left: -8px; top: 28px;
+  width: 13px; height: 13px; border-radius: 50%;
+  border: 3px solid var(--bg);
+}
+.career-phase.p1::before { background: #22d3ee; }
+.career-phase.p2::before { background: #6366f1; }
+.career-phase.p3::before { background: #f59e0b; }
+.career-phase.p4::before { background: #10b981; }
+.career-phase.p5::before { background: #ec4899; }
+.career-phase .phase-header { min-width: 110px; }
+.career-phase .phase-header h4 { font-size: 16px; margin-bottom: 2px; }
+.career-phase .phase-header .phase-time { font-size: 11px; color: var(--text-dim); }
+.career-phase .phase-body p { font-size: 13px; color: var(--text-muted); }
+.career-phase .phase-body ul { padding-left: 18px; margin-top: 6px; }
+.career-phase .phase-body ul li { font-size: 12.5px; color: var(--text-muted); padding: 2px 0; }
+
+/* Skill Tree */
+.skill-tree { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
+.skill-branch {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.skill-branch h4 { font-size: 15px; margin-bottom: 4px; }
+.skill-branch .branch-icon { font-size: 24px; margin-bottom: 6px; }
+.skill-branch .skill-list { list-style: none; padding: 0; margin-top: 8px; }
+.skill-branch .skill-list li {
+  font-size: 12px; color: var(--text-muted); padding: 3px 0;
+  display: flex; align-items: center; gap: 6px;
+}
+.skill-branch .skill-list li .check {
+  width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--border);
+  display: inline-block; flex-shrink: 0;
+}
+.skill-branch .skill-list li .check.done { background: var(--accent-4); border-color: var(--accent-4); }
+
+/* Interview Q&A */
+.interview-item {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 18px; margin-bottom: 14px;
+}
+.interview-item .iq { font-size: 14px; font-weight: 700; color: var(--accent-light); margin-bottom: 4px; }
+.interview-item .iq .iq-level {
+  font-size: 10px; padding: 2px 6px; border-radius: 4px; margin-left: 8px;
+  font-weight: 600;
+}
+.interview-item .iq .iq-level.junior { background: rgba(16,185,129,0.15); color: #6ee7b7; }
+.interview-item .iq .iq-level.mid { background: rgba(245,158,11,0.15); color: #fcd34d; }
+.interview-item .iq .iq-level.senior { background: rgba(236,72,153,0.15); color: #f9a8d4; }
+.interview-item .ia { font-size: 13px; color: var(--text-muted); margin-top: 6px; line-height: 1.7; }
+
+/* Checkpoint */
+.checkpoint-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.checkpoint-card {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.checkpoint-card h4 { font-size: 15px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.checkpoint-card h4 .cp-icon { font-size: 20px; }
+.checkpoint-card .cp-item {
+  display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; font-size: 12.5px; color: var(--text-muted);
+}
+.checkpoint-card .cp-item .cp-box {
+  width: 16px; height: 16px; border-radius: 3px; border: 1.5px solid var(--border);
+  flex-shrink: 0; margin-top: 2px;
+}
+
+/* Suggestion box */
+.tip-box {
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(34,211,238,0.04));
+  border: 1px solid rgba(99,102,241,0.25); border-radius: var(--radius);
+  padding: 24px; margin-top: 20px;
+}
+.tip-box h3 { font-size: 18px; margin-bottom: 14px; }
+.tip-box .tip-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.tip-box .tip-item:last-child { border-bottom: none; }
+.tip-box .tip-icon { font-size: 18px; min-width: 26px; }
+.tip-box .tip-text { font-size: 13px; color: var(--text-muted); }
+.tip-box .tip-text strong { color: var(--text); }
+
+/* Resume bullet */
+.resume-tip {
+  background: rgba(236,72,153,0.06); border: 1px solid rgba(236,72,153,0.25);
+  border-radius: var(--radius); padding: 18px 22px; margin: 16px 0;
+  font-size: 13px; color: var(--text-muted);
+}
+.resume-tip h4 { color: #f9a8d4; font-size: 14px; margin-bottom: 6px; }
+
+/* Footer */
+.footer { text-align: center; padding: 36px 0; color: var(--text-dim); font-size: 12px; }
+
+@media (max-width: 768px) { .proto-grid, .glossary-grid, .checkpoint-grid { grid-template-columns: 1fr; } .hero h1 { font-size: 24px; } }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="container hero-inner">
+    <h1>软件开发多Agent协作框架</h1>
+    <p class="subtitle">独立Agent系统 · 个人开发/个人使用 · Trae IDE 驱动 · AI Agent工程师养成完整学习包</p>
+    <div class="badges">
+      <span class="badge a2a">🔗 A2A Protocol 2025</span>
+      <span class="badge mcp">🔌 MCP 工具协议</span>
+      <span class="badge trae">⚡ Trae IDE 驱动</span>
+      <span class="badge personal">🎓 学习版 · 个人使用</span>
+      <span class="badge career">💼 职业导向</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="note-banner" style="margin-top:44px;">
+    <strong>📌 独立系统声明：</strong>这是一个完全独立的Agent系统，与任何其他系统（如公司管理Agent框架）<strong>没有任何关系、互不影响、彼此隔离</strong>。本项目使用 <strong>Trae IDE</strong> 作为开发工具独立开发。核心目标是 <strong>学习AI Agent开发并积累就业竞争力</strong>，但功能完整、技术先进，不因学习目的而裁剪。
+  </div>
+
+  <div class="annotation-box">
+    <div class="anno-title">📖 本文档学习导航</div>
+    <p>这份文档既是<strong>架构设计蓝图</strong>，也是你的<strong>AI Agent开发教科书</strong>。每个章节都配有<code>📖 学习注解</code>帮你理解"为什么这样设计"，末尾有完整的<strong>概念词典、职业路线图、面试知识点</strong>。建议：先通读一遍了解全貌，开发时对照架构图编码，最后用面试知识点自测。</p>
+  </div>
+</div>
+
+<!-- Section 1: Architecture -->
+<!-- ===== 需求分析 ===== -->
+<section>
+  <div class="container">
+    <h2><span class="num">0</span> 需求分析：为什么要这样设计？</h2>
+    <p class="lead">在写任何代码之前，先回答6个关键问题。这些分析决定了架构选择、Agent数量和复杂度。前期想清楚，后期少返工。</p>
+
+    <h3>0.1 问题定义：我们要解决什么？</h3>
+    <p>个人开发者在开发软件时面临的核心痛点：</p>
+    <table>
+      <tr><th>痛点</th><th>具体表现</th><th>当前怎么解决</th><th>为什么不够</th></tr>
+      <tr><td>角色切换成本高</td><td>一会儿写代码、一会儿写测试、一会儿写文档</td><td>手动切换，靠记忆</td><td>上下文丢失，效率低</td></tr>
+      <tr><td>质量难保证</td><td>自己写的代码自己审，盲区多</td><td>跑完测试就觉得没问题</td><td>测试覆盖不全，架构问题测不出来</td></tr>
+      <tr><td>文档永远滞后</td><td>改了代码忘了改文档</td><td>最后统一补</td><td>补的时候已经忘了细节</td></tr>
+      <tr><td>流程不透明</td><td>不知道开发卡在哪一步</td><td>靠感觉</td><td>无法量化进度</td></tr>
+    </table>
+
+    <h3>0.2 为什么需要Agent？不用Agent行不行？</h3>
+    <table>
+      <tr><th>方案</th><th>能做什么</th><th>做不到什么</th><th>结论</th></tr>
+      <tr><td>传统IDE + 脚本</td><td>自动补全、格式化、跑测试</td><td>不能理解需求、不能跨步骤协调、不能自主决策</td><td>不够</td></tr>
+      <tr><td>单个LLM对话</td><td>写代码、解释代码、写测试</td><td>上下文窗口有限、不能并行、没有记忆、不能调用工具</td><td>不够</td></tr>
+      <tr><td>单个Agent（如GPT-4/Cursor）</td><td>代码生成+审查+测试+文档，全能但深度有限</td><td>复杂项目超过上下文窗口后需要人类切分任务；没有记忆跨会话——每次都是全新开始；无法并行执行独立任务</td><td>能跑但不适合系统性开发</td></tr>
+      <tr><td><strong>多Agent协作</strong></td><td>每个Agent专注一个角色、可并行、可互相审查</td><td>需要编排机制、有通信开销</td><td><strong>最优解</strong></td></tr>
+    </table>
+    <p><strong>核心论证</strong>：软件开发本质上是多角色协作（架构师、开发、测试、运维、文档），每个角色有不同的思维方式和工作模式。<strong>单个 Agent（如 GPT-4+Cursor）理论上可以覆盖全流程</strong>——事实上很多个人开发者已经在这样用了。但问题是：(1) 单 Agent 的上下文窗口是有限的，复杂项目需要人类切分任务；(2) 单 Agent 没有"角色切换"的意识——它在同一段对话里既是架构师又是码农又是测试，容易混淆思维模式；(3) 单 Agent 无法并行——架构设计完成后，编码和测试用例可以同时进行，单 Agent 只能串行。多 Agent 解决的不是"单 Agent 做不了"，而是<strong>"单 Agent 做不好"</strong>——通过角色分离让每个 Agent 的 Prompt 短而精准，通过 DAG 并行执行提升效率。如果项目很简单（单文件脚本），1 个 Agent 够用——不要为了多而多。</p>
+
+    <h3>0.3 架构选型：为什么选DAG编排？</h3>
+    <table>
+      <tr><th>候选架构</th><th>结构</th><th>适合场景</th><th>为什么选/不选</th></tr>
+      <tr><td>顺序流水线</td><td>A→B→C→D</td><td>每步严格依赖上一步</td><td><strong>不选</strong>：编码和测试用例可以并行写，顺序执行浪费时间</td></tr>
+      <tr><td><strong>DAG（有向无环图）</strong></td><td>A→{B,C}→D</td><td>有依赖关系但部分可并行</td><td><strong>选</strong>：架构设计完成后，编码/测试用例/文档可并行，最后汇总到代码审查</td></tr>
+      <tr><td>自由对话（AutoGen式）</td><td>Agents自由讨论</td><td>探索性问题、头脑风暴</td><td><strong>不选</strong>：软件开发需要明确的步骤和可追踪的进度，自由对话不可控</td></tr>
+      <tr><td>监督者模式</td><td>一个Supervisor分配任务</td><td>任务不确定、需要动态分配</td><td><strong>不选</strong>：个人项目任务模式固定，Supervisor是额外开销</td></tr>
+    </table>
+    <p><strong>选DAG的理由</strong>：软件开发的依赖关系是固定的（架构→编码→测试→部署），不需要动态分配。DAG能表达"编码和测试并行"这种部分依赖关系，比顺序流水线快30%，比自由对话可控。</p>
+
+    <h3>0.4 Agent复杂度评估</h3>
+    <table>
+      <tr><th>Agent</th><th>核心能力</th><th>LLM依赖度</th><th>工具依赖度</th><th>整体复杂度</th><th>开发难度</th></tr>
+      <tr><td>Architect</td><td>架构设计、技术选型</td><td>高（需要推理）</td><td>低</td><td>中</td><td>★★★</td></tr>
+      <tr><td>Coder</td><td>代码生成、重构</td><td>高（需要代码能力）</td><td>中（Git/文件系统）</td><td>高</td><td>★★★★</td></tr>
+      <tr><td>Reviewer</td><td>代码审查</td><td>高（需要理解代码）</td><td>低</td><td>中</td><td>★★★</td></tr>
+      <tr><td>Tester</td><td>测试用例生成</td><td>中</td><td>高（测试框架）</td><td>中</td><td>★★★</td></tr>
+      <tr><td>DevOps</td><td>CI/CD、部署</td><td>低</td><td>高（Docker/K8s）</td><td>中</td><td>★★★</td></tr>
+      <tr><td>Docs</td><td>文档生成</td><td>中</td><td>低</td><td>低</td><td>★★</td></tr>
+    </table>
+    <p><strong>结论</strong>：6个Agent中，Coder最复杂（需要代码生成+工具调用+Git操作），Docs最简单。建议从最简单的Docs开始开发，逐步增加复杂度。</p>
+    <div class="annotation-box" style="margin-top:12px;">
+      <div class="anno-title">🔗 隐式依赖关系</div>
+      <p><strong>外部依赖</strong>：所有 Agent 共享 LLM API（DeepSeek/GPT）→ 这是系统级单点依赖。Memory Agent 依赖 ChromaDB（向量数据库）→ 需独立部署。Coder 依赖 Git（代码管理）和文件系统（读写代码）。<strong>Agent 间依赖</strong>：Architect → {Coder, Tester, Docs}（上游输出是下游输入）→ Reviewer（聚合所有中间产物）→ Scheduler（迭代控制）。</p>
+    </div>
+
+    <h3>0.5 架构合理性分析</h3>
+    <table>
+      <tr><th>评估维度</th><th>本架构表现</th><th>说明</th></tr>
+      <tr><td>可扩展性</td><td>★★★★☆</td><td>新增Agent只需在DAG中加节点，不影响现有Agent</td></tr>
+      <tr><td>可调试性</td><td>★★★★☆</td><td>DAG的每一步都有明确输入输出，出问题容易定位</td></tr>
+      <tr><td>并行效率</td><td>★★★★★</td><td>无依赖的Agent可以并行执行</td></tr>
+      <tr><td>容错性</td><td>★★★☆☆</td><td>一个Agent失败会阻塞下游——需要补Retry/降级</td></tr>
+      <tr><td>学习曲线</td><td>★★★☆☆</td><td>DAG概念简单，但LangGraph的API需要学习</td></tr>
+      <tr><td>资源消耗</td><td>★★★★☆</td><td>个人项目6个Agent，每Agent一个进程，资源可控</td></tr>
+    </table>
+
+    <h3>0.6 风险评估与缓解</h3>
+    <table>
+      <tr><th>风险</th><th>概率</th><th>影响</th><th>缓解措施</th></tr>
+      <tr><td>LLM生成错误代码</td><td>高</td><td>高</td><td>Reviewer Agent审查 + 自动化测试覆盖</td></tr>
+      <tr><td>上下文窗口溢出</td><td>中</td><td>中</td><td>每个Agent只接收必要信息，Memory Agent负责压缩</td></tr>
+      <tr><td>Agent死循环</td><td>低</td><td>高</td><td>Scheduler设置最大迭代次数（如10次）</td></tr>
+      <tr><td>API费用失控</td><td>中</td><td>中</td><td>简单任务用小模型，核心推理用大模型；批处理</td></tr>
+      <tr><td>安全风险（代码注入）</td><td>低</td><td>高</td><td>Guardrails输入校验 + 代码在沙箱中执行</td></tr>
+    </table>
+
+    <div class="callout">
+      <div class="callout-title">📖 学习注解：需求分析是Agent开发的第0步</div>
+      <p>很多新人拿到需求就直接写代码，结果写到一半发现架构不对，推倒重来。需求分析的核心不是写文档，而是<strong>强迫自己想清楚"为什么这样做"</strong>。你在面试时如果被问"你为什么选DAG不选监督者模式"，上面的表格就是你的回答——有对比、有理由、有数据。</p>
+    </div>
+
+    <h3>0.7 面试官视角：关键质疑与回应</h3>
+    <p class="lead">以下是一个资深 Agent 工程师/面试官会提出的尖锐问题。如果你在面试中能主动覆盖这些质疑，说明你对架构的理解远超"能跑就行"的水平。</p>
+    <table>
+      <tr><th>面试官质疑</th><th>本质问题</th><th>你的回应框架</th></tr>
+      <tr>
+        <td>"DAG 里 Coder/Tester/Docs 并行，Tester 发现 Bug 需要 Coder 修改，这个回流怎么处理？"</td>
+        <td>DAG 是单向的，不支持回流边</td>
+        <td>当前设计通过<strong>迭代轮次</strong>解决：Reviewer 统一审查 → 如果发现 Bug，Scheduler 发起新一轮（Architect→Coder→Tester），而非在 DAG 中加回流边。回流边会导致循环依赖，破坏 DAG 的可追踪性。代价是：每轮迭代有完整开销，而非增量修复。</td>
+      </tr>
+      <tr>
+        <td>"Architect 是单点，它生成的架构方案如果有问题，后面所有 Agent 都白干了吧？"</td>
+        <td>级联失败风险</td>
+        <td>确实存在。缓解措施：(1) Architect 输出后增加<strong>架构评审检查点</strong>（LLM 二次验证 + 人工确认）；(2) Reviewer 在最终审查时回溯检查架构合理性；(3) 如果迭代 3 轮仍未通过 Reviewer，触发<strong>架构重设计</strong>而非继续修补。</td>
+      </tr>
+      <tr>
+        <td>"LLM 生成的代码质量够用吗？你真的用这个系统开发过完整项目吗？"</td>
+        <td>实际效果验证</td>
+        <td>诚实回答：当前 LLM（DeepSeek/Claude）在<strong>简单 CRUD 模块</strong>上质量可用，复杂业务逻辑仍需人工审查和修改。系统设计目标不是"完全自动开发"，而是"AI 生成 80% 骨架 + 人工审查修改 20%"。简历上应该写"AI 辅助开发流水线"，不是"全自动开发系统"。</td>
+      </tr>
+      <tr>
+        <td>"6 个 Agent 的协调成本很高，一个简单项目真的需要这么多 Agent 吗？"</td>
+        <td>过度工程化质疑</td>
+        <td>取决于项目规模。对于<strong>单文件脚本</strong>，1 个 Agent 足够。对于<strong>多模块项目</strong>（如日志分析系统），DAG 的并行优势才能体现。建议：默认 2 个 Agent（Coder+Tester），项目复杂度增长后逐步加 Architect/Reviewer/DevOps/Docs。<strong>Agent 数量应该跟随需求增长，不是一开始就全上。</strong></td>
+      </tr>
+    </table>
+
+    <h3>0.8 优劣势分析（诚实评估）</h3>
+    <table>
+      <tr><th>维度</th><th>优势</th><th>劣势</th></tr>
+      <tr>
+        <td>开发效率</td>
+        <td>Coder/Tester/Docs 并行，比串行流水线快 40-60%</td>
+        <td>并行 Agent 的上下文同步开销大；Architect 串行等待是瓶颈</td>
+      </tr>
+      <tr>
+        <td>代码质量</td>
+        <td>Reviewer + Tester 双重把关，比单人审查覆盖面广</td>
+        <td>LLM 生成的代码天花板受模型能力限制；复杂逻辑容易"看起来对但实际有 bug"</td>
+      </tr>
+      <tr>
+        <td>可维护性</td>
+        <td>每个 Agent 职责单一，Prompt 可独立优化</td>
+        <td>6 个 Agent 的 Prompt 维护成本高；Agent 间接口变更需要同步修改多个 Agent</td>
+      </tr>
+      <tr>
+        <td>成本</td>
+        <td>简单任务用小模型，核心推理用大模型，成本可控</td>
+        <td>每轮迭代 6 个 Agent 各调用 1-3 次 LLM，一个中等项目可能 50-100 次调用</td>
+      </tr>
+      <tr>
+        <td>可扩展性</td>
+        <td>新增 Agent 只需接入 DAG，不改现有 Agent</td>
+        <td>DAG 边数随 Agent 数量增长，编排复杂度上升</td>
+      </tr>
+    </table>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 最大的劣势：级联失败</div>
+      <p>DAG 架构最危险的场景是<strong>级联失败</strong>——Architect 给出错误方案 → Coder 按错误方案写代码 → Tester 按错误方案写测试（测试还通过了！）→ Reviewer 可能也看不出问题。整个链路的错误被"合理化"了。缓解：Reviewer 的 Prompt 必须包含"独立思考"指令——不信任前面 Agent 的输出，从需求出发重新验证。</p>
+    </div>
+
+    <h3>0.9 鲁棒性分析（故障模式与恢复策略）</h3>
+    <p class="lead">鲁棒性 = 系统在异常情况下的生存能力。以下穷举每个关键故障场景，分析影响范围、检测方式和恢复策略。</p>
+    <table>
+      <tr><th>故障场景</th><th>影响范围</th><th>检测方式</th><th>恢复策略</th><th>降级方案</th></tr>
+      <tr>
+        <td>Architect 超时或输出格式错误</td>
+        <td>全链路阻塞（后续 Agent 无输入）</td>
+        <td>输出格式 Pydantic 校验 + 超时检测（60s）</td>
+        <td>重试 1 次（换温度参数）；仍失败则人工介入</td>
+        <td>降级：跳过 Architect，直接用用户需求作为 Coder 输入</td>
+      </tr>
+      <tr>
+        <td>Coder 生成代码无法通过测试</td>
+        <td>Tester 报告失败，Reviewer 需审查</td>
+        <td>Tester 自动化测试结果</td>
+        <td>Reviewer 分析失败原因 → 新一轮 Coder（附失败信息作为上下文）</td>
+        <td>降级：标记该模块为 TODO，跳过继续其他模块</td>
+      </tr>
+      <tr>
+        <td>LLM API 不可用（限流/宕机）</td>
+        <td>所有 Agent 停止工作</td>
+        <td>健康检查 + 熔断器（5 次失败触发）</td>
+        <td>熔断器 OPEN → 等待 30s → HALF_OPEN 探测 → 恢复</td>
+        <td>降级：切换备用模型（如 DeepSeek→Qwen）；或暂停+通知用户</td>
+      </tr>
+      <tr>
+        <td>多 Agent 同时修改同一文件</td>
+        <td>代码冲突，文件损坏</td>
+        <td>文件锁机制（写前检查锁状态）</td>
+        <td>排队等待锁释放；超时则跳过</td>
+        <td>降级：串行化所有写操作（牺牲并行性保正确性）</td>
+      </tr>
+      <tr>
+        <td>Agent 死循环（反复修改同一代码）</td>
+        <td>无限消耗 API 费用</td>
+        <td>Scheduler 最大迭代次数（10 次）+ 重复检测</td>
+        <td>强制终止当前轮次 → 标记为"需人工介入"</td>
+        <td>降级：跳过该模块，保留当前版本</td>
+      </tr>
+      <tr>
+        <td>用户需求含 Prompt 注入</td>
+        <td>Architect/Coder 被操纵生成恶意代码</td>
+        <td>InputGuardrail 检查需求文本</td>
+        <td>拒绝执行 + 告知用户检测到注入</td>
+        <td>无降级——安全风险必须阻断</td>
+      </tr>
+    </table>
+    <div class="callout">
+      <div class="callout-title">📖 鲁棒性设计原则</div>
+      <p><strong>每个故障场景必须有"降级方案"</strong>——即使降级后功能受限，系统也不能完全崩溃。面试时说"我的系统在 LLM API 不可用时会自动切换备用模型"，比说"我的系统很健壮"有说服力 100 倍。<strong>降级方案的存在本身比降级方案的完美更重要。</strong></p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="container">
+    <h2><span class="num">1</span> 架构总览</h2>
+    <p class="lead">分层架构设计，从用户到工具的完整链路。All-in-one 单仓库，个人开发者轻松维护。</p>
+
+    <div class="arch-diagram">
+      <svg viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="l1" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#818cf8"/></linearGradient>
+          <linearGradient id="l2" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#67e8f9"/></linearGradient>
+          <linearGradient id="l3" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#fcd34d"/></linearGradient>
+          <linearGradient id="l4" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#6ee7b7"/></linearGradient>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L6,3 z" fill="#475569"/></marker>
+        </defs>
+
+        <rect x="300" y="8" width="400" height="52" rx="12" fill="rgba(99,102,241,0.1)" stroke="url(#l1)" stroke-width="1.5"/>
+        <text x="500" y="32" fill="#a5b4fc" font-size="14" font-weight="700" text-anchor="middle">🧑‍💻 你（个人开发者）</text>
+        <text x="500" y="50" fill="#94a3b8" font-size="10" text-anchor="middle">需求输入 · 代码审查 · 最终决策</text>
+
+        <rect x="150" y="90" width="700" height="70" rx="12" fill="rgba(34,211,238,0.06)" stroke="url(#l2)" stroke-width="1.5"/>
+        <rect x="190" y="105" width="180" height="42" rx="8" fill="rgba(34,211,238,0.12)" stroke="#22d3ee"/>
+        <text x="280" y="125" fill="#67e8f9" font-size="13" font-weight="700" text-anchor="middle">🎮 Orchestrator</text>
+        <text x="280" y="141" fill="#94a3b8" font-size="10" text-anchor="middle">任务分解 · Agent调度</text>
+
+        <rect x="400" y="105" width="180" height="42" rx="8" fill="rgba(34,211,238,0.12)" stroke="#22d3ee"/>
+        <text x="490" y="125" fill="#67e8f9" font-size="13" font-weight="700" text-anchor="middle">🧠 Memory Agent</text>
+        <text x="490" y="141" fill="#94a3b8" font-size="10" text-anchor="middle">记忆 · 状态 · 上下文</text>
+
+        <rect x="610" y="105" width="180" height="42" rx="8" fill="rgba(34,211,238,0.12)" stroke="#22d3ee"/>
+        <text x="700" y="125" fill="#67e8f9" font-size="13" font-weight="700" text-anchor="middle">⏰ Scheduler</text>
+        <text x="700" y="141" fill="#94a3b8" font-size="10" text-anchor="middle">定时任务 · 事件触发</text>
+
+        <line x1="500" y1="60" x2="500" y2="90" stroke="#475569" stroke-width="1.5" marker-end="url(#arr)"/>
+
+        <rect x="30" y="190" width="130" height="65" rx="9" fill="rgba(99,102,241,0.1)" stroke="url(#l1)" stroke-width="1.5"/>
+        <text x="95" y="215" fill="#a5b4fc" font-size="12" font-weight="700" text-anchor="middle">🏗️ Architect</text>
+        <text x="95" y="232" fill="#94a3b8" font-size="10" text-anchor="middle">系统设计</text>
+        <text x="95" y="246" fill="#64748b" font-size="9" text-anchor="middle">API契约·技术选型</text>
+
+        <rect x="175" y="190" width="130" height="65" rx="9" fill="rgba(245,158,11,0.1)" stroke="url(#l3)" stroke-width="1.5"/>
+        <text x="240" y="215" fill="#fcd34d" font-size="12" font-weight="700" text-anchor="middle">💻 Coder</text>
+        <text x="240" y="232" fill="#94a3b8" font-size="10" text-anchor="middle">代码实现</text>
+        <text x="240" y="246" fill="#64748b" font-size="9" text-anchor="middle">Trae实时编码</text>
+
+        <rect x="320" y="190" width="130" height="65" rx="9" fill="rgba(16,185,129,0.1)" stroke="url(#l4)" stroke-width="1.5"/>
+        <text x="385" y="215" fill="#6ee7b7" font-size="12" font-weight="700" text-anchor="middle">🔍 Reviewer</text>
+        <text x="385" y="232" fill="#94a3b8" font-size="10" text-anchor="middle">代码审查</text>
+        <text x="385" y="246" fill="#64748b" font-size="9" text-anchor="middle">质量·安全·规范</text>
+
+        <rect x="465" y="190" width="130" height="65" rx="9" fill="rgba(236,72,153,0.1)" stroke="#ec4899" stroke-width="1.5"/>
+        <text x="530" y="215" fill="#f9a8d4" font-size="12" font-weight="700" text-anchor="middle">🧪 Tester</text>
+        <text x="530" y="232" fill="#94a3b8" font-size="10" text-anchor="middle">测试生成</text>
+        <text x="530" y="246" fill="#64748b" font-size="9" text-anchor="middle">单元·集成·E2E</text>
+
+        <rect x="610" y="190" width="130" height="65" rx="9" fill="rgba(34,211,238,0.1)" stroke="url(#l2)" stroke-width="1.5"/>
+        <text x="675" y="215" fill="#67e8f9" font-size="12" font-weight="700" text-anchor="middle">🚀 DevOps</text>
+        <text x="675" y="232" fill="#94a3b8" font-size="10" text-anchor="middle">部署运维</text>
+        <text x="675" y="246" fill="#64748b" font-size="9" text-anchor="middle">Docker·CI/CD</text>
+
+        <rect x="755" y="190" width="130" height="65" rx="9" fill="rgba(139,92,246,0.1)" stroke="#8b5cf6" stroke-width="1.5"/>
+        <text x="820" y="215" fill="#c4b5fd" font-size="12" font-weight="700" text-anchor="middle">📚 Docs</text>
+        <text x="820" y="232" fill="#94a3b8" font-size="10" text-anchor="middle">文档自动生成</text>
+        <text x="820" y="246" fill="#64748b" font-size="9" text-anchor="middle">API·README</text>
+
+        <line x1="280" y1="160" x2="95" y2="190" stroke="#475569" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arr)"/>
+        <line x1="350" y1="160" x2="240" y2="190" stroke="#475569" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arr)"/>
+        <line x1="490" y1="160" x2="385" y2="190" stroke="#475569" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arr)"/>
+        <line x1="580" y1="160" x2="530" y2="190" stroke="#475569" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arr)"/>
+        <line x1="670" y1="160" x2="675" y2="190" stroke="#475569" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arr)"/>
+        <line x1="760" y1="160" x2="820" y2="190" stroke="#475569" stroke-width="1" stroke-dasharray="3,3" marker-end="url(#arr)"/>
+
+        <rect x="50" y="290" width="900" height="100" rx="12" fill="rgba(99,102,241,0.04)" stroke="#6366f1" stroke-width="1" stroke-dasharray="4,4"/>
+        <text x="500" y="313" fill="#a5b4fc" font-size="12" font-weight="700" text-anchor="middle">🔗 A2A 通信层：Agent Card · Task Delegation · Streaming · Push Notifications</text>
+
+        <rect x="30" y="420" width="140" height="50" rx="8" fill="rgba(245,158,11,0.08)" stroke="#f59e0b"/>
+        <text x="100" y="442" fill="#fcd34d" font-size="12" font-weight="700" text-anchor="middle">Trae IDE</text>
+        <text x="100" y="458" fill="#64748b" font-size="9" text-anchor="middle">实时编码·预览</text>
+
+        <rect x="185" y="420" width="140" height="50" rx="8" fill="rgba(16,185,129,0.08)" stroke="#10b981"/>
+        <text x="255" y="442" fill="#6ee7b7" font-size="12" font-weight="700" text-anchor="middle">MCP Filesystem</text>
+        <text x="255" y="458" fill="#64748b" font-size="9" text-anchor="middle">文件读写</text>
+
+        <rect x="340" y="420" width="140" height="50" rx="8" fill="rgba(99,102,241,0.08)" stroke="#6366f1"/>
+        <text x="410" y="442" fill="#a5b4fc" font-size="12" font-weight="700" text-anchor="middle">MCP GitHub</text>
+        <text x="410" y="458" fill="#64748b" font-size="9" text-anchor="middle">PR·Issue·Commit</text>
+
+        <rect x="495" y="420" width="140" height="50" rx="8" fill="rgba(34,211,238,0.08)" stroke="#22d3ee"/>
+        <text x="565" y="442" fill="#67e8f9" font-size="12" font-weight="700" text-anchor="middle">MCP Terminal</text>
+        <text x="565" y="458" fill="#64748b" font-size="9" text-anchor="middle">命令执行</text>
+
+        <rect x="650" y="420" width="140" height="50" rx="8" fill="rgba(236,72,153,0.08)" stroke="#ec4899"/>
+        <text x="720" y="442" fill="#f9a8d4" font-size="12" font-weight="700" text-anchor="middle">MCP DB</text>
+        <text x="720" y="458" fill="#64748b" font-size="9" text-anchor="middle">数据库查询</text>
+
+        <rect x="805" y="420" width="140" height="50" rx="8" fill="rgba(139,92,246,0.08)" stroke="#8b5cf6"/>
+        <text x="875" y="442" fill="#c4b5fd" font-size="12" font-weight="700" text-anchor="middle">Conda/Cargo</text>
+        <text x="875" y="458" fill="#64748b" font-size="9" text-anchor="middle">环境·依赖</text>
+
+        <rect x="230" y="505" width="540" height="55" rx="10" fill="rgba(245,158,11,0.06)" stroke="rgba(245,158,11,0.25)" stroke-dasharray="5,5"/>
+        <text x="500" y="528" fill="#fcd34d" font-size="12" font-weight="700" text-anchor="middle">⚡ Trae IDE 作为唯一开发引擎</text>
+        <text x="500" y="546" fill="#94a3b8" font-size="10" text-anchor="middle">Agent开发 · 实时编码 · 可视化编排 · 调试 · 部署 · 全程在Trae中完成</text>
+      </svg>
+    </div>
+
+    <div class="annotation-box">
+      <div class="anno-title">📖 学习注解：为什么要分层？</div>
+      <p>分层架构是软件工程中最经典的设计模式。在Agent系统中，分层的意义在于<strong>关注点分离</strong>：Agent层只关心"我该做什么"，不知道"其他Agent在哪"；A2A层只管通信，不管业务逻辑；MCP层只管工具调用，不知道是谁在调用。这种设计让你可以<strong>独立修改任何一层而不影响其他层</strong>。面试中经常考察"你如何设计一个可扩展的Agent系统"，答案核心就是"分层 + 协议标准化"。</p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 2: Agent Details -->
+<section>
+  <div class="container">
+    <h2><span class="num">2</span> Agent 角色定义</h2>
+    <p class="lead">6个核心Agent + 3个编排组件，覆盖个人开发全流程。每个Agent都是独立的AI实例，通过A2A协议自主协作。</p>
+
+    <div class="agent-grid">
+      <div class="agent-card c1">
+        <div class="agent-icon">🏗️</div>
+        <h3>Architect Agent <span class="learn-star">学习重点</span></h3>
+        <span class="role-tag">系统架构师</span>
+        <ul>
+          <li>接收你的需求描述，进行需求分析</li>
+          <li>输出架构设计文档、Mermaid图表</li>
+          <li>定义模块边界、API契约（OpenAPI/Protobuf）</li>
+          <li>技术选型建议 + 利弊分析</li>
+          <li>通过 A2A 向 Coder 下发实现任务</li>
+        </ul>
+        <div class="tools"><span class="tool-chip">MCP: filesystem</span><span class="tool-chip">MCP: github</span><span class="tool-chip">OpenAPI</span></div>
+      </div>
+
+      <div class="agent-card c3">
+        <div class="agent-icon">💻</div>
+        <h3>Coder Agent <span class="learn-star">核心实践</span></h3>
+        <span class="role-tag">代码实现引擎</span>
+        <ul>
+          <li>根据架构设计编写代码实现</li>
+          <li>在Trae IDE中实时编码，你可见可调</li>
+          <li>支持多语言：Python / TS / Go / Rust</li>
+          <li>自动重构、代码风格统一</li>
+          <li>响应 Reviewer 的修改建议</li>
+        </ul>
+        <div class="tools"><span class="tool-chip">Trae IDE</span><span class="tool-chip">MCP: filesystem</span><span class="tool-chip">MCP: terminal</span></div>
+      </div>
+
+      <div class="agent-card c4">
+        <div class="agent-icon">🔍</div>
+        <h3>Reviewer Agent</h3>
+        <span class="role-tag">质量守护者</span>
+        <ul>
+          <li>自动审查代码变更（PR diff分析）</li>
+          <li>检查设计模式、代码复杂度、潜在Bug</li>
+          <li>验证API契约一致性</li>
+          <li>生成审查报告 + 修改建议</li>
+          <li>通过A2A将建议发回Coder</li>
+        </ul>
+        <div class="tools"><span class="tool-chip">MCP: github</span><span class="tool-chip">ESLint/Pylint</span></div>
+      </div>
+
+      <div class="agent-card c5">
+        <div class="agent-icon">🧪</div>
+        <h3>Tester Agent</h3>
+        <span class="role-tag">测试工程师</span>
+        <ul>
+          <li>根据代码自动生成测试用例</li>
+          <li>执行单元 / 集成 / E2E 测试</li>
+          <li>覆盖率分析 + 测试缺口报告</li>
+          <li>失败用例自动复现和报告</li>
+          <li>向Coder反馈回归测试结果</li>
+        </ul>
+        <div class="tools"><span class="tool-chip">Pytest/Jest</span><span class="tool-chip">Playwright</span><span class="tool-chip">MCP: terminal</span></div>
+      </div>
+
+      <div class="agent-card c2">
+        <div class="agent-icon">🚀</div>
+        <h3>DevOps Agent</h3>
+        <span class="role-tag">部署运维</span>
+        <ul>
+          <li>Docker 镜像构建和优化</li>
+          <li>CI/CD Pipeline 管理</li>
+          <li>本地/云端部署执行</li>
+          <li>环境变量和配置管理</li>
+          <li>日志收集和健康检查</li>
+        </ul>
+        <div class="tools"><span class="tool-chip">Docker</span><span class="tool-chip">GitHub Actions</span><span class="tool-chip">MCP: terminal</span></div>
+      </div>
+
+      <div class="agent-card c6">
+        <div class="agent-icon">📚</div>
+        <h3>Docs Agent</h3>
+        <span class="role-tag">文档工程</span>
+        <ul>
+          <li>自动生成API文档（Swagger/OpenAPI）</li>
+          <li>编写/更新README和项目文档</li>
+          <li>代码注释质量检查</li>
+          <li>变更日志自动维护</li>
+          <li>Markdown + Mermaid图表生成</li>
+        </ul>
+        <div class="tools"><span class="tool-chip">MCP: filesystem</span><span class="tool-chip">MCP: github</span></div>
+      </div>
+    </div>
+
+    <div class="annotation-box">
+      <div class="anno-title">📖 学习注解：Agent不是微服务</div>
+      <p>新人常犯的误区是把Agent等同于微服务。关键区别：<strong>Agent有自主决策能力（调用LLM推理），微服务只是执行固定逻辑</strong>。当你设计Agent时，核心问题是"这个Agent需要什么信息来做决策？"而不是"这个服务暴露什么API？"。面试常问"Agent和微服务有什么区别"，答案核心是：Agent = LLM推理 + 工具调用 + 记忆；微服务 = 固定逻辑 + 数据库。</p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 3: A2A + MCP -->
+<section>
+  <div class="container">
+    <h2><span class="num">3</span> A2A + MCP 双协议详解</h2>
+    <p class="lead">这是学习Agent开发最核心的两个协议，理解它们就等于掌握了2025年Agent互操作的标准范式。</p>
+
+    <div class="proto-grid">
+      <div class="proto-card">
+        <h3>🔗 A2A Protocol <span style="font-size:11px;color:var(--text-dim)">Google · 2025</span></h3>
+        <p>Agent之间沟通的语言。每个Agent发布自己的"名片"（Agent Card），其他Agent发现后即可发送任务。</p>
+        <ul>
+          <li><strong>Agent Card</strong>：JSON-LD格式的能力声明，放在 <code>/.well-known/agent.json</code></li>
+          <li><strong>Task Lifecycle</strong>：submitted → working → completed/failed</li>
+          <li><strong>JSON-RPC 2.0 over HTTP/SSE</strong>：标准RPC调用+流式推送</li>
+          <li><strong>Agent Discovery</strong>：自动发现网络中的可用Agent</li>
+          <li><strong>Streaming</strong>：长时间任务通过SSE实时推送进度</li>
+          <li><strong>Push Notifications</strong>：Webhook回调通知任务完成</li>
+        </ul>
+        <div class="code-block">
+<pre><span class="comment">// Architect Agent 发布的能力卡片</span>
+{
+  <span class="str">"name"</span>: <span class="str">"Architect Agent"</span>,
+  <span class="str">"url"</span>: <span class="str">"http://localhost:8081"</span>,
+  <span class="str">"capabilities"</span>: {
+    <span class="str">"streaming"</span>: <span class="kw">true</span>,
+    <span class="str">"modalities"</span>: [<span class="str">"text"</span>, <span class="str">"code"</span>, <span class="str">"file"</span>]
+  },
+  <span class="str">"skills"</span>: [
+    { <span class="str">"name"</span>: <span class="str">"system-design"</span> },
+    { <span class="str">"name"</span>: <span class="str">"api-contract"</span> }
+  ]
+}</pre>
+        </div>
+      </div>
+
+      <div class="proto-card">
+        <h3>🔌 MCP Protocol <span style="font-size:11px;color:var(--text-dim)">Anthropic · 2024+</span></h3>
+        <p>Agent与外部世界交互的接口。把任何工具/API/数据库封装为MCP Server，Agent即可统一调用。</p>
+        <ul>
+          <li><strong>Tools</strong>：Agent可调用的函数，如read_file、run_test</li>
+          <li><strong>Resources</strong>：文件、数据库记录等资源读写</li>
+          <li><strong>Prompts</strong>：可复用的提示词模板</li>
+          <li><strong>Transport</strong>：stdio（本地进程）或 SSE/HTTP（远程服务）</li>
+          <li><strong>Roots</strong>：定义Agent可访问的文件系统边界</li>
+        </ul>
+        <div class="code-block">
+<pre><span class="comment">// Tester Agent 调用 MCP Tool 运行测试</span>
+<span class="kw">const</span> result = <span class="kw">await</span> <span class="fn">mcp</span>.<span class="fn">callTool</span>(<span class="str">"run_test"</span>, {
+  <span class="str">"test_file"</span>: <span class="str">"tests/test_auth.py"</span>,
+  <span class="str">"coverage"</span>: <span class="kw">true</span>
+});
+<span class="comment">// → {passed: 23, failed: 1, coverage: "92%"}</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="annotation-box">
+      <div class="anno-title">📖 学习注解：A2A vs MCP 的本质区别</div>
+      <p>最简单的记忆法：<strong>A2A = Agent之间的语言（同行交流），MCP = Agent的手和脚（操作世界）</strong>。更深一层：A2A解决的是"Agent协作"问题，属于<strong>水平通信</strong>；MCP解决的是"Agent能力"问题，属于<strong>垂直集成</strong>。面试中几乎必考这道题，答案核心是：A2A用于Agent-to-Agent，MCP用于Agent-to-Tool。未来可能会出现统一协议（如AGNTCY），但目前这两个是最成熟的标准。</p>
+    </div>
+
+    <table style="margin-top:20px;">
+      <thead><tr><th>维度</th><th>A2A</th><th>MCP</th></tr></thead>
+      <tbody>
+        <tr><td>解决什么问题</td><td>Agent 之间怎么对话</td><td>Agent 怎么调用工具</td></tr>
+        <tr><td>比喻</td><td>同事之间发消息下任务</td><td>打开电脑软件干活</td></tr>
+        <tr><td>谁发起的</td><td>Google</td><td>Anthropic</td></tr>
+        <tr><td>传输方式</td><td>HTTP/SSE (JSON-RPC 2.0)</td><td>stdio / HTTP+SSE</td></tr>
+        <tr><td>关键概念</td><td>Agent Card · Task · Skill</td><td>Tool · Resource · Prompt</td></tr>
+        <tr><td>面试权重</td><td>★★★★★</td><td>★★★★★</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Section 4: Workflow -->
+<section>
+  <div class="container">
+    <h2><span class="num">4</span> 开发工作流</h2>
+    <p class="lead">一次完整的功能开发中，6个Agent如何通过A2A协作完成任务。</p>
+
+    <table>
+      <thead><tr><th>阶段</th><th>执行者</th><th>动作（A2A/MCP）</th><th>产物</th></tr></thead>
+      <tbody>
+        <tr><td>1. 需求输入</td><td>你 → Orchestrator</td><td>你用自然语言描述需求</td><td>需求文档</td></tr>
+        <tr><td>2. 任务分解</td><td>Orchestrator → Architect</td><td>A2A: 发送设计任务</td><td>任务列表</td></tr>
+        <tr><td>3. 架构设计</td><td>Architect</td><td>MCP: 读现有代码 → 输出架构文档</td><td>架构文档.md + API契约</td></tr>
+        <tr><td>4. 代码实现</td><td>Architect → Coder</td><td>A2A: 发送架构文档作为上下文</td><td>—</td></tr>
+        <tr><td>5. IDE编码</td><td>Coder (Trae)</td><td>MCP: 读写文件 → 在Trae中编码</td><td>代码PR</td></tr>
+        <tr><td>6. 代码审查</td><td>Coder → Reviewer</td><td>A2A: 发送PR链接</td><td>审查报告</td></tr>
+        <tr><td>7. 自动测试</td><td>Reviewer → Tester</td><td>A2A: 发送测试请求</td><td>测试报告</td></tr>
+        <tr><td>8. 文档生成</td><td>Tester → Docs</td><td>A2A: 通知代码已就绪</td><td>API文档</td></tr>
+        <tr><td>9. 部署</td><td>你 → DevOps</td><td>A2A: 发送部署指令，人工确认</td><td>上线完成</td></tr>
+      </tbody>
+    </table>
+
+    <div class="annotation-box">
+      <div class="anno-title">📖 学习注解：工作流是Agent系统的"骨架"</div>
+      <p>上面的工作流看似简单，但背后有一个重要概念：<strong>DAG（有向无环图）</strong>。Agent之间的任务依赖构成了一张DAG——Architect完成设计后Coder才能开始编码，Coder提交PR后Reviewer才能审查。在实现时，Orchestrator的核心职责就是<strong>构建并执行这个DAG</strong>，确保依赖关系正确、并发得当。面试中常问"如何处理Agent间的依赖"，答案就是DAG + 拓扑排序。LangGraph的StateGraph本质上就是对这个DAG的状态管理。</p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 5: Learning Path -->
+<section>
+  <h2><span class="num">5</span> 🎓 AI Agent 学习路线图</h2>
+  <div class="container">
+    <p class="lead">因为你的核心目标是学习Agent开发并积累就业竞争力，这里设计了一条渐进式学习路径。每步都有明确的学习产出和可量化的成果。</p>
+
+    <div class="learn-path">
+      <div class="learn-step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h4>单Agent入门 — 理解 Agent = LLM + 工具 + 记忆</h4>
+          <p>实现一个最简单的Agent：Python脚本接收用户输入，调用LLM API（Claude/GPT），输出结果。加入第一个工具（如计算器函数），让Agent能"做事情"而不仅仅是"说事情"。<strong>学习产出：一个能对话+调用工具的Python脚本（约100行）</strong></p>
+          <div class="step-tags"><span>Python</span><span>OpenAI API</span><span>Tool Calling</span><span>预计1-2天</span></div>
+        </div>
+      </div>
+      <div class="learn-step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h4>MCP协议入门 — Agent如何标准化调用工具</h4>
+          <p>为Agent挂载一个MCP Server（如filesystem MCP），让Agent能读写文件。亲手实现一个简单的MCP Server（如"天气查询"）。<strong>理解MCP的Tool/Resource/Prompt三大概念和stdio transport机制。学习产出：1个自定义MCP Server + Agent调用代码（约200行）</strong></p>
+          <div class="step-tags"><span>MCP SDK</span><span>stdio transport</span><span>自建MCP Server</span><span>预计2-3天</span></div>
+        </div>
+      </div>
+      <div class="learn-step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h4>多Agent通信 — 引入A2A协议</h4>
+          <p>搭建两个Agent：Architect + Coder。Architect接收需求输出设计文档，Coder接收设计文档输出代码。通过A2A Protocol实现两者通信，亲手实现Agent Card发现和Task发送/接收。<strong>学习产出：2个Agent通过A2A协作的完整demo（约500行）</strong></p>
+          <div class="step-tags"><span>A2A SDK</span><span>FastAPI</span><span>JSON-RPC</span><span>预计3-4天</span></div>
+        </div>
+      </div>
+      <div class="learn-step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h4>Orchestrator — 多Agent调度引擎</h4>
+          <p>引入Orchestrator，实现：需求分解→子任务DAG→根据Agent Card自动路由→并发调度→结果汇聚。用LangGraph的StateGraph管理整个流程的状态。<strong>学习产出：带DAG编排的3+Agent系统（约800行）</strong></p>
+          <div class="step-tags"><span>LangGraph</span><span>任务DAG</span><span>并发调度</span><span>预计3-5天</span></div>
+        </div>
+      </div>
+      <div class="learn-step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h4>三层记忆系统 — 让Agent拥有"长期记忆"</h4>
+          <p>短期记忆（Redis，会话上下文）、工作记忆（ChromaDB + Embedding + RAG，知识检索）、长期记忆（SQLite，用户偏好和项目规范）。<strong>学习产出：带完整记忆系统的Agent框架（约600行）</strong></p>
+          <div class="step-tags"><span>Redis</span><span>ChromaDB</span><span>Embedding</span><span>RAG</span><span>预计3-5天</span></div>
+        </div>
+      </div>
+      <div class="learn-step">
+        <div class="step-num">6</div>
+        <div class="step-content">
+          <h4>完整框架 — 6 Agent + 编排 + 记忆 = 端到端</h4>
+          <p>在Trae IDE中完整实现6个Agent+3个编排组件。跑通"需求→设计→编码→审查→测试→文档→部署"全流程。<strong>学习产出：完整可运行的多Agent开发系统（约2000行），可直接写入简历</strong></p>
+          <div class="step-tags"><span>Trae IDE</span><span>完整项目</span><span>端到端实战</span><span>预计1-2周</span></div>
+        </div>
+      </div>
+      <div class="learn-step">
+        <div class="step-num">7</div>
+        <div class="step-content">
+          <h4>高级特性 — 可观测性 + 自治级别 + 安全</h4>
+          <p>接入LangSmith全链路追踪（每个Agent的LLM调用、Token消耗、延迟都可观测）；实现4级自治（L0全手动→L1建议→L2半自动→L3全自动）；添加安全沙箱和权限控制。<strong>学习产出：生产级Agent系统（约3000行）</strong></p>
+          <div class="step-tags"><span>LangSmith</span><span>Opentelemetry</span><span>安全沙箱</span><span>自治级别</span><span>持续迭代</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 6: Key Concepts → GLOSSARY -->
+<section>
+  <div class="container">
+    <h2><span class="num">6</span> 📚 概念词典：AI Agent开发必知必会50词</h2>
+    <p class="lead">以下是你作为AI Agent开发者必须掌握的核心概念。按学习难度分级，从基础到进阶。面试中的概念题基本不会超出这个范围。</p>
+
+    <div class="glossary-grid">
+      <div class="glossary-card">
+        <h4>LLM (大语言模型)</h4>
+        <div class="gloss-en">Large Language Model</div>
+        <div class="gloss-tags"><span>基础</span><span>必知</span></div>
+        <p>像GPT-4、Claude这样的AI模型，是Agent的"大脑"。Agent的所有"智能"行为本质上都是LLM在推理。<code>温度(temperature)</code>参数控制创造性：0=精确，1=发散。</p>
+        <span class="gloss-level basic">入门级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>Agent (智能体)</h4>
+        <div class="gloss-en">AI Agent</div>
+        <div class="gloss-tags"><span>基础</span><span>核心</span></div>
+        <p>能自主感知环境、做出决策、执行动作的AI系统。公式：<code>Agent = LLM + 工具 + 记忆 + 规划</code>。与聊天机器人的核心区别：Agent能"做事"，不只"说话"。</p>
+        <span class="gloss-level basic">入门级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>Tool Calling (工具调用)</h4>
+        <div class="gloss-en">Function Calling / Tool Use</div>
+        <div class="gloss-tags"><span>基础</span><span>必知</span></div>
+        <p>LLM不再只输出文字，而是输出一个<strong>结构化的函数调用请求</strong>。比如LLM输出<code>{function:"search", args:{q:"天气"}}</code>，由外部代码实际执行搜索。这是Agent从"说"到"做"的关键。</p>
+        <span class="gloss-level basic">入门级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>MCP (模型上下文协议)</h4>
+        <div class="gloss-en">Model Context Protocol</div>
+        <div class="gloss-tags"><span>核心</span><span>Anthropic</span></div>
+        <p>Anthropic发布的Agent工具调用标准。定义了<strong>Tool（工具）、Resource（资源）、Prompt（提示模板）</strong>三种交互方式。MCP Server是你封装的工具服务，MCP Client是你的Agent。类比：MCP就是Agent世界的"USB接口标准"。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>A2A (Agent间协议)</h4>
+        <div class="gloss-en">Agent-to-Agent Protocol</div>
+        <div class="gloss-tags"><span>核心</span><span>Google</span></div>
+        <p>Google发布的Agent互操作标准。核心理念：每个Agent发布一张<strong>Agent Card</strong>（能力名片），其他Agent通过标准JSON-RPC接口发送任务。类比：A2A就是Agent世界的"电子邮件协议"。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>Agent Card</h4>
+        <div class="gloss-en">Agent Card (JSON-LD)</div>
+        <div class="gloss-tags"><span>A2A核心</span></div>
+        <p>A2A协议的核心概念。每个Agent在<code>/.well-known/agent.json</code>发布自己的JSON-LD能力描述：名称、URL、技能列表、支持的模式。其他Agent通过读取这个文件来"发现"它，然后发送任务。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>Orchestrator (编排器)</h4>
+        <div class="gloss-en">Agent Orchestrator</div>
+        <div class="gloss-tags"><span>架构</span><span>核心</span></div>
+        <p>多Agent系统的"调度中心"。职责：接收用户任务→分解为子任务DAG→根据Agent Card路由到合适Agent→并发执行→汇聚结果→返回用户。LangGraph是实现Orchestrator的主流框架。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>LangGraph</h4>
+        <div class="gloss-en">LangGraph (LangChain)</div>
+        <div class="gloss-tags"><span>框架</span><span>必学</span></div>
+        <p>LangChain生态的状态图编排框架。用图（Graph）来定义Agent工作流：节点=Agent/工具，边=数据流动，状态在节点间传递。核心优势：<strong>有状态、可检查点、支持人机交互中断</strong>。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>CrewAI</h4>
+        <div class="gloss-en">CrewAI Framework</div>
+        <div class="gloss-tags"><span>框架</span><span>备选</span></div>
+        <p>另一个流行的多Agent框架。与LangGraph的区别：CrewAI更偏向"角色扮演"风格（定义Agent角色和任务），LangGraph更偏向"状态图编排"（定义节点和边）。CrewAI上手更简单，LangGraph更灵活。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>Human-in-the-Loop</h4>
+        <div class="gloss-en">HITL / Human-in-the-Loop</div>
+        <div class="gloss-tags"><span>设计模式</span><span>安全</span></div>
+        <p>在Agent的自动化流程中插入<strong>人类确认节点</strong>。A2A协议用<code>input-required</code>状态实现。关键设计原则：涉及资金、删除、发布、合同的操作必须有HITL。面试必问。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>RAG (检索增强生成)</h4>
+        <div class="gloss-en">Retrieval-Augmented Generation</div>
+        <div class="gloss-tags"><span>记忆</span><span>必知</span></div>
+        <p>先搜索相关文档/知识片段，再把搜索结果作为上下文注入LLM的Prompt。解决了LLM"不知道私有知识"和"知识截止日期"的问题。Agent的工作记忆层通常用RAG实现。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>Embedding (向量嵌入)</h4>
+        <div class="gloss-en">Text Embedding</div>
+        <div class="gloss-tags"><span>基础</span><span>必知</span></div>
+        <p>把文本转化为一串数字（向量），语义相近的文本向量距离也近。这是RAG的基础：用户问题→向量→在向量数据库中找最近的文档→注入LLM。OpenAI的<code>text-embedding-3</code>是常用模型。</p>
+        <span class="gloss-level basic">入门级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>VectorDB (向量数据库)</h4>
+        <div class="gloss-en">Vector Database</div>
+        <div class="gloss-tags"><span>存储</span><span>必知</span></div>
+        <p>专门存储和检索向量的数据库。ChromaDB（轻量/本地）、Pinecone（云）、Qdrant（高性能）、Milvus（企业级）是常见选择。Agent的记忆系统核心依赖VectorDB做语义检索。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>SSE (服务器推送事件)</h4>
+        <div class="gloss-en">Server-Sent Events</div>
+        <div class="gloss-tags"><span>通信</span><span>必知</span></div>
+        <p>HTTP协议的一种用法：服务器持续向客户端推送数据流，而不是一次性返回响应。在Agent系统中，SSE用于：LLM流式输出（逐字显示）、A2A长任务进度推送、Agent状态实时更新。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>JSON-RPC 2.0</h4>
+        <div class="gloss-en">JSON Remote Procedure Call</div>
+        <div class="gloss-tags"><span>协议</span><span>通信</span></div>
+        <p>A2A和MCP都使用的底层通信格式。请求={<code>jsonrpc,method,params,id</code>}，响应={<code>jsonrpc,result,id</code>}。比REST更简单，比gRPC更轻量。理解这个格式是理解Agent通信的基础。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>StateGraph (状态图)</h4>
+        <div class="gloss-en">LangGraph StateGraph</div>
+        <div class="gloss-tags"><span>LangGraph核心</span></div>
+        <p>LangGraph的核心抽象：一个有状态的图，每个节点接收状态、修改状态、传递给下一个节点。状态是TypedDict格式的Python字典，在整个工作流中不断累积和更新。</p>
+        <span class="gloss-level adv">高级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>自治级别 (L0-L3)</h4>
+        <div class="gloss-en">Autonomy Levels</div>
+        <div class="gloss-tags"><span>设计</span><span>安全</span></div>
+        <p>L0：全手动；L1：Agent建议但不执行；L2：Agent执行但需要确认关键步骤；L3：全自动（仅限安全操作）。这是Agent系统的安全骨架，每个Agent/操作都要指定自治级别。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>Token / 上下文窗口</h4>
+        <div class="gloss-en">Token & Context Window</div>
+        <div class="gloss-tags"><span>基础</span><span>成本</span></div>
+        <p>Token是LLM处理文本的最小单位（≈0.75个英文单词，≈0.5个中文字）。上下文窗口=LLM一次能"看到"的最大Token数。多Agent系统中每个Agent调用LLM都消耗Token，<strong>Token成本管理</strong>是实际开发中必须关注的问题。</p>
+        <span class="gloss-level basic">入门级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>FastAPI</h4>
+        <div class="gloss-en">FastAPI (Python)</div>
+        <div class="gloss-tags"><span>框架</span><span>必会</span></div>
+        <p>Python异步Web框架，天然支持SSE和异步处理，是Agent Server的首选。每个Agent通常是一个独立的FastAPI服务，通过A2A接口对外暴露。async/await是核心特性。</p>
+        <span class="gloss-level basic">入门级</span>
+      </div>
+
+      <div class="glossary-card">
+        <h4>DAG (有向无环图)</h4>
+        <div class="gloss-en">Directed Acyclic Graph</div>
+        <div class="gloss-tags"><span>算法</span><span>编排</span></div>
+        <p>Agent任务编排的数学基础。任务=节点，依赖=边。Orchestrator通过拓扑排序确定执行顺序，出度为0的节点可以并发执行。Airflow、LangGraph都基于DAG模型。</p>
+        <span class="gloss-level inter">中级</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 7: Tech Stack -->
+<section>
+  <div class="container">
+    <h2><span class="num">7</span> 关键技术栈与推荐方案</h2>
+    <p class="lead">基于2025年生态，推荐以下工具。每个选择都给出"为什么这样选"的解释，帮助你理解技术决策。</p>
+
+    <table>
+      <thead><tr><th>层级</th><th>推荐</th><th>为什么</th><th>备选</th></tr></thead>
+      <tbody>
+        <tr><td>LLM引擎</td><td>Claude 4 / GPT-5</td><td>最强推理，Agent决策质量最高</td><td>DeepSeek R2（成本低）</td></tr>
+        <tr><td>编排框架</td><td>LangGraph</td><td>有状态图编排，适合复杂Agent流程</td><td>CrewAI（角色扮演风格）</td></tr>
+        <tr><td>A2A实现</td><td>Google A2A Python SDK</td><td>官方SDK，最贴近协议规范</td><td>自建FastAPI端点</td></tr>
+        <tr><td>MCP实现</td><td>Anthropic MCP Python SDK</td><td>官方SDK，文档完善</td><td>自建JSON-RPC</td></tr>
+        <tr><td>记忆存储</td><td>Redis + ChromaDB</td><td>Redis快（短期），ChromaDB语义检索</td><td>Qdrant / Pinecone</td></tr>
+        <tr><td>Agent后端</td><td>FastAPI</td><td>Python异步，天然支持SSE</td><td>Flask / Express</td></tr>
+        <tr><td>可观测性</td><td>LangSmith</td><td>Agent全链路Trace，LLM性能监控</td><td>自定义OpenTelemetry</td></tr>
+        <tr><td>开发环境</td><td>Trae IDE</td><td>AI原生IDE，Agent开发最佳体验</td><td>VS Code + Copilot</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Section 8: Project Structure -->
+<section>
+  <div class="container">
+    <h2><span class="num">8</span> 项目结构</h2>
+    <p class="lead">单仓库 All-in-one，个人开发友好，Trae IDE 可直接打开。</p>
+
+    <div class="code-block">
+<pre><span class="comment"># 你的项目结构（在 Trae 中打开这个目录）</span>
+dev-agent-system/
+├── <span class="fn">README.md</span>                <span class="comment"># 快速开始 + 架构说明</span>
+├── <span class="fn">requirements.txt</span>
+├── <span class="fn">.env.example</span>              <span class="comment"># API Key 等配置模板</span>
+│
+├── <span class="fn">orchestrator/</span>            <span class="comment"># 编排层</span>
+│   ├── <span class="fn">main.py</span>              <span class="comment"># FastAPI入口 + A2A Server</span>
+│   ├── <span class="fn">scheduler.py</span>          <span class="comment"># Agent调度逻辑</span>
+│   └── <span class="fn">memory.py</span>             <span class="comment"># 记忆管理 (Redis + ChromaDB)</span>
+│
+├── <span class="fn">agents/</span>                  <span class="comment"># 6个Agent实现</span>
+│   ├── <span class="fn">architect/</span>
+│   │   ├── <span class="fn">agent.py</span>          <span class="comment"># Agent逻辑 + A2A Server</span>
+│   │   ├── <span class="fn">agent.json</span>        <span class="comment"># Agent Card (/.well-known)</span>
+│   │   └── <span class="fn">prompts/</span>          <span class="comment"># 系统提示词模板</span>
+│   ├── <span class="fn">coder/</span>
+│   ├── <span class="fn">reviewer/</span>
+│   ├── <span class="fn">tester/</span>
+│   ├── <span class="fn">devops/</span>
+│   └── <span class="fn">docs/</span>
+│
+├── <span class="fn">mcp-servers/</span>             <span class="comment"># 自定义MCP Server</span>
+│   ├── <span class="fn">filesystem/</span>           <span class="comment"># 文件系统操作</span>
+│   ├── <span class="fn">github/</span>              <span class="comment"># GitHub PR/Issue操作</span>
+│   └── <span class="fn">terminal/</span>            <span class="comment"># 终端命令执行</span>
+│
+├── <span class="fn">a2a/</span>                     <span class="comment"># A2A协议封装</span>
+│   ├── <span class="fn">client.py</span>             <span class="comment"># A2A Client（发现+调用Agent）</span>
+│   ├── <span class="fn">server.py</span>             <span class="comment"># A2A Server基类</span>
+│   └── <span class="fn">types.py</span>              <span class="comment"># 类型定义 (Pydantic)</span>
+│
+├── <span class="fn">trae/</span>                    <span class="comment"># Trae IDE集成</span>
+│   └── <span class="fn">agents.json</span>           <span class="comment"># Trae Agent注册表</span>
+│
+└── <span class="fn">tests/</span>                   <span class="comment"># 框架自身的测试</span>
+    └── <span class="fn">test_a2a_flow.py</span>     <span class="comment"># A2A通信测试</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- Section 9: Career Roadmap -->
+<section>
+  <div class="container">
+    <h2><span class="num">9</span> 🚀 职业发展路线图：从零到AI Agent工程师</h2>
+    <p class="lead">这是一条以就业为目标的完整学习路线。每个阶段都有明确的技能要求、时间预期和可量化的产出。当你完成整套系统的开发，你已经具备了市场上AI Agent开发岗位的核心竞争力。</p>
+
+    <div class="career-roadmap">
+      <div class="career-phase p1">
+        <div class="phase-header"><h4>🌱 第一阶段</h4><div class="phase-time">1-2个月</div></div>
+        <div class="phase-body">
+          <p><strong>Python + LLM 基础</strong> — 打好Agent开发的根基</p>
+          <ul>
+            <li>Python异步编程（asyncio, async/await）— Agent后端的基础</li>
+            <li>LLM API调用（OpenAI/Anthropic SDK）— 理解Prompt Engineering</li>
+            <li>HTTP协议深入理解（REST, SSE, JSON-RPC）— Agent通信的基础</li>
+            <li>实现第一个单Agent Demo（能对话+调用工具）</li>
+            <li>FastAPI基础（路由、中间件、SSE端点）</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="career-phase p2">
+        <div class="phase-header"><h4>🌿 第二阶段</h4><div class="phase-time">2-3个月</div></div>
+        <div class="phase-body">
+          <p><strong>A2A + MCP + 多Agent系统</strong> — 掌握Agent互操作核心技术</p>
+          <ul>
+            <li>亲手实现A2A协议的Agent Card发现和Task转发</li>
+            <li>开发自定义MCP Server（至少3个不同Tool类型）</li>
+            <li>用LangGraph搭建3+Agent的协作系统</li>
+            <li>实现Human-in-the-Loop审批流程</li>
+            <li>向量数据库 + RAG实现Agent记忆系统</li>
+            <li><strong>里程碑：完整的多Agent系统可运行，写入简历</strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="career-phase p3">
+        <div class="phase-header"><h4>🌳 第三阶段</h4><div class="phase-time">2-3个月</div></div>
+        <div class="phase-body">
+          <p><strong>工程化 + 可观测性 + 安全</strong> — 从Demo到生产级</p>
+          <ul>
+            <li>接入LangSmith/OpenTelemetry全链路Trace</li>
+            <li>Docker Compose编排所有Agent服务</li>
+            <li>API Key管理、速率限制、错误重试</li>
+            <li>Token成本监控和优化</li>
+            <li>安全沙箱：文件系统隔离、网络限制</li>
+            <li>CI/CD Pipeline（GitHub Actions自动测试部署）</li>
+            <li><strong>里程碑：系统达到可演示级别，写入GitHub Portfolio</strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="career-phase p4">
+        <div class="phase-header"><h4>🌲 第四阶段</h4><div class="phase-time">持续</div></div>
+        <div class="phase-body">
+          <p><strong>深度 + 广度 + 社区影响力</strong> — 建立行业存在感</p>
+          <ul>
+            <li>写3-5篇技术博客 / 在知乎/掘金发布Agent开发文章</li>
+            <li>开源你的Agent框架或MCP Server到GitHub</li>
+            <li>学习AGNTCY、ANP等新兴Agent协议</li>
+            <li>参与开源Agent项目贡献代码（LangChain/CrewAI）</li>
+            <li>关注AI Agent公司招聘信息，针对性准备</li>
+            <li><strong>里程碑：GitHub 50+ Star，技术文章累计阅读5000+</strong></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="career-phase p5">
+        <div class="phase-header"><h4>🎯 目标岗位</h4><div class="phase-time">可投递</div></div>
+        <div class="phase-body">
+          <p><strong>AI Agent开发工程师 / LLM应用工程师 / AI平台开发</strong> — 薪资范围 ¥25K-60K（2025年市场行情）</p>
+          <ul>
+            <li>职位关键词：AI Agent、LLM Application、LangChain/LangGraph、A2A/MCP</li>
+            <li>公司类型：AI创业公司、大厂AI Lab、SaaS公司AI团队、传统企业AI转型部门</li>
+            <li>差异化竞争力：你在简历上不是写"了解AI Agent"，而是<span style="color:#67e8f9">"独立设计并实现了基于A2A+MCP的6 Agent协作系统，含DAG编排、三层记忆、Human-in-the-Loop安全机制"</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resume Tip -->
+    <div class="resume-tip">
+      <h4>📝 简历项目描述参考模板</h4>
+      <p style="margin-bottom:8px;">当你在简历中描述这个项目时，可以这样写（中英文版本）：</p>
+      <p><strong>中文：</strong>"独立设计并实现了一个基于A2A协议和MCP协议的多Agent软件开发协作系统，包含Architect、Coder、Reviewer、Tester、DevOps、Docs六个专业Agent。采用LangGraph进行DAG任务编排，Redis+ChromaDB构建三层记忆架构，支持4级自治（L0-L3）和Human-in-the-Loop安全审批。使用FastAPI+SSE实现Agent间实时通信，通过LangSmith进行全链路可观测性追踪。"</p>
+      <p style="margin-top:8px;"><strong>English:</strong> "Designed and implemented a multi-agent software development collaboration system based on Google's A2A protocol and Anthropic's MCP protocol. Features 6 specialized agents (Architect, Coder, Reviewer, Tester, DevOps, Docs) with LangGraph-based DAG orchestration, 3-tier memory architecture (Redis + ChromaDB), 4-level autonomy control, and Human-in-the-Loop safety mechanisms. Built with FastAPI + SSE for real-time agent communication and LangSmith for full-stack observability."</p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 10: Interview Prep -->
+<section>
+  <div class="container">
+    <h2><span class="num">10</span> 🎯 面试高频知识点与回答思路</h2>
+    <p class="lead">以下是AI Agent开发岗位面试中最常见的问题类型和回答框架。标注了面向的级别（初级/中级/高级）。</p>
+
+    <div class="interview-item">
+      <div class="iq">Q1: 什么是AI Agent？它和传统的聊天机器人有什么区别？ <span class="iq-level junior">初级必问</span></div>
+      <div class="ia"><strong>回答框架：</strong>核心区别在于"能否自主行动"。聊天机器人只做"输入→输出"的单轮转换；Agent则是在一个循环中持续运行：感知(Observe)→思考(Reason)→行动(Act)→观察结果→继续。公式：Agent = LLM + 工具调用 + 记忆 + 规划。可以举例说明：聊天机器人只能回答"怎么部署Docker"，Agent可以直接帮你执行docker build和docker run。</div>
+    </div>
+
+    <div class="interview-item">
+      <div class="iq">Q2: A2A协议和MCP协议有什么区别？各自解决什么问题？ <span class="iq-level mid">中级必问</span></div>
+      <div class="ia"><strong>回答框架：</strong>A2A（Agent-to-Agent）解决的是Agent之间的通信和协作问题，由Google提出，基于JSON-RPC over HTTP/SSE，核心是Agent Card发现机制和Task生命周期管理。MCP（Model Context Protocol）解决的是Agent与外部工具的交互问题，由Anthropic提出，基于JSON-RPC over stdio/SSE，核心是Tool/Resource/Prompt三层抽象。一句话：A2A是Agent之间的语言，MCP是Agent的手和脚。</div>
+    </div>
+
+    <div class="interview-item">
+      <div class="iq">Q3: 如何设计一个安全的多Agent系统？ <span class="iq-level senior">高级常考</span></div>
+      <div class="ia"><strong>回答框架：</strong>四个层面：(1)<strong>自治级别</strong>：L0-L3分级，涉及资金/删除/发布的操作必须在L2以下（需要人工确认）；(2)<strong>Human-in-the-Loop</strong>：在关键节点插入A2A的input-required状态，暂停流程等待人类决策；(3)<strong>沙箱隔离</strong>：每个Agent在独立的Docker容器中运行，文件系统和网络受限；(4)<strong>审计日志</strong>：所有Agent的LLM调用、工具执行、A2A消息全量记录到LangSmith，可追溯。还可以提到权限模型：每个MCP Tool注册时声明需要的权限级别。</div>
+    </div>
+
+    <div class="interview-item">
+      <div class="iq">Q4: 多Agent系统中的记忆是如何设计的？ <span class="iq-level mid">中级常考</span></div>
+      <div class="ia"><strong>回答框架：</strong>三层记忆架构：(1)<strong>短期记忆</strong>（Redis）：当前会话的对话历史和上下文，TTL过期；(2)<strong>工作记忆</strong>（VectorDB + RAG）：长期的、可检索的知识，如项目规范、代码库结构、用户偏好。原理是Embedding→VectorDB→相似度检索→注入Prompt；(3)<strong>长期记忆</strong>（SQLite/PostgreSQL）：结构化的永久数据，如用户设置、历史决策记录。三层记忆由Memory Agent统一管理，通过A2A对外提供读写接口。</div>
+    </div>
+
+    <div class="interview-item">
+      <div class="iq">Q5: LangGraph的StateGraph是如何工作的？ <span class="iq-level mid">中级常考</span></div>
+      <div class="ia"><strong>回答框架：</strong>StateGraph是LangGraph的核心，它是一个有状态的有向图。节点(Node)是处理函数，接收当前状态、返回状态更新；边(Edge)定义节点间的流转，可以是条件边（根据状态决定走哪条路）；状态(State)是一个TypedDict，在整张图中传递和累积。关键特性：(1)检查点(Checkpoint)机制支持中断和恢复（用于HITL）；(2)支持条件分支和循环；(3)每个节点调用后状态自动合并。在Agent系统中，每个节点通常对应一个Agent或一个工具调用。</div>
+    </div>
+
+    <div class="interview-item">
+      <div class="iq">Q6: 如何控制Agent的Token消耗和成本？ <span class="iq-level mid">中级常问</span></div>
+      <div class="ia"><strong>回答框架：</strong>几个策略：(1)<strong>模型分层</strong>：简单任务（文档生成、格式转换）用便宜模型；核心推理（架构设计、代码生成）用高级模型；(2)<strong>提示词压缩</strong>：精简系统提示词，避免冗余上下文；(3)<strong>RAG精准检索</strong>：只注入最相关的知识片段，而非全部文档；(4)<strong>缓存LLM响应</strong>：相同输入不重复调用LLM；(5)<strong>LangSmith监控</strong>：实时追踪每个Agent的Token消耗，设置预算警报。这是实际工作中必须关注的问题。</div>
+    </div>
+
+    <div class="interview-item">
+      <div class="iq">Q7: 你如何测试一个多Agent系统？ <span class="iq-level senior">高级常考</span></div>
+      <div class="ia"><strong>回答框架：</strong>分四层测试：(1)<strong>单元测试</strong>：测试单个Agent的LLM调用逻辑，用Mock替换LLM API；(2)<strong>集成测试</strong>：测试A2A通信链路，验证Agent Card发现、Task发送/接收、状态流转；(3)<strong>端到端测试</strong>：模拟完整工作流（需求→设计→编码→测试），验证所有Agent协作产出正确结果；(4)<strong>评估测试</strong>：用标准数据集评估Agent输出质量（架构设计合理性、代码正确率），建立Benchmark基线。LangSmith的Eval功能可以用于评估测试。</div>
+    </div>
+
+    <div class="interview-item">
+      <div class="iq">Q8: 你觉得Agent开发的未来趋势是什么？ <span class="iq-level senior">高级/开放题</span></div>
+      <div class="ia"><strong>回答框架：</strong>可以从几个方向回答：(1)协议统一：A2A+MCP可能会融合或被AGNTCY等新协议取代；(2)多模态Agent：不仅处理文本，还能理解图像、音频、视频；(3)Agent操作系统：像Android/iOS一样出现Agent Runtime环境；(4)端侧Agent：在手机/PC上运行的轻量Agent（Apple Intelligence）;(5)Agent间经济系统：Agent之间形成服务市场和Token支付体系。回答时注意表达自己的独立判断而不仅是罗列趋势。</div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 11: Skill Tree & Checkpoints -->
+<section>
+  <div class="container">
+    <h2><span class="num">11</span> 📋 技能树与学习里程碑</h2>
+    <p class="lead">将抽象的学习目标转化为可勾选的技能清单。当你勾满了大部分Checkbox，就可以自信地去面试了。</p>
+
+    <h3 style="font-size:18px; margin-bottom:14px; color:var(--accent-2);">🌳 AI Agent开发技能树</h3>
+    <div class="skill-tree">
+      <div class="skill-branch">
+        <div class="branch-icon">🐍</div>
+        <h4>Python 基础</h4>
+        <ul class="skill-list">
+          <li><span class="check"></span> async/await 异步编程</li>
+          <li><span class="check"></span> Pydantic 数据模型</li>
+          <li><span class="check"></span> FastAPI 路由+SSE</li>
+          <li><span class="check"></span> Poetry/uv 包管理</li>
+          <li><span class="check"></span> pytest 测试框架</li>
+        </ul>
+      </div>
+
+      <div class="skill-branch">
+        <div class="branch-icon">🧠</div>
+        <h4>LLM 基础</h4>
+        <ul class="skill-list">
+          <li><span class="check"></span> OpenAI/Anthropic SDK</li>
+          <li><span class="check"></span> Prompt Engineering</li>
+          <li><span class="check"></span> Tool/Function Calling</li>
+          <li><span class="check"></span> Token + 成本管理</li>
+          <li><span class="check"></span> Streaming 输出处理</li>
+        </ul>
+      </div>
+
+      <div class="skill-branch">
+        <div class="branch-icon">🔗</div>
+        <h4>A2A 协议</h4>
+        <ul class="skill-list">
+          <li><span class="check"></span> Agent Card 设计与发布</li>
+          <li><span class="check"></span> Task 生命周期管理</li>
+          <li><span class="check"></span> JSON-RPC 2.0 实现</li>
+          <li><span class="check"></span> Agent Discovery 机制</li>
+          <li><span class="check"></span> Streaming/Push通知</li>
+        </ul>
+      </div>
+
+      <div class="skill-branch">
+        <div class="branch-icon">🔌</div>
+        <h4>MCP 协议</h4>
+        <ul class="skill-list">
+          <li><span class="check"></span> 自建 MCP Server</li>
+          <li><span class="check"></span> Tool/Resource/Prompt</li>
+          <li><span class="check"></span> stdio/SSE Transport</li>
+          <li><span class="check"></span> MCP Client 集成</li>
+          <li><span class="check"></span> 权限与Roots管理</li>
+        </ul>
+      </div>
+
+      <div class="skill-branch">
+        <div class="branch-icon">🎮</div>
+        <h4>Agent 编排</h4>
+        <ul class="skill-list">
+          <li><span class="check"></span> LangGraph StateGraph</li>
+          <li><span class="check"></span> 任务DAG构建与调度</li>
+          <li><span class="check"></span> Agent路由与选择</li>
+          <li><span class="check"></span> 并发+失败重试</li>
+          <li><span class="check"></span> CrewAI基础使用</li>
+        </ul>
+      </div>
+
+      <div class="skill-branch">
+        <div class="branch-icon">🧠</div>
+        <h4>记忆系统</h4>
+        <ul class="skill-list">
+          <li><span class="check"></span> Redis 会话管理</li>
+          <li><span class="check"></span> ChromaDB 向量存储</li>
+          <li><span class="check"></span> Embedding + RAG</li>
+          <li><span class="check"></span> SQLite 结构化存储</li>
+          <li><span class="check"></span> 三层记忆架构</li>
+        </ul>
+      </div>
+
+      <div class="skill-branch">
+        <div class="branch-icon">🔒</div>
+        <h4>安全与可观测</h4>
+        <ul class="skill-list">
+          <li><span class="check"></span> LangSmith Trace</li>
+          <li><span class="check"></span> HITL 审批流程</li>
+          <li><span class="check"></span> 自治级别 L0-L3</li>
+          <li><span class="check"></span> Docker 沙箱隔离</li>
+          <li><span class="check"></span> 全量审计日志</li>
+        </ul>
+      </div>
+
+      <div class="skill-branch">
+        <div class="branch-icon">🚀</div>
+        <h4>工程化</h4>
+        <ul class="skill-list">
+          <li><span class="check"></span> Docker Compose</li>
+          <li><span class="check"></span> GitHub Actions CI</li>
+          <li><span class="check"></span> 环境变量管理</li>
+          <li><span class="check"></span> 错误处理+重试</li>
+          <li><span class="check"></span> API速率限制</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="font-size:18px; margin:28px 0 14px; color:var(--accent-3);">✅ 学习里程碑检验清单</h3>
+    <p class="lead" style="margin-bottom:18px;">以下4个里程碑是评估你学习进度的客观标准。完成每个里程碑后勾选，你会清楚看到自己的成长。</p>
+
+    <div class="checkpoint-grid">
+      <div class="checkpoint-card">
+        <h4><span class="cp-icon">🌱</span> 里程碑 1：单Agent入门</h4>
+        <div class="cp-item"><span class="cp-box"></span>能用Python调用LLM API完成一次对话</div>
+        <div class="cp-item"><span class="cp-box"></span>实现了至少1个Tool Calling（如计算器、搜索）</div>
+        <div class="cp-item"><span class="cp-box"></span>理解Agent循环：Observe→Reason→Act</div>
+        <div class="cp-item"><span class="cp-box"></span>代码量：约100行</div>
+        <div class="cp-item"><span class="cp-box"></span>能解释Agent和聊天机器人的区别</div>
+      </div>
+
+      <div class="checkpoint-card">
+        <h4><span class="cp-icon">🌿</span> 里程碑 2：双Agent A2A通信</h4>
+        <div class="cp-item"><span class="cp-box"></span>2个Agent通过A2A完成了至少一次任务协作</div>
+        <div class="cp-item"><span class="cp-box"></span>亲手实现了Agent Card发现机制</div>
+        <div class="cp-item"><span class="cp-box"></span>每个Agent是独立的FastAPI服务</div>
+        <div class="cp-item"><span class="cp-box"></span>理解JSON-RPC 2.0的请求/响应格式</div>
+        <div class="cp-item"><span class="cp-box"></span>代码量：约500行</div>
+      </div>
+
+      <div class="checkpoint-card">
+        <h4><span class="cp-icon">🌳</span> 里程碑 3：完整多Agent系统</h4>
+        <div class="cp-item"><span class="cp-box"></span>6个Agent全部实现并可协作运行</div>
+        <div class="cp-item"><span class="cp-box"></span>Orchestrator实现了DAG任务编排</div>
+        <div class="cp-item"><span class="cp-box"></span>三层记忆系统（Redis+ChromaDB+SQLite）</div>
+        <div class="cp-item"><span class="cp-box"></span>HITL审批节点实现</div>
+        <div class="cp-item"><span class="cp-box"></span>代码量：约2000行 | 可写入简历</div>
+      </div>
+
+      <div class="checkpoint-card">
+        <h4><span class="cp-icon">🌲</span> 里程碑 4：生产级就绪</h4>
+        <div class="cp-item"><span class="cp-box"></span>LangSmith全链路Trace接入</div>
+        <div class="cp-item"><span class="cp-box"></span>Docker Compose一键启动全系统</div>
+        <div class="cp-item"><span class="cp-box"></span>CI/CD Pipeline自动化测试部署</div>
+        <div class="cp-item"><span class="cp-box"></span>Token成本监控+预算告警</div>
+        <div class="cp-item"><span class="cp-box"></span>代码量：约3000行 | GitHub开源</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Section 12: Tips -->
+<section>
+  <div class="container">
+    <h2><span class="num">12</span> 学习建议</h2>
+
+    <div class="tip-box">
+      <h3>💡 给Agent学习者的10条建议</h3>
+      <div class="tip-item">
+        <div class="tip-icon">1️⃣</div>
+        <div class="tip-text"><strong>先跑通再完善</strong> — 第一版只写2个Agent（Architect + Coder），A2A通信跑通了再逐步加其他Agent。</div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">2️⃣</div>
+        <div class="tip-text"><strong>"用Agent开发Agent"是最好的学习</strong> — 在Trae中开发Agent时，Trae本身就是一个Agent在帮你编码。观察Trae的行为，理解它作为Agent如何工作。</div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">3️⃣</div>
+        <div class="tip-text"><strong>打印一切日志</strong> — 每个A2A消息、每个MCP调用、每个LLM推理都log出来。看到Agent之间的"对话"才能理解多Agent系统的运作。</div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">4️⃣</div>
+        <div class="tip-text"><strong>先从脚本开始</strong> — 不需要一开始就FastAPI+HTTP，先用Python脚本让Agent通过内存传数据。理解通信模式后再升级到A2A协议。</div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">5️⃣</div>
+        <div class="tip-text"><strong>亲手实现一次协议</strong> — 不要只调SDK。手动实现一次Agent Card发现、手动封装一个MCP Tool。亲手实现比调用库理解深十倍。</div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">6️⃣</div>
+        <div class="tip-text"><strong>边学边写博客</strong> — 每完成一个阶段就写一篇技术博客。教别人是最好的学习方式。这些文章也是你面试时的加分项。</div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">7️⃣</div>
+        <div class="tip-text"><strong>关注Token消耗</strong> — 每个Agent调用LLM都要花钱。学习阶段用低成本模型（DeepSeek）做实验，确认流程正确后再切高性能模型。</div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">8️⃣</div>
+        <div class="tip-text"><strong>关注AGNTCY等新协议</strong> — 2025年Agent协议百花齐放。先吃透A2A+MCP，再关注AGNTCY、ANP等方向，这能展现你的技术前瞻性。</div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">9️⃣</div>
+        <div class="tip-text"><strong>简历上写"实现"而不是"了解"</strong> — "了解A2A协议"不如"基于A2A协议独立实现了6 Agent协作系统"。动词决定面试官对你的第一印象。</div>
+      </div>
+      <div class="tip-item">
+        <div class="tip-icon">🔟</div>
+        <div class="tip-text"><strong>这是你的作品，不是作业</strong> — 这个系统是你在AI Agent领域最重要的作品。大胆修改、扩展、个性化。它的质量直接代表你的技术水平。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 以下为 v3 新增章节：脚手架代码、踩坑指南、Prompt工程、框架对比、成本分析 -->
+<!-- ============================================================ -->
+
+<!-- Section 13: Scaffold Code -->
+<section>
+  <div class="container">
+    <h2><span class="num">13</span> 🏗️ 可运行的脚手架代码：从零到你的第一个Agent</h2>
+    <p class="lead">以下代码专为<strong>通过Trae写代码的学习者</strong>设计。每段代码都配有「让Trae帮你写这段」的提示词和逐行中文注释。如果你无法独立写出这些代码——完全正常！这个章节就是帮你用AI工具学会的。</p>
+
+    <div class="annotation-box">
+      <div class="anno-title">📖 学习注解：为什么叫"脚手架"？</div>
+      <p>脚手架（Scaffold）是建筑工程中的临时支撑结构。在编程中，它指<strong>一个最小但完整可运行的代码骨架</strong>——你可以直接复制运行，然后在此基础上改。脚手架的价值在于：不需要理解每一行才能跑起来，边跑边学。</p>
+    </div>
+
+    <!-- Example 1: Simplest Agent -->
+    <h3 style="font-size:20px; color:var(--accent-2); margin:28px 0 14px;">1️⃣ 最简单的Agent：能对话也能"做事"</h3>
+    <p style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">目标：一个Python脚本，你问它"现在几点了"，它调用工具获取真实时间而不是瞎编。约60行。</p>
+
+    <div class="annotation-box" style="margin-bottom:10px;">
+      <div class="anno-title">🤖 让 Trae 帮你写这段</div>
+      <p>在Trae中新建 <code>hello_agent.py</code>，然后输入以下提示词：<br><br>
+      <strong>「写一个Python脚本，使用OpenAI兼容API（base_url用环境变量LLM_BASE_URL，api_key用环境变量LLM_API_KEY），实现一个简单的Agent：它有一个get_current_time工具函数（返回当前时间字符串），当用户问"几点了"或"现在时间"时自动调用这个工具。用print打印整个思考过程。」</strong></p>
+    </div>
+
+    <div class="code-block">
+<pre><span class="comment"># ===== hello_agent.py — 你的第一个Agent =====</span>
+<span class="comment"># 【这段代码在做什么】</span>
+<span class="comment"># 1. 设置LLM连接的"门牌号"（API地址+密钥）</span>
+<span class="comment"># 2. 告诉LLM你有一个"工具"可以用（get_current_time函数）</span>
+<span class="comment"># 3. 进入一个循环：用户说话→LLM思考→如果需要就调用工具→回答用户</span>
+
+<span class="kw">import</span> os, json
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+<span class="kw">from</span> openai <span class="kw">import</span> OpenAI  <span class="comment"># OpenAI的Python库，也兼容DeepSeek等国产模型</span>
+
+<span class="comment"># ========== 第1步：配置LLM连接 ==========</span>
+<span class="comment"># os.getenv() 从环境变量读取，不要把Key写死在代码里</span>
+client = OpenAI(
+    api_key=os.getenv(<span class="str">"LLM_API_KEY"</span>),     <span class="comment"># 你的API密钥，从环境变量读取</span>
+    base_url=os.getenv(<span class="str">"LLM_BASE_URL"</span>),   <span class="comment"># API地址，DeepSeek填"https://api.deepseek.com"</span>
+)
+
+<span class="comment"># ========== 第2步：定义工具（Agent的"手"） ==========</span>
+<span class="kw">def</span> <span class="fn">get_current_time</span>():
+    <span class="str">"""获取当前时间。当用户问'几点了'时被Agent调用。"""</span>
+    <span class="kw">return</span> datetime.now().strftime(<span class="str">"%Y-%m-%d %H:%M:%S"</span>)
+
+<span class="comment"># 这段JSON是"工具说明书"——告诉LLM这个工具叫什么、怎么用</span>
+<span class="comment"># LLM不会真正执行函数，它只是输出"我想调用get_current_time"</span>
+tools = [{
+    <span class="str">"type"</span>: <span class="str">"function"</span>,
+    <span class="str">"function"</span>: {
+        <span class="str">"name"</span>: <span class="str">"get_current_time"</span>,          <span class="comment"># 工具名称</span>
+        <span class="str">"description"</span>: <span class="str">"获取当前的日期和时间"</span>,  <span class="comment"># 工具说明（写清楚，LLM靠这个判断何时调用）</span>
+        <span class="str">"parameters"</span>: {<span class="str">"type"</span>: <span class="str">"object"</span>, <span class="str">"properties"</span>: {}}  <span class="comment"># 这个工具不需要参数</span>
+    }
+}]
+
+<span class="comment"># ========== 第3步：Agent主循环（核心！） ==========</span>
+messages = [{<span class="str">"role"</span>: <span class="str">"system"</span>, <span class="str">"content"</span>: <span class="str">"你是助手，用tools获取真实信息"</span>}]
+
+<span class="kw">while</span> <span class="kw">True</span>:
+    user_input = input(<span class="str">"\n你: "</span>)
+    <span class="kw">if</span> user_input.lower() == <span class="str">"quit"</span>: <span class="kw">break</span>
+    messages.append({<span class="str">"role"</span>: <span class="str">"user"</span>, <span class="str">"content"</span>: user_input})
+
+    <span class="comment"># 发送给LLM，告诉它有哪些工具可用</span>
+    response = client.chat.completions.create(
+        model=<span class="str">"deepseek-chat"</span>,  <span class="comment"># 学习阶段用DeepSeek，便宜</span>
+        messages=messages,
+        tools=tools,               <span class="comment"># 🔑 关键：把工具列表传给LLM</span>
+    )
+
+    msg = response.choices[0].message
+
+    <span class="comment"># 判断LLM是想"说话"还是想"调用工具"</span>
+    <span class="kw">if</span> msg.tool_calls:  <span class="comment"># LLM说："我要调用工具！"</span>
+        <span class="kw">for</span> tool_call <span class="kw">in</span> msg.tool_calls:
+            name = tool_call.function.name
+            print(<span class="str">f"🔧 Agent调用工具: {name}"</span>)
+
+            <span class="comment"># 实际执行工具（这一步是你（Python代码）做的，不是LLM）</span>
+            <span class="kw">if</span> name == <span class="str">"get_current_time"</span>:
+                result = get_current_time()
+
+            <span class="comment"># 把工具执行结果告诉LLM</span>
+            messages.append({
+                <span class="str">"role"</span>: <span class="str">"tool"</span>,
+                <span class="str">"tool_call_id"</span>: tool_call.id,
+                <span class="str">"content"</span>: result
+            })
+
+        <span class="comment"># 让LLM根据工具结果生成最终回答</span>
+        final = client.chat.completions.create(
+            model=<span class="str">"deepseek-chat"</span>, messages=messages
+        )
+        print(<span class="str">f"Agent: {final.choices[0].message.content}"</span>)
+        messages.append(final.choices[0].message)
+
+    <span class="kw">else</span>:  <span class="comment"># LLM直接回答，不需要工具</span>
+        print(<span class="str">f"Agent: {msg.content}"</span>)
+        messages.append(msg)</pre>
+    </div>
+
+    <div class="annotation-box">
+      <div class="anno-title">📖 关键理解：LLM不执行工具，你执行</div>
+      <p>这是新手最容易困惑的点。看这段代码：<code>if msg.tool_calls</code> 之后的逻辑。LLM只是<strong>输出了一句"我想调用get_current_time"</strong>（JSON格式），真正执行 <code>get_current_time()</code> 的是你的Python代码。执行完后你把结果发回给LLM，它再基于结果回答。这个「LLM说要调→你调→结果回传→LLM回答」的循环就是Agent的核心机制。</p>
+    </div>
+
+    <!-- Example 2: Two Agents A2A -->
+    <h3 style="font-size:20px; color:var(--accent-3); margin:36px 0 14px;">2️⃣ 两个Agent通过A2A通信</h3>
+    <p style="color:var(--text-muted); font-size:13px; margin-bottom:12px;">目标：Architect Agent 和 Coder Agent 通过HTTP互相发送任务。这个例子需要两个终端窗口，各运行一个Agent。</p>
+
+    <div class="annotation-box" style="margin-bottom:10px;">
+      <div class="anno-title">🤖 让 Trae 帮你写这段</div>
+      <p>在Trae中新建 <code>a2a_demo/</code> 目录，然后依次对Trae说：<br><br>
+      1. <strong>「写一个FastAPI服务architect_agent.py，端口8081，在/.well-known/agent.json暴露Agent Card（name: Architect, skills: system-design），接收POST /tasks创建任务，用print打印收到的任务内容」</strong><br><br>
+      2. <strong>「写coder_agent.py，端口8082，Agent Card声明skills: code-implementation。启动后自动发现localhost:8081的Architect Agent，读取它的Agent Card，然后发送一个POST请求创建任务"设计用户登录模块"」</strong></p>
+    </div>
+
+    <div class="code-block">
+<pre><span class="comment"># ===== architect_agent.py =====</span>
+<span class="comment"># 【这段代码在做什么】</span>
+<span class="comment"># 用FastAPI创建一个Web服务（Agent = Web服务 + LLM能力）</span>
+<span class="comment"># 它暴露了两个HTTP端点：</span>
+<span class="comment">#   GET /.well-known/agent.json → 返回Agent名片</span>
+<span class="comment">#   POST /tasks → 接收其他Agent发来的任务</span>
+
+<span class="kw">from</span> fastapi <span class="kw">import</span> FastAPI
+<span class="kw">from</span> pydantic <span class="kw">import</span> BaseModel  <span class="comment"># Pydantic：定义数据格式（结构体）</span>
+<span class="kw">import</span> uvicorn
+
+app = FastAPI()  <span class="comment"># 创建Web应用</span>
+
+<span class="comment"># --- Agent Card：其他Agent通过访问这个URL来"认识"我 ---</span>
+<span class="kw">@app.get</span>(<span class="str">"/.well-known/agent.json"</span>)
+<span class="kw">def</span> <span class="fn">agent_card</span>():
+    <span class="kw">return</span> {
+        <span class="str">"name"</span>: <span class="str">"Architect Agent"</span>,
+        <span class="str">"url"</span>: <span class="str">"http://localhost:8081"</span>,
+        <span class="str">"skills"</span>: [{<span class="str">"name"</span>: <span class="str">"system-design"</span>}],
+        <span class="str">"capabilities"</span>: {<span class="str">"streaming"</span>: <span class="kw">False</span>}
+    }
+
+<span class="comment"># --- 任务接收端点：其他Agent通过POST请求给我派任务 ---</span>
+<span class="kw">class</span> <span class="fn">Task</span>(BaseModel):  <span class="comment"># 定义任务的数据格式</span>
+    description: <span class="kw">str</span>  <span class="comment"># 任务描述字段，类型是字符串</span>
+
+<span class="kw">@app.post</span>(<span class="str">"/tasks"</span>)
+<span class="kw">def</span> <span class="fn">receive_task</span>(task: Task):
+    print(<span class="str">f"\n📨 收到任务: {task.description}"</span>)
+    <span class="comment"># 实际系统中这里会调用LLM处理任务</span>
+    <span class="kw">return</span> {<span class="str">"status"</span>: <span class="str">"working"</span>, <span class="str">"task_id"</span>: <span class="str">"task-001"</span>}
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    uvicorn.run(app, port=8081)  <span class="comment"># 在8081端口启动Web服务</span></pre>
+    </div>
+
+    <div class="code-block">
+<pre><span class="comment"># ===== coder_agent.py =====</span>
+<span class="comment"># 【这段代码在做什么】</span>
+<span class="comment"># Coder Agent启动后：</span>
+<span class="comment">#   1. 用requests.get去Architect的/.well-known/agent.json"认识"它</span>
+<span class="comment">#   2. 把Architect的地址和能力信息存下来</span>
+<span class="comment">#   3. 发送一个POST请求给Architect派任务</span>
+
+<span class="kw">import</span> requests  <span class="comment"># requests库：Python发HTTP请求的工具</span>
+<span class="kw">import</span> time
+
+ARCHITECT_URL = <span class="str">"http://localhost:8081"</span>
+
+<span class="kw">def</span> <span class="fn">discover_architect</span>():
+    <span class="str">"""步骤1：发现Architect Agent——读取它的Agent Card"""</span>
+    resp = requests.get(<span class="str">f"{ARCHITECT_URL}/.well-known/agent.json"</span>)
+    card = resp.json()  <span class="comment"># 把JSON字符串转成Python字典</span>
+    print(<span class="str">f"🔍 发现了Agent: {card['name']}"</span>)
+    print(<span class="str">f"   技能: {card['skills']}"</span>)
+    <span class="kw">return</span> card
+
+<span class="kw">def</span> <span class="fn">send_task</span>(description):
+    <span class="str">"""步骤2：向Architect发送一个设计任务"""</span>
+    resp = requests.post(
+        <span class="str">f"{ARCHITECT_URL}/tasks"</span>,
+        json={<span class="str">"description"</span>: description}  <span class="comment"># Python字典→自动转JSON</span>
+    )
+    result = resp.json()
+    print(<span class="str">f"✅ 任务已提交: {result}"</span>)
+
+<span class="kw">if</span> __name__ == <span class="str">"__main__"</span>:
+    time.sleep(1)  <span class="comment"># 等Architect先启动</span>
+    discover_architect()
+    send_task(<span class="str">"设计用户登录模块的架构"</span>)</pre>
+    </div>
+
+    <div class="annotation-box">
+      <div class="anno-title">📖 关键理解：Agent之间怎么"说话"</div>
+      <p>看完这两个文件，你会发现Agent之间的通信<strong>本质就是HTTP请求</strong>——和你用浏览器访问网页一样。A2A协议的创新不在于发明了新的传输方式，而在于<strong>标准化了"Agent名片"的格式</strong>：每个Agent都在同一个路径 <code>/.well-known/agent.json</code> 发布自己的能力，这样任何Agent都知道去哪找、怎么读。类比：就像所有餐厅都在同一个位置挂菜单，你不需要挨个问"你们有什么菜"。</p>
+    </div>
+
+    <!-- Running instructions -->
+    <h3 style="font-size:18px; color:var(--accent-4); margin:24px 0 10px;">🚀 怎么运行？</h3>
+    <div class="code-block">
+<pre><span class="comment"># 终端1：先启动Architect Agent</span>
+pip install fastapi uvicorn requests pydantic
+python architect_agent.py
+
+<span class="comment"># 终端2：再启动Coder Agent（它会自动发现Architect并发送任务）</span>
+python coder_agent.py
+
+<span class="comment"># 你应该在终端1看到：📨 收到任务: 设计用户登录模块的架构</span>
+<span class="comment"># 你应该在终端2看到：🔍 发现了Agent: Architect Agent → ✅ 任务已提交</span></pre>
+    </div>
+  </div>
+</section>
+
+<!-- Section 14: Debugging & Pitfalls -->
+<section>
+  <div class="container">
+    <h2><span class="num">14</span> 🐛 常见踩坑与调试指南</h2>
+    <p class="lead">Agent开发有大量"看起来对但就是跑不通"的情况。以下10个坑是我在学习和你类似的系统中实际踩过的——知道了这些，你至少能省50%的调试时间。</p>
+
+    <div class="note-banner">
+      <strong>💡 调试黄金法则：</strong>Agent系统出问题时，<strong>从外到内排查</strong>：先看HTTP能不能通（curl测），再看LLM有没有返回（print打印），最后看工具是否真的执行了（加log）。不要一上来就怀疑LLM出错了——80%的情况是网络/环境/格式问题。
+    </div>
+
+    <table>
+      <thead><tr><th style="width:40px;">#</th><th>踩坑现象</th><th>原因</th><th>解决方案</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>LLM返回的不是有效JSON，tool call格式错误</td><td>用了不支持tool calling的模型（如旧版小模型）</td><td>换用DeepSeek-Chat / GPT-4o-mini（都支持标准tool calling）；检查<code>tools</code>参数格式是否完全正确</td></tr>
+        <tr><td>2</td><td>Agent死循环：反复调用同一个工具不停止</td><td>LLM没"看到"工具的执行结果，以为调用失败了</td><td>确认把tool结果以<code>role:"tool"</code>格式加入messages；设置最大调用次数上限（如最多调5次工具就强制终止）</td></tr>
+        <tr><td>3</td><td>上下文溢出：聊了几轮后Agent开始"忘记"前面说了什么</td><td>messages列表太长，超过了模型的上下文窗口</td><td>限制messages数量（保留最近20条）；摘要压缩：让LLM把长对话总结成一段再继续</td></tr>
+        <tr><td>4</td><td>A2A通信超时：Agent A向Agent B发任务后等了很久没响应</td><td>Agent B在处理长时间任务（如调用LLM），HTTP连接超时了</td><td>任务改成异步模式：POST创建任务后立即返回task_id，然后GET /tasks/{id}轮询状态；或使用SSE推送</td></tr>
+        <tr><td>5</td><td>MCP Server连接失败："Connection refused"</td><td>MCP Server没启动，或stdio模式的进程崩溃了</td><td>先单独启动MCP Server确认它能运行；stdio模式加try/except捕获进程退出；SSE模式检查端口是否被占用</td></tr>
+        <tr><td>6</td><td>中文乱码：Agent输出是乱码或空字符串</td><td>Windows终端默认编码不是UTF-8；API返回的编码设置不对</td><td>Python文件第一行加<code># -*- coding: utf-8 -*-</code>；终端执行<code>chcp 65001</code>切换UTF-8；response用<code>.encode().decode()</code>确保编码</td></tr>
+        <tr><td>7</td><td>API Key泄露到GitHub</td><td>把key写死在代码里，git push后被扫描到</td><td>用<code>.env</code>文件+<code>python-dotenv</code>库管理；<code>.gitignore</code>加入<code>.env</code>；一旦泄露立即在平台后台revoke该key</td></tr>
+        <tr><td>8</td><td>多个Agent同时写同一个文件，数据损坏</td><td>没有文件锁，两个Agent并发写冲突</td><td>用<code>threading.Lock</code>或<code>asyncio.Lock</code>加锁；或让文件操作统一走一个Agent（如只让Docs Agent写文件）</td></tr>
+        <tr><td>9</td><td>向量检索结果不相关：搜"用户登录"返回了"数据库配置"</td><td>Embedding模型选错了（中英文不匹配）；chunk切得太碎</td><td>中文用<code>text-embedding-3-large</code>或<code>bge-large-zh</code>；每个chunk保持200-500字；检索后加一层LLM相关性过滤</td></tr>
+        <tr><td>10</td><td>月度API账单爆炸（¥2000+）</td><td>没有设置预算和用量监控；每个Agent都在用最贵的模型</td><td>学习阶段全程用DeepSeek（价格是GPT-4的1/50）；设置API平台的用量限额；LangSmith监控每Agent的Token消耗；批处理合并LLM调用</td></tr>
+      </tbody>
+    </table>
+
+    <div class="annotation-box" style="margin-top:20px;">
+      <div class="anno-title">📖 学习注解：踩坑是最好的学习</div>
+      <p>以上10个坑，你现在看是10行文字，但每一个背后都是一两个小时的调试时间。记住两点：(1)<strong>遇到问题先在表中找对应项</strong>，90%的Agent问题都能对上号；(2)<strong>解决了就记下来</strong>——面试官问你"遇到过什么技术难题"，这些坑每一个都是完美的回答素材。</p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 15: Prompt Engineering for Agents -->
+<section>
+  <div class="container">
+    <h2><span class="num">15</span> 📝 Prompt Engineering for Agents：与聊天Prompt完全不同</h2>
+    <p class="lead">给Agent写Prompt和给聊天机器人写Prompt是完全不同的两件事。Agent的Prompt需要结构化、需要告诉它"什么时候用什么工具"、需要明确"你能做什么/不能做什么"。</p>
+
+    <h3 style="font-size:20px; color:var(--accent-2); margin:24px 0 12px;">对比：聊天Prompt vs Agent Prompt</h3>
+    <table>
+      <thead><tr><th>维度</th><th>聊天机器人Prompt</th><th>Agent Prompt</th></tr></thead>
+      <tbody>
+        <tr><td>长度</td><td>1-3句话，简洁</td><td>50-200行，结构化</td></tr>
+        <tr><td>核心内容</td><td>角色描述 + 语气要求</td><td>角色 + 可用工具清单 + 决策规则 + 边界约束</td></tr>
+        <tr><td>工具</td><td>无</td><td>必须列出所有tools和何时使用</td></tr>
+        <tr><td>格式</td><td>自然语言</td><td>分节标题（Role / Tools / Rules / Output Format）</td></tr>
+        <tr><td>最重要的是</td><td>"用友好语气回答"</td><td>"遇到XX情况必须调用YY工具，不要自己编造"</td></tr>
+        <tr><td>典型用户</td><td>终端用户</td><td>其他Agent或Orchestrator</td></tr>
+      </tbody>
+    </table>
+
+    <h3 style="font-size:20px; color:var(--accent-3); margin:28px 0 12px;">Coder Agent 的完整System Prompt示例</h3>
+    <div class="code-block">
+<pre><span class="comment"># ===== Coder Agent 的 System Prompt =====</span>
+<span class="comment"># 在一个文件中定义，Agent启动时加载</span>
+
+<span class="str">"""你是一个代码实现专家Agent（Coder Agent）。
+你的职责是接收架构设计文档，产出高质量的可运行代码。
+
+== 你的工具 ==
+- read_file(path): 读取项目中的现有代码，理解上下文
+- write_file(path, content): 创建或覆盖文件
+- run_command(cmd): 在终端执行命令（测试、lint、构建）
+
+== 决策规则 ==
+- 收到设计文档后，先 read_file 了解现有代码结构，再开始写
+- 如果设计文档提到"API接口"，你必须生成对应的 FastAPI 路由代码
+- 写完代码后，立即 run_command("pytest") 验证
+- 如果测试失败，修复后重新运行，最多重试3次
+
+== 你不能做什么 ==
+- 不能修改架构设计文档——那是Architect的工作
+- 不能部署代码到生产环境——那是DevOps的工作
+- 遇到不确定的技术选型，不要自己决定，向Orchestrator请示
+
+== 输出格式 ==
+完成编码后，输出一个JSON格式的状态报告：
+{
+  "status": "completed" 或 "needs_help",
+  "files_modified": ["文件列表"],
+  "test_result": "passed" 或 "failed",
+  "note": "需要人工确认的事项（如有）"
+}
+"""</span></pre>
+    </div>
+
+    <h3 style="font-size:20px; color:var(--accent-4); margin:28px 0 12px;">5条Agent Prompt黄金法则</h3>
+    <div class="agent-grid" style="margin-top:16px;">
+      <div class="agent-card c1" style="grid-column: span 1;">
+        <h3>1. 说"不要做"比"要做"更重要</h3>
+        <p style="font-size:13px;color:var(--text-muted);">明确告诉Agent哪些事它<strong>不能</strong>做。比如"你不能自己编造数据，没有工具验证的信息必须说不知道"。约束比鼓励重要十倍。</p>
+      </div>
+      <div class="agent-card c3" style="grid-column: span 1;">
+        <h3>2. 给工具写"使用说明书"</h3>
+        <p style="font-size:13px;color:var(--text-muted);">每个tool的description要写清楚<strong>什么时候该用、什么时候不该用</strong>。比如"search_logs: 当需要从日志中查找错误时调用，但不要用它查配置信息"。</p>
+      </div>
+      <div class="agent-card c4" style="grid-column: span 1;">
+        <h3>3. 要求结构化输出</h3>
+        <p style="font-size:13px;color:var(--text-muted);">Agent的输出不仅是给人看的，更是给<strong>其他Agent解析</strong>的。在Prompt中要求输出JSON格式，方便上下游Agent自动处理。</p>
+      </div>
+      <div class="agent-card c2" style="grid-column: span 1;">
+        <h3>4. 设置"护栏"</h3>
+        <p style="font-size:13px;color:var(--text-muted);">在Prompt末尾加一段：<code>如果你尝试了3次仍无法完成任务，输出{"status":"blocked","reason":"..."}</code>。这能防止Agent陷入死循环。</p>
+      </div>
+      <div class="agent-card c5" style="grid-column: span 1;">
+        <h3>5. 用Few-shot示例</h3>
+        <p style="font-size:13px;color:var(--text-muted);">在Prompt中放1-2个"正确的输入→正确的工具调用→正确的输出"示例。LLM模仿能力极强，一个例子胜过十行规则。</p>
+      </div>
+    </div>
+
+    <div class="annotation-box" style="margin-top:16px;">
+      <div class="anno-title">📖 面试中的Prompt Engineering题</div>
+      <p>面试常问："你是如何设计Agent的System Prompt的？"不要只回答"写了一段描述"，要回答："我采用结构化设计：分Role/Tools/Rules/Output四大块。Tool的description写明使用时机和禁忌。输出要求JSON便于Agent间解析。底部有失败护栏防止死循环。"这种回答展示了工程化思维。</p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 16: Framework Comparison -->
+<section>
+  <div class="container">
+    <h2><span class="num">16</span> ⚖️ Agent框架对比：LangGraph vs CrewAI vs AutoGen vs Agno</h2>
+    <p class="lead">面试必考题："为什么选择LangGraph而不是CrewAI？" 以下是2025年四大主流Agent框架的客观对比，帮助你在面试和技术选型时有据可依。</p>
+
+    <table>
+      <thead><tr><th>维度</th><th>LangGraph</th><th>CrewAI</th><th>AutoGen</th><th>Agno</th></tr></thead>
+      <tbody>
+        <tr><td><strong>核心思想</strong></td><td>状态图编排（DAG）</td><td>角色扮演（Role-based）</td><td>对话驱动（Conversation）</td><td>极简Agent工厂</td></tr>
+        <tr><td><strong>适合场景</strong></td><td>复杂多步骤工作流、条件分支</td><td>团队协作模拟、内容生成</td><td>研究探索、代码生成</td><td>快速原型、简单Agent</td></tr>
+        <tr><td><strong>学习曲线</strong></td><td>中等（需理解图）</td><td>低（直觉式API）</td><td>中等（概念较多）</td><td>低（类Django风格）</td></tr>
+        <tr><td><strong>状态管理</strong></td><td>⭐⭐⭐⭐⭐ 内置StateGraph</td><td>⭐⭐⭐ 任务级状态</td><td>⭐⭐⭐ 对话级状态</td><td>⭐⭐ 需自行实现</td></tr>
+        <tr><td><strong>HITL支持</strong></td><td>⭐⭐⭐⭐⭐ 原生Checkpoint</td><td>⭐⭐⭐ 回调函数</td><td>⭐⭐⭐⭐ 中断恢复</td><td>⭐⭐ 需自行实现</td></tr>
+        <tr><td><strong>A2A兼容</strong></td><td>⭐⭐⭐⭐ 可集成</td><td>⭐⭐ 内部通信</td><td>⭐⭐ 自有协议</td><td>⭐⭐ 内部通信</td></tr>
+        <tr><td><strong>MCP兼容</strong></td><td>⭐⭐⭐⭐⭐ LangChain生态</td><td>⭐⭐⭐⭐ 支持MCP</td><td>⭐⭐⭐ 需适配</td><td>⭐⭐⭐ 有限支持</td></tr>
+        <tr><td><strong>社区与文档</strong></td><td>⭐⭐⭐⭐⭐ 最大最活跃</td><td>⭐⭐⭐⭐ 增长快</td><td>⭐⭐⭐⭐ 微软背书</td><td>⭐⭐⭐ 较新</td></tr>
+        <tr><td><strong>生产就绪度</strong></td><td>⭐⭐⭐⭐ 高</td><td>⭐⭐⭐ 中</td><td>⭐⭐⭐ 中</td><td>⭐⭐ 低（早期）</td></tr>
+      </tbody>
+    </table>
+
+    <div class="annotation-box" style="margin-top:16px;">
+      <div class="anno-title">📖 为什么这个框架选LangGraph？</div>
+      <p>对你的场景（6 Agent协作、DAG编排、HITL审批、完整生产化），LangGraph是最合适的选择。CrewAI更适合"写一篇文章由几个Agent协作"这种内容生成场景，AutoGen适合研究探索型任务。面试时记住这句话：<strong>"我选择LangGraph是因为它原生支持有状态图编排和Human-in-the-Loop，这两点对生产级Agent系统是不可或缺的。"</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- Section 17: Cost Analysis & Evaluation -->
+<section>
+  <div class="container">
+    <h2><span class="num">17</span> 💰 成本分析与Agent评估入门</h2>
+    <p class="lead">个人开发者最关心的两个实操问题：(1)开发这套系统要花多少钱？(2)怎么判断我的Agent做得好不好？</p>
+
+    <h3 style="font-size:20px; color:var(--accent-3); margin:24px 0 12px;">💰 API成本：真实数字与省钱策略</h3>
+    <table>
+      <thead><tr><th>模型</th><th>输入价格 (每1M Token)</th><th>输出价格 (每1M Token)</th><th>学习阶段的月预算</th></tr></thead>
+      <tbody>
+        <tr><td>DeepSeek V3</td><td>¥1</td><td>¥2</td><td style="color:#6ee7b7;font-weight:700;">≈ ¥15-30/月 ✅</td></tr>
+        <tr><td>GPT-4o-mini</td><td>¥1.1</td><td>¥4.4</td><td style="color:#6ee7b7;">≈ ¥20-40/月 ✅</td></tr>
+        <tr><td>Claude 3.5 Sonnet</td><td>¥21.5</td><td>¥107.5</td><td style="color:#fcd34d;">≈ ¥200-500/月 ⚠️</td></tr>
+        <tr><td>GPT-4o</td><td>¥18</td><td>¥72</td><td style="color:#fcd34d;">≈ ¥150-400/月 ⚠️</td></tr>
+        <tr><td>Claude 4 Opus</td><td>¥107.5</td><td>¥537</td><td style="color:#f87171;">≈ ¥1000+/月 💸</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note-banner" style="margin-top:14px;">
+      <strong>💡 学习阶段推荐策略：</strong><strong style="color:#6ee7b7;">全程用DeepSeek V3做开发调试（月费<¥30）</strong>，只在最终验证时切换到GPT-4o/Claude跑一遍确认质量。这样整个学习周期（3个月）的API花费可以控制在 <strong>¥100以内</strong>。
+    </div>
+
+    <div class="agent-grid" style="margin-top:20px;">
+      <div class="agent-card c3">
+        <h3>省钱的5个技巧</h3>
+        <ul>
+          <li>用DeepSeek做"热开发"（频繁调试的循环中）</li>
+          <li>缓存相同的LLM调用结果（Redis）</li>
+          <li>精简System Prompt（少50字=每次省50 Token）</li>
+          <li>RAG只检索Top-3最相关文档而非Top-10</li>
+          <li>设置每日API消费上限（平台后台可配置）</li>
+        </ul>
+      </div>
+      <div class="agent-card c4">
+        <h3>Token消耗估算公式</h3>
+        <ul>
+          <li>中文：1字 ≈ 1.5 Token</li>
+          <li>英文：1词 ≈ 1.3 Token</li>
+          <li>代码：1行 ≈ 8-15 Token</li>
+          <li>Coder Agent每次调LLM ≈ 2000-5000 Token</li>
+          <li>6 Agent跑一轮完整流程 ≈ 2万-5万 Token ≈ ¥0.05-0.25（DeepSeek）</li>
+        </ul>
+      </div>
+    </div>
+
+    <h3 style="font-size:20px; color:var(--accent-2); margin:32px 0 12px;">📊 Agent评估：怎么知道你的Agent做得好？</h3>
+    <p style="color:var(--text-muted); font-size:13px;">不用搞复杂的Benchmark，学习阶段用这4个指标就够了：</p>
+
+    <table>
+      <thead><tr><th>指标</th><th>怎么测</th><th>好/差的标准</th></tr></thead>
+      <tbody>
+        <tr><td><strong>任务完成率</strong></td><td>给Agent 10个标准任务，看多少能独立完成</td><td>好：≥80%；差：<50%</td></tr>
+        <tr><td><strong>平均响应时间</strong></td><td>从发任务到拿到结果的耗时（含LLM推理）</td><td>好：<30秒；差：>2分钟</td></tr>
+        <tr><td><strong>每次任务Token消耗</strong></td><td>LangSmith自动统计，或手动计messages长度</td><td>好：稳定在预期范围；差：波动剧烈</td></tr>
+        <tr><td><strong>人工修正率</strong></td><td>Agent产出中需要你手动修改的比例</td><td>好：<20%；差：>50%</td></tr>
+      </tbody>
+    </table>
+
+    <div class="annotation-box" style="margin-top:14px;">
+      <div class="anno-title">📖 面试怎么聊"评估"</div>
+      <p>当面试官问"你怎么评估你的Agent系统"时，不要只说"我看看它有没有完成任务"。要说："我建立了4维评估体系：完成率（功能性）、响应时间（性能）、Token消耗（效率）、人工修正率（质量）。每周跑一次标准任务集，跟踪趋势变化。"这个回答展示了你的工程化思维——不仅会做Agent，还会<strong>衡量和改进</strong>Agent。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 资深开发者审查 ===== -->
+<section>
+  <div class="container">
+    <h2><span class="num">14</span> 🔍 资深开发者审查：遗漏与修复</h2>
+    <p class="lead">以 AI Agent 资深开发者视角审查本框架的代码示例和架构设计，发现 5 个技术遗漏。</p>
+
+    <h3 style="color:#f87171;">🔴 P0-1：LLM 调用无 timeout 和错误处理</h3>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 问题</div>
+      <p>脚手架代码中 <code>client.chat.completions.create()</code> 没有 timeout 参数，也没有 try/except。LLM API 不可用时整个 Agent 主循环崩溃，用户看到未处理的异常堆栈。</p>
+    </div>
+    <table>
+      <tr><th>问题代码</th><th>修复方案</th></tr>
+      <tr>
+        <td><code>client = OpenAI(api_key=...)</code><br><code>response = client.chat.completions.create(model=..., messages=...)</code></td>
+        <td><code>client = OpenAI(api_key=..., timeout=30, max_retries=2)</code><br>外层加 <code>try/except Exception</code> 返回友好错误消息</td>
+      </tr>
+    </table>
+
+    <h3 style="color:#f87171;">🔴 P0-2：对话历史无限增长 — 上下文窗口溢出</h3>
+    <div class="warn-box">
+      <div class="warn-title">⚠️ 问题</div>
+      <p>Agent 主循环中 <code>messages.append()</code> 每轮都追加消息，但<strong>从不截断</strong>。对话 20 轮后，messages 列表的 Token 数可能超过 LLM 上下文窗口（DeepSeek 64K），导致 API 报错 <code>context_length_exceeded</code>。</p>
+    </div>
+    <table>
+      <tr><th>层级</th><th>方案</th><th>代码思路</th></tr>
+      <tr><td>基础</td><td>滑动窗口截断</td><td>保留 System + 最近 N 轮对话：<code>messages = [system] + messages[-N*2:]</code></td></tr>
+      <tr><td>进阶</td><td>Token 计数截断</td><td>用 tiktoken 计算 Token 数，超过阈值时截断旧消息</td></tr>
+      <tr><td>生产级</td><td>摘要压缩</td><td>旧对话用 LLM 总结成一段摘要，替换原始消息</td></tr>
+    </table>
+
+    <h3 style="color:#fbbf24;">🟡 P1-3：工具调用循环无最大迭代限制</h3>
+    <p>Agent 主循环中 LLM 可能反复调用工具（如调 <code>get_current_time</code> → 看结果 → 再调 → 再看），形成无限循环。<strong>Scheduler 应设置最大迭代次数</strong>（如 10 次），超过后强制退出并返回当前结果。</p>
+
+    <h3 style="color:#fbbf24;">🟡 P1-4：DAG 缺少错误传播机制</h3>
+    <p>架构设计中 DAG 的 Coder/Tester/Docs 并行执行，但如果 Coder 失败了，Tester 和 Docs 还在运行——浪费资源。需要 <strong>取消机制</strong>：任一并行分支失败时，通知 Orchestrator 取消其他分支。</p>
+    <table>
+      <tr><th>场景</th><th>当前行为</th><th>修复方案</th></tr>
+      <tr><td>Coder 生成代码失败</td><td>Tester/Docs 继续运行（浪费）</td><td>Orchestrator 监听分支状态，失败时发送取消信号</td></tr>
+      <tr><td>Tester 超时</td><td>Reviewer 一直等</td><td>Tester 超时后标记"测试未完成"，Reviewer 可以选择继续或重试</td></tr>
+    </table>
+
+    <h3 style="color:#fbbf24;">🟡 P1-5：缺少 /health 和优雅关闭</h3>
+    <p>每个 Agent 部署后需要 <code>/health</code> 端点供 Docker healthcheck 使用；收到 SIGTERM 时需要优雅关闭（等待当前任务完成）。这两个是<strong>生产部署的基本要求</strong>，详细修复代码见框架五第 17 节。</p>
+
+    <div class="callout">
+      <div class="callout-title">📖 审查总结</div>
+      <p>5 个问题中 2 个 P0（LLM timeout + 上下文溢出）、3 个 P1（迭代限制 + 错误传播 + 健康检查）。P0 问题会在实际运行中<strong>直接导致 Agent 崩溃</strong>。框架一作为学习框架，脚手架代码是新人第一次接触 Agent 开发的参考——如果参考代码本身有问题，新人会复制这些坏习惯。<strong>修复这些问题不仅是为了"正确"，更是为了"教对了"。</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 稳定性加固 ===== -->
+<section id="stability">
+  <h2><span class="num">15</span> 🛡️ 稳定性加固检查清单</h2>
+  <p class="lead">框架一的 DAG 架构在稳定性方面有 3 个最关键的维度。完整代码模板见框架五第 18 节。</p>
+
+  <div class="note-banner">
+    <strong>为什么选这 3 个维度？</strong> 框架一是任务驱动的 DAG 流水线——Orchestrator 委派任务给 Architect→Coder→Tester→Reviewer。DAG 的特点是"前序节点失败会影响后续所有节点"，因此<strong>幂等性</strong>（防止重试导致重复代码生成）和<strong>错误传播控制</strong>最关键。此外 DAG 迭代会累积上下文，<strong>资源泄漏防护</strong>不可少。
+  </div>
+
+  <!-- 15.1 幂等性 -->
+  <h3 style="color:var(--accent-light); margin-top:32px;">15.1 ✅ 幂等性：DAG 任务委派去重</h3>
+  <table>
+    <tr><th>检查项</th><th>风险</th><th>状态</th></tr>
+    <tr><td>Orchestrator→Architect 委派带 request_id</td><td>重试导致 Architect 重复生成设计文档</td><td>☐ 待实现</td></tr>
+    <tr><td>Coder 收到相同 task_id 时跳过</td><td>重复 LLM 调用（浪费成本）+ 重复代码文件</td><td>☐ 待实现</td></tr>
+    <tr><td>Tester 不会对同一段代码重复测试</td><td>重复测试报告覆盖前一次结果</td><td>☐ 待实现</td></tr>
+  </table>
+  <p><strong>关键代码</strong>（完整版见框架五模板 1）：</p>
+  <div class="code-block">
+<pre><span class="comment"># Orchestrator 委派任务时携带 request_id</span>
+<span class="kw">import</span> uuid
+
+<span class="kw">def</span> <span class="fn">delegate_to_architect</span>(requirement: str):
+    request_id = str(uuid.uuid4())
+    <span class="comment"># A2A 请求头中携带 X-Request-ID</span>
+    resp = requests.post(
+        <span class="str">f"{ARCHITECT_URL}/tasks/send"</span>,
+        json={<span class="str">"requirement"</span>: requirement},
+        headers={<span class="str">"X-Request-ID"</span>: request_id}
+    )
+    <span class="kw">return</span> resp.json()
+
+<span class="comment"># Architect 端做幂等检查</span>
+<span class="kw">from</span> idempotency_guard <span class="kw">import</span> IdempotencyGuard
+guard = IdempotencyGuard(max_size=<span class="str">200</span>, ttl_seconds=<span class="str">3600</span>)
+
+@app.post(<span class="str">"/tasks/send"</span>)
+<span class="kw">def</span> <span class="fn">handle_task</span>(req: Request):
+    request_id = req.headers.get(<span class="str">"X-Request-ID"</span>)
+    <span class="kw">if</span> guard.is_duplicate(req.body, request_id):
+        <span class="kw">return</span> {<span class="str">"status"</span>: <span class="str">"skipped"</span>, <span class="str">"reason"</span>: <span class="str">"duplicate"</span>}
+    <span class="comment"># 正常处理设计任务...</span></pre>
+  </div>
+  <div class="annotation-box">
+    <div class="anno-title">DAG 场景的特殊性</div>
+    <p>DAG 中一个节点失败 → Orchestrator 重试 → 下游节点可能已经收到部分结果 → <strong>重复处理会产生不一致状态</strong>。幂等性保证"重试等价于第一次执行"，是 DAG 容错的基础。</p>
+  </div>
+
+  <!-- 15.2 多级降级 -->
+  <h3 style="color:var(--accent-light); margin-top:32px;">15.2 ✅ 多级降级：LLM 不可用时 Coder 的备选方案</h3>
+  <table>
+    <tr><th>降级层级</th><th>Coder 行为</th><th>质量</th><th>触发条件</th></tr>
+    <tr><td>Level 1: GPT-4/DeepSeek</td><td>LLM 生成代码</td><td>⭐⭐⭐⭐⭐</td><td>正常状态</td></tr>
+    <tr><td>Level 2: 代码模板匹配</td><td>从模板库中匹配最接近的代码骨架</td><td>⭐⭐⭐</td><td>LLM 连续失败 3 次</td></tr>
+    <tr><td>Level 3: 缓存命中</td><td>返回历史相似需求的代码</td><td>⭐⭐⭐⭐</td><td>模板未匹配</td></tr>
+    <tr><td>Level 4: 标记失败</td><td>返回"代码生成失败"，DAG 跳过后续</td><td>⭐</td><td>以上全部失败</td></tr>
+  </table>
+  <p><strong>关键代码</strong>（完整版见框架五模板 3）：</p>
+  <div class="code-block">
+<pre><span class="kw">class</span> <span class="fn">CoderWithFallback</span>:
+    <span class="kw">def</span> <span class="fn">generate_code</span>(self, task: str) -> dict:
+        <span class="comment"># Level 1: LLM</span>
+        <span class="kw">try</span>:
+            code = self._call_llm(task)
+            <span class="kw">return</span> {<span class="str">"code"</span>: code, <span class="str">"source"</span>: <span class="str">"llm"</span>}
+        <span class="kw">except</span> Exception:
+            <span class="kw">pass</span>
+
+        <span class="comment"># Level 2: 模板匹配</span>
+        template = self._match_template(task)
+        <span class="kw">if</span> template:
+            <span class="kw">return</span> {<span class="str">"code"</span>: template, <span class="str">"source"</span>: <span class="str">"template"</span>}
+
+        <span class="comment"># Level 3: 缓存</span>
+        cached = self._cache.get(hash(task))
+        <span class="kw">if</span> cached:
+            <span class="kw">return</span> {<span class="str">"code"</span>: cached, <span class="str">"source"</span>: <span class="str">"cache"</span>}
+
+        <span class="comment"># Level 4: 失败</span>
+        <span class="kw">return</span> {<span class="str">"code"</span>: None, <span class="str">"source"</span>: <span class="str">"failed"</span>, <span class="str">"error"</span>: <span class="str">"代码生成不可用"</span>}</pre>
+  </div>
+
+  <!-- 15.3 资源泄漏 -->
+  <h3 style="color:var(--accent-light); margin-top:32px;">15.3 ✅ 资源泄漏防护：DAG 迭代中的上下文膨胀</h3>
+  <table>
+    <tr><th>检查项</th><th>风险</th><th>状态</th></tr>
+    <tr><td>每轮迭代后裁剪对话历史</td><td>5 轮迭代后上下文超过 LLM token 限制</td><td>☐ 待实现</td></tr>
+    <tr><td>Reviewer 的审查报告有数量上限</td><td>审查报告累积导致 Orchestrator 上下文溢出</td><td>☐ 待实现</td></tr>
+    <tr><td>日志文件配置 RotatingFileHandler</td><td>长时间运行日志撑满磁盘</td><td>☐ 待实现</td></tr>
+  </table>
+  <div class="annotation-box">
+    <div class="anno-title">关键代码</div>
+    <p>DAG 每轮迭代后裁剪上下文：<code>messages = messages[-MAX_MESSAGES:]</code>（保留最近 N 条）。审查报告上限：<code>reviews = reviews[-5:]</code>（只保留最近 5 份审查报告）。完整资源防护方案见框架五模板 4。</p>
+  </div>
+
+  <div class="callout" style="margin-top:24px;">
+    <div class="callout-title">📖 稳定性总结</div>
+    <p>框架一的 3 个稳定性维度聚焦于 <strong>DAG 架构特有的风险</strong>：任务委派重试（幂等性）、LLM 不可用时代码生成的备选方案（多级降级）、迭代中的上下文膨胀（资源泄漏）。完整代码模板见框架五第 18 节。<strong>面试时说"我在 DAG 的每个节点间加了 request_id 幂等检查，Coder 有 4 级降级策略"，比说"我用了 DAG 架构"有说服力得多。</strong></p>
+  </div>
+</section>
+
+<!-- ===== §16 工程质量全面提升 ===== -->
+<section>
+  <h2><span class="num">16</span> 📐 工程质量全面提升：安全生成 · 并行加速 · 可测试</h2>
+  <p>软件开发 Agent 系统的工程质量维度聚焦：LLM 生成的代码<strong>安全执行</strong>（沙箱）、代码质量<strong>可测试</strong>（Mock LLM）、代码生成<strong>低延迟</strong>（流式+并行）、Prompt <strong>可迭代</strong>（版本管理）。完整代码模板见框架五 §19。</p>
+
+  <!-- 16.1 安全性 -->
+  <h3>16.1 🔐 安全性：代码生成沙箱 + API 鉴权</h3>
+  <table>
+    <tr><th style="width:160px;">风险场景</th><th>后果</th><th>防御措施</th></tr>
+    <tr>
+      <td><strong>Prompt 注入 → Coder 生成恶意代码</strong></td>
+      <td>LLM 生成的代码包含 <code>os.system("rm -rf /")</code></td>
+      <td>ToolSandbox：Coder 工具执行前过白名单+黑名单检查（框架五 §19.1.2）</td>
+    </tr>
+    <tr>
+      <td><strong>未授权访问 Agent API</strong></td>
+      <td>任何人直接 POST /generate 生成代码</td>
+      <td>AuthMiddleware：API Key（内部 Agent 间调用）+ JWT（用户会话）双模式（框架五 §19.1.1）</td>
+    </tr>
+    <tr>
+      <td><strong>敏感信息泄露到 LLM</strong></td>
+      <td>代码中的 API Key / 密码随 Prompt 发给 OpenAI</td>
+      <td>PIIMasker：调 LLM 前自动脱敏手机号/密钥/密码（框架五 §19.1.3）</td>
+    </tr>
+  </table>
+
+  <div class="warn-box" style="margin-top:10px;">
+    <div class="warn-title">⚠️ 面试高频：代码生成 Agent 的安全边界</div>
+    <p>"如果用户 Prompt 注入你的 Coder Agent，让它生成恶意代码并执行，你怎么防御？" → 正确回答："Coder 生成的代码<strong>不直接在宿主机执行</strong>——先过 ToolSandbox（命令白名单+危险模式拦截+路径限制），再在 Docker 隔离环境运行，超时 5 秒自动 kill。"</p>
+  </div>
+
+  <!-- 16.2 可测试性 -->
+  <h3>16.2 🧪 可测试性：Mock LLM + 单元测试</h3>
+  <table>
+    <tr><th>Agent</th><th>测试焦点</th><th>Mock 策略</th></tr>
+    <tr>
+      <td><strong>Coder</strong></td>
+      <td>代码生成格式（是否输出代码块）、JSON 输出格式</td>
+      <td>Mock 返回固定代码片段，验证 parse_code() 函数</td>
+    </tr>
+    <tr>
+      <td><strong>Reviewer</strong></td>
+      <td>审查结果的 JSON schema 校验、严重级别分类</td>
+      <td>Mock 返回已知审查结果，验证评分逻辑</td>
+    </tr>
+    <tr>
+      <td><strong>Tester</strong></td>
+      <td>测试用例生成数量、覆盖范围</td>
+      <td>Mock 返回固定测试用例，验证 pytest 可执行性</td>
+    </tr>
+    <tr>
+      <td><strong>Architect</strong></td>
+      <td>架构决策记录的格式</td>
+      <td>Mock 返回标准 ADR，验证 Pydantic 模型校验</td>
+    </tr>
+  </table>
+
+  <div class="code-block" style="max-height:300px;overflow-y:auto;"><pre><span class="comment"># 框架一专用：Coder Agent 的 Mock 测试</span>
+<span class="kw">def</span> <span class="fn">test_coder_handles_malformed_json</span>(mock_openai):
+    <span class="comment"># 模拟 LLM 返回不规范的 JSON</span>
+    mock_openai.chat.completions.create.return_value = MockLLMResponse(
+        content=<span class="str">"好的，这是代码：```python\nprint(1)\n```\n\n{\"file\": \"test.py\"}"</span>
+    )
+    result = coder_agent.generate(<span class="str">"写一个 hello"</span>)
+    <span class="kw">assert</span> result.success  <span class="comment"># safe_json_parse 应该正确提取代码块</span>
+    <span class="kw">assert</span> <span class="str">"print(1)"</span> <span class="kw">in</span> result.code
+
+<span class="kw">def</span> <span class="fn">test_coder_timeout_triggers_fallback</span>(mock_openai):
+    mock_openai.chat.completions.create.side_effect = TimeoutError()
+    result = coder_agent.generate_with_fallback(<span class="str">"写一个排序"</span>)
+    <span class="kw">assert</span> result.source == <span class="str">"cache"</span>  <span class="comment"># 降级到缓存模板</span></pre></div>
+  <p><strong>完整 Mock LLM fixture 代码见框架五 §19.2.3</strong></p>
+
+  <!-- 16.3 并行+流式 -->
+  <h3>16.3 ⚡ 性能：流式输出 + 并行 Agent 调用</h3>
+  <table>
+    <tr><th>场景</th><th>串行耗时</th><th>并行/流式优化后</th><th>优化手段</th></tr>
+    <tr>
+      <td><strong>代码生成时用户等待</strong></td>
+      <td>等 5~8 秒才看到代码</td>
+      <td>0.3 秒开始逐行输出</td>
+      <td>SSE 流式输出（框架五 §19.3.1）</td>
+    </tr>
+    <tr>
+      <td><strong>Coder → Reviewer → Tester（有依赖）</strong></td>
+      <td>5+4+3 = 12 秒</td>
+      <td>6 秒（Coder 流式输出 + Reviewer 提前分析部分代码）</td>
+      <td>Speculative execution（流式给 Reviewer 预览）</td>
+    </tr>
+    <tr>
+      <td><strong>Reviewer + DocWriter + Tester（无依赖，都是审 Coder 的输出）</strong></td>
+      <td>4+3+3 = 10 秒</td>
+      <td>4 秒（3 个 Agent 并行）</td>
+      <td>asyncio.gather 并行调用（框架五 §19.3.2）</td>
+    </tr>
+  </table>
+
+  <div class="annotation-box">
+    <div class="anno-title">💡 面试话术</div>
+    <p>"软件开发 Agent 的代码生成环节我用 SSE 流式输出，用户 0.3 秒看到第一行代码，体验类似 ChatGPT。审代码 Coder 输出后，Reviewer + DocWriter + Tester 三个无依赖 Agent 用 asyncio.gather 并行执行，总耗时从 10 秒降到约 4 秒。这个优化在面试中一提 DAG 并行策略，工程素养分直接拉满。"</p>
+  </div>
+
+  <!-- 16.4 版本管理 -->
+  <h3>16.4 📝 版本管理：Prompt + 模型版本全部锁定</h3>
+  <table>
+    <tr><th>维度</th><th>Demo 级</th><th>工程级（框架一应做）</th></tr>
+    <tr><td><strong>Prompt 存储</strong></td><td>硬编码在 <code>coder_agent.py</code></td><td>YAML 文件：<code>prompts/coder_v2.yaml</code>（框架五 §19.2.4）</td></tr>
+    <tr><td><strong>模型版本</strong></td><td><code>model="gpt-4"</code></td><td><code>model="gpt-4-0613"</code>锁定版本（框架五 §19.2.5）</td></tr>
+    <tr><td><strong>变更记录</strong></td><td>Git 提交信息："fix prompt"</td><td><code>prompts/CHANGELOG.md</code> + YAML 内嵌 changelog 字段</td></tr>
+    <tr><td><strong>API 版本</strong></td><td>单一路由 <code>/generate</code></td><td><code>/api/v1/generate</code> + <code>/api/v2/generate</code>（框架五 §19.5.4）</td></tr>
+  </table>
+
+  <div class="callout" style="margin-top:24px;">
+    <div class="callout-title">📖 工程质量总结</div>
+    <p>框架一在<strong>稳定性加固</strong>基础上增加了<strong>安全沙箱、Mock 测试、流式并行、版本管理</strong> 4 个维度。面试时你可以说：<em>"我做的代码 Agent 不只是让 LLM 生成代码——代码执行在沙箱里（命令白名单+超时 kill），开发过程用 Mock LLM 跑单元测试（不烧钱），生成过程 SSE 流式输出+下游 Agent 并行执行（4 秒完成审+测+文档），Prompt 和模型版本用 Git+YAML 锁定（随时可回滚）。"</em></p>
+  </div>
+</section>
+
+<!-- ===== §17 需求补全：SLA · ROI · 测试 · 生命周期 ===== -->
+<section>
+  <div class="container">
+  <h2><span class="num">17</span> 📋 需求补全：SLA · ROI · 测试 · 全生命周期</h2>
+  <p class="lead">前文的需求分析（§0）回答了"为什么这样设计"，但缺了三个关键维度：(1) <strong>SLA 性能目标</strong>——系统的量化验收标准；(2) <strong>ROI 量化</strong>——值不值得做；(3) <strong>测试与生命周期</strong>——系统如何验证、如何迭代、如何退役。</p>
+
+  <h3>17.1 SLA 性能目标</h3>
+  <p>没有 SLA 的需求分析是不完整的——"系统要快"是主观的，"API 响应 < 3s"是可验证的。</p>
+  <table>
+    <tr><th>指标</th><th>目标</th><th>测量方式</th><th>不达标影响</th></tr>
+    <tr><td>单 Agent 响应延迟（P50）</td><td>< 5s</td><td>LangFuse 追踪每个 Agent 的端到端延迟</td><td>用户等待超过 5s 会认为"系统卡了"</td></tr>
+    <tr><td>单 Agent 响应延迟（P95）</td><td>< 15s</td><td>同上，取 95 分位值</td><td>长尾延迟影响少数用户的体验</td></tr>
+    <tr><td>整轮迭代完成时间（无人工介入）</td><td>< 2min</td><td>Scheduler 记录每轮迭代的总耗时</td><td>超过 2min 说明并行效率不足或某个 Agent 卡住</td></tr>
+    <tr><td>LLM 调用成功率</td><td>> 99%</td><td>LangFuse 统计 HTTP 2xx/4xx/5xx</td><td>失败率 > 1% 说明 API 不稳定或超时配置有问题</td></tr>
+    <tr><td>系统可用性（Uptime）</td><td>> 99.5%（月故障 ≤ 3.6 小时）</td><td>/health 端点 + Prometheus 探活</td><td>个人开发系统，99.5% 是合理目标（非 7×24 系统）</td></tr>
+    <tr><td>代码生成正确率（可编译/可运行）</td><td>> 80%</td><td>评估脚本：生成代码 → pytest 跑一遍 → 统计通过率</td><td>低于 80% 说明 LLM 生成的代码质量不足，需要升级模型或优化 Prompt</td></tr>
+  </table>
+
+  <h3>17.2 ROI 量化：这个系统值不值得做？</h3>
+  <table>
+    <tr><th>投入</th><th>量化</th></tr>
+    <tr><td>开发时间</td><td>约 40-60 小时（用 Trae，6 个 Agent 各约 6-10 小时）</td></tr>
+    <tr><td>LLM 月费（开发期）</td><td>约 $20-40（频繁测试各 Agent 的 Prompt）</td></tr>
+    <tr><td>运行月费（日常使用）</td><td>约 $10-20/mo（假设每天 1-2 次迭代，每次 6 Agent × 2-3 次 LLM 调用）</td></tr>
+  </table>
+  <table style="margin-top:12px;">
+    <tr><th>收益</th><th>量化</th></tr>
+    <tr><td>开发效率提升</td><td>假设原来纯人工写一个 CRUD 模块需 4h，用本系统 AI 生成骨架+人工审查 → 1.5h，<strong>节省 62.5%</strong>。一个月做 4 个模块，省 10h。</td></tr>
+    <tr><td>文档自动同步</td><td>Docs Agent 自动同步文档，省去"写完代码补文档"的 20% 额外时间</td></tr>
+    <tr><td>代码质量提升</td><td>Reviewer + Tester 双重把关，减少线上 Bug——每个 Bug 修复成本从 30min → 10min</td></tr>
+    <tr><td>面试作品价值</td><td>一个完整的多 Agent 系统 + 5 份框架文档 + 需求/SLA/ROI/测试分析 = <strong>面试时远超同级别竞争者</strong>（无形价值但极其重要）</td></tr>
+  </table>
+  <p style="margin-top:8px;"><strong>ROI 结论</strong>：纯算金钱，月省 $100-200（时间成本换算）。但最大 ROI 是<strong>面试资本</strong>——你能在面试中展示"从需求分析到 SLA 到 ROI 到代码实现到测试评估到迭代退役"的完整链路，这是 90% 的 Agent 开发者做不到的。</p>
+
+  <h3>17.3 测试策略与评估数据集</h3>
+  <p>前文有 Mock LLM 测试方案（§16.2），但缺少<strong>端到端测试场景和评估数据集</strong>。</p>
+  <table>
+    <tr><th>测试类型</th><th>内容</th><th>通过标准</th><th>文件/工具</th></tr>
+    <tr><td>单元测试（Mock LLM）</td><td>每个 Agent 的输入输出格式校验、重试逻辑、超时处理</td><td>覆盖率 > 70%</td><td>pytest + @patch('openai.ChatCompletion.create')</td></tr>
+    <tr><td>集成测试</td><td>完整 DAG 流程：Architect→{Coder,Tester,Docs}→Reviewer，验证各 Agent 间数据传递正确</td><td>DAG 执行无中断、中间产物格式正确</td><td>pytest + LangGraph test utilities</td></tr>
+    <tr><td>评估数据集（Eval Set）</td><td>10 个真实需求（如"做一个用户登录模块"），记录每个需求的：代码可运行率、测试覆盖率、文档完整性评分</td><td>代码可运行率 > 80%、文档覆盖 > 90%</td><td><code>tests/eval_dataset.json</code>（10 条需求 + 预期产出）</td></tr>
+    <tr><td>回归测试</td><td>修改 Prompt 后，跑评估数据集对比新旧版本产出</td><td>新版本各指标不低于旧版本</td><td>CI 中集成 <code>python eval.py --compare</code></td></tr>
+  </table>
+  <div class="trae-box" style="margin-top:12px;">
+    <p>帮我创建 tests/eval_dataset.json：包含 10 个真实软件开发需求（从简单到复杂），每个需求包含 description、expected_files、min_test_coverage 三个字段。逐行中文注释。</p>
+  </div>
+
+  <h3>17.4 全生命周期：从开发到退役</h3>
+  <p>前文覆盖了开发阶段（§1-§16），但 Agent 系统不是"写完就完了"——它有自己的生命周期。</p>
+  <table>
+    <tr><th>阶段</th><th>框架覆盖</th><th>补全</th></tr>
+    <tr><td><strong>1. 需求分析</strong></td><td>✅ §0（6 子节）</td><td>本节补全 SLA + ROI</td></tr>
+    <tr><td><strong>2. 架构设计</strong></td><td>✅ §1-§2（DAG + A2A/MCP）</td><td>—</td></tr>
+    <tr><td><strong>3. 代码开发</strong></td><td>✅ §3-§13（脚手架代码 + 各 Agent 实现）</td><td>—</td></tr>
+    <tr><td><strong>4. 测试验证</strong></td><td>⚠️ 部分覆盖</td><td>本节 §17.3 补全测试数据集 + 回归测试</td></tr>
+    <tr><td><strong>5. 部署上线</strong></td><td>⚠️ Docker（框架五）</td><td>本节 §17.4.1 补全灰度发布流程</td></tr>
+    <tr><td><strong>6. 监控运维</strong></td><td>✅ LangFuse + Prometheus</td><td>—</td></tr>
+    <tr><td><strong>7. 迭代进化</strong></td><td>❌ 空缺</td><td>本节 §17.4.2 补全迭代循环 + 用户反馈闭环</td></tr>
+    <tr><td><strong>8. 退役下线</strong></td><td>❌ 空缺</td><td>本节 §17.4.3 补全退役清单</td></tr>
+  </table>
+
+  <h4>17.4.1 灰度发布流程</h4>
+  <pre><code># 灰度发布：新版本先给 20% 流量，验证无误再全量
+# docker-compose.override.yml
+services:
+  architect-v2:
+    build: ./architect-v2
+    ports: ["8001:8000"]
+  # 路由层：nginx 按比例分流
+  # upstream architect { server architect:8000 weight=80; server architect-v2:8001 weight=20; }</code></pre>
+
+  <h4>17.4.2 迭代进化循环（螺旋模型）</h4>
+  <p>Agent 开发不是线性的"写完→上线→结束"，而是<strong>螺旋迭代</strong>的：</p>
+  <pre><code># 迭代循环（每个周期）：评估 → 分析 → 改进 → 测试 → 上线
+# 
+# 周期 1: 跑评估数据集 → 发现 Coder 的代码可运行率只有 65%
+#         → 分析原因：Coder 的 Prompt 不够具体
+#         → 改进：增加"必须生成可运行的完整文件"指令
+#         → 重新测试 → 可运行率提升到 82%
+#         → 灰度上线
+#
+# 周期 2: 跑评估数据集 → 发现 Reviewer 对性能问题不敏感
+#         → 改进：Prompt 增加"检查 O(n²) 复杂度"规则
+#         → 重新测试 → 性能检测率提升
+#         → 灰度上线
+#
+# 关键：每次迭代都要跑评估数据集，确保"修了一个问题不引入另一个问题"</code></pre>
+
+  <h4>17.4.3 退役下线清单</h4>
+  <table>
+    <tr><th>步骤</th><th>操作</th></tr>
+    <tr><td>1. 数据导出</td><td>导出所有历史任务记录（Memory Agent 的 ChromaDB 数据）→ JSON 归档</td></tr>
+    <tr><td>2. Agent Card 注销</td><td>从 A2A 注册中心移除 Agent Card</td></tr>
+    <tr><td>3. 旧服务下线</td><td><code>docker compose down</code> + 确认所有容器已停止</td></tr>
+    <tr><td>4. 迁移验证</td><td>如果替换为新版本，确认新版本能正确处理旧系统产生的数据</td></tr>
+    <tr><td>5. 文档归档</td><td>保留最后的 Prompt 版本、评估结果、已知问题列表（供未来参考）</td></tr>
+  </table>
+
+  <div class="callout" style="margin-top:24px;">
+    <div class="callout-title">📖 需求补全总结</div>
+    <p>新增<strong>SLA 性能目标（6 项量化指标）、ROI 量化分析（投入 $40-60h/$20-40/mo → 产出省时 62% + 面试资本）、测试策略（4 层测试 + 10 条评估数据集）、全生命周期（8 阶段覆盖，补全了测试/灰度/迭代/退役 4 个先前空缺的阶段）</strong>。面试时完整覆盖 "需求→设计→开发→测试→部署→监控→迭代→退役" 全链路，证明你不只是"会写 Agent"，而是<strong>"能做 Agent 产品的全生命周期管理"</strong>。</p>
+  </div>
+  </div>
+</section>
+
+<!-- ===== §18 版本管理 SOP ===== -->
+<section>
+  <div class="section-header">
+    <h2><span class="num">18</span> 🔄 版本管理 SOP</h2>
+    <p>本 SOP（标准作业程序）适用于<strong>框架一自身</strong>和<strong>由此框架开发的软件开发多Agent系统</strong>。Agent 的版本管理比传统软件更复杂——除了代码，还要管理 Prompt、模型版本、知识库、配置等"软资产"。</p>
+  </div>
+
+  <div class="content">
+
+  <h3>18.1 为什么 Agent 需要专门的版本管理？</h3>
+  <div class="note-banner warning">
+    <strong>核心问题</strong>：改了一行 Prompt → 代码审查率从 72% 掉到 58% → 你不知道是 Prompt 改了导致的 → 因为 Prompt 没进 Git。
+  </div>
+  <table>
+    <tr><th>传统软件</th><th>AI Agent</th><th>风险</th></tr>
+    <tr><td>只管理源代码</td><td>管理代码 + Prompt + 模型版本 + 知识库 + 配置</td><td>改了 Prompt 没记录 → 无法复现历史行为</td></tr>
+    <tr><td>版本 = 代码快照</td><td>版本 = 代码快照 + Prompt快照 + 模型快照 + 知识库快照</td><td>同一份代码 + 不同模型版本 = 完全不同结果</td></tr>
+    <tr><td>回滚 = git revert</td><td>回滚 = git revert + 模型回退 + 知识库回退</td><td>只回滚代码不回滚 Prompt = 回滚不完整</td></tr>
+    <tr><td>测试 = 单元测试</td><td>测试 = 单元测试 + 评估数据集 + A/B 对比</td><td>单元测试通过不等于 Agent 行为正确</td></tr>
+  </table>
+
+  <h3>18.2 语义化版本规范</h3>
+  <p>遵循 <a href="https://semver.org/lang/zh-CN/" target="_blank">Semantic Versioning 2.0.0</a>，格式：<strong>MAJOR.MINOR.PATCH</strong></p>
+  <table>
+    <tr><th>版本号</th><th>何时递增</th><th>Agent 示例</th></tr>
+    <tr><td><strong>MAJOR</strong></td><td>不兼容的架构变更、Agent 角色增删、A2A 协议变更</td><td>新增 Reviewer Agent → 1.x.x → <strong>2.0.0</strong></td></tr>
+    <tr><td><strong>MINOR</strong></td><td>新增功能（向后兼容）、新增工具、Prompt 重大优化</td><td>Coder Agent 新增"自动修复"能力 → 1.1.x → <strong>1.2.0</strong></td></tr>
+    <tr><td><strong>PATCH</strong></td><td>Bug 修复、Prompt 微调（不影响输出格式）、依赖更新</td><td>修复 Reviewer 对 Go 代码的误报 → 1.1.1 → <strong>1.1.2</strong></td></tr>
+  </table>
+  <div class="note-banner info">
+    <strong>框架文件本身的版本</strong>：框架一的 HTML 文件也使用语义化版本——文件名末尾标注版本号：<code>框架一_v1.2.0.html</code>。
+  </div>
+
+  <h3>18.3 Git 分支策略</h3>
+  <p>采用 <strong>Trunk-Based 简化版</strong>（适合个人/小团队开发 Agent）：</p>
+  <table>
+    <tr><th>分支</th><th>用途</th><th>规则</th></tr>
+    <tr><td><code>main</code></td><td>生产就绪版本，每次合并 = 一次 Release</td><td>必须通过全部测试 + 评估数据集</td></tr>
+    <tr><td><code>dev</code></td><td>日常开发分支</td><td>功能完成后 merge 到 main</td></tr>
+    <tr><td><code>feature/xxx</code></td><td>新功能/新 Agent 开发</td><td>从 dev 切出，合并回 dev</td></tr>
+    <tr><td><code>hotfix/xxx</code></td><td>紧急修复（从 main 切出）</td><td>修复后 merge 到 main 和 dev</td></tr>
+  </table>
+  <pre><code># 标准开发流程
+git checkout -b feature/add-reviewer-agent dev
+# 开发、测试...
+git checkout dev && git merge feature/add-reviewer-agent
+# 评估验证通过后发布
+git checkout main && git merge dev
+git tag -a v1.2.0 -m "新增 Reviewer Agent + 修复 Coder 超时问题"
+git push --tags</code></pre>
+
+  <h3>18.4 Agent 专属版本项清单</h3>
+  <p>以下每一项发生变更都必须<strong>独立记录</strong>，不能混在一个 commit 里。</p>
+  <table>
+    <tr><th>版本项</th><th>存储位置</th><th>框架一具体内容</th><th>变更时记录要求</th></tr>
+    <tr><td><strong>源代码</strong></td><td>Git 仓库</td><td>6 个 Agent 的 Python 代码 + FastAPI 服务 + Dockerfile</td><td>常规 Git commit</td></tr>
+    <tr><td><strong>System Prompt</strong></td><td><code>prompts/</code> 目录（Git 管理）</td><td>Architect / Coder / Reviewer / Tester / Docs 各 Agent 的 System Prompt</td><td>每次修改单独 commit，commit message 说明"为什么改"</td></tr>
+    <tr><td><strong>模型版本</strong></td><td><code>config/model.yaml</code>（Git 管理）</td><td>各 Agent 使用的模型（如 Architect: gpt-4-0613, Coder: gpt-4-turbo-2024-04-09）</td><td>锁定到具体版本号（不用 "latest"）</td></tr>
+    <tr><td><strong>Agent Card</strong></td><td><code>agents/*.json</code>（Git 管理）</td><td>6 个 Agent 的 Agent Card（A2A 发现用）</td><td>Capability 变更时更新</td></tr>
+    <tr><td><strong>MCP 工具配置</strong></td><td><code>config/mcp.yaml</code>（Git 管理）</td><td>Git/GitHub API/文件系统 等 MCP Server 的配置</td><td>工具增删时更新</td></tr>
+    <tr><td><strong>评估数据集</strong></td><td><code>eval/</code> 目录（Git 管理）</td><td>10 条代码生成任务 + 预期输出</td><td>新增测试用例时更新</td></tr>
+    <tr><td><strong>知识库</strong></td><td>ChromaDB（不随 Git）</td><td>Memory Agent 的历史项目经验向量库</td><td>单独备份 + 版本号标注（见 §18.6 回滚）</td></tr>
+    <tr><td><strong>运行环境</strong></td><td><code>Dockerfile</code> + <code>requirements.txt</code>（Git 管理）</td><td>Python 3.11、openai 1.x、chromadb 0.4.x、langgraph 0.x</td><td>锁定依赖版本（不用 ^ 或 >=）</td></tr>
+  </table>
+
+  <h3>18.5 发布检查清单</h3>
+  <p>每次发布（打 Git tag）前，必须逐项检查：</p>
+  <table>
+    <tr><th>#</th><th>检查项</th><th>通过标准</th></tr>
+    <tr><td>1</td><td>所有 Agent 单元测试通过</td><td><code>pytest</code> 100% 通过</td></tr>
+    <tr><td>2</td><td>评估数据集通过</td><td>代码可运行率 ≥ 80%，审查准确率 ≥ 70%</td></tr>
+    <tr><td>3</td><td>新版本与旧版本 A/B 对比</td><td>新版本各项指标不劣于旧版本（或在新功能上显著优于旧版本）</td></tr>
+    <tr><td>4</td><td>Prompt 变更已记录</td><td>CHANGELOG 中标注"Prompt 变更"及其原因</td></tr>
+    <tr><td>5</td><td>模型版本已锁定</td><td><code>config/model.yaml</code> 中无 "latest" 字样</td></tr>
+    <tr><td>6</td><td>CHANGELOG.md 已更新</td><td>含本次发布的所有变更（按 MAJOR / MINOR / PATCH 分类）</td></tr>
+    <tr><td>7</td><td>文档已同步</td><td>Agent Card、README、API 文档与代码一致</td></tr>
+    <tr><td>8</td><td>知识库已备份</td><td>ChromDB 导出到 <code>backups/kb_vX.Y.Z/</code> 目录</td></tr>
+  </table>
+  <div class="trae-box" style="margin-top:12px;">
+    <p>帮我创建一个 pre-release-check.sh 脚本：自动运行 pytest → 检查 model.yaml 无 "latest" → 检查 CHANGELOG 已更新 → 备份 ChromaDB。每步用绿色 ✅ 或红色 ❌ 输出。</p>
+  </div>
+
+  <h3>18.6 回滚流程</h3>
+  <p>生产环境发现新版本有问题时，按以下步骤回滚：</p>
+  <table>
+    <tr><th>步骤</th><th>操作</th><th>命令/工具</th></tr>
+    <tr><td>1. 确认问题</td><td>查看 LangFuse 追踪 + Prometheus 指标，确认是新版本引入</td><td>LangFuse UI / Grafana</td></tr>
+    <tr><td>2. 回滚代码</td><td>Git tag 切换到上一个稳定版本</td><td><code>git checkout v1.1.0</code></td></tr>
+    <tr><td>3. 回滚 Prompt</td><td>恢复 <code>prompts/</code> 目录到标签版本</td><td><code>git checkout v1.1.0 -- prompts/</code></td></tr>
+    <tr><td>4. 回滚模型</td><td>如果模型版本也变了 → 恢复 <code>config/model.yaml</code> 的模型版本</td><td><code>git checkout v1.1.0 -- config/model.yaml</code></td></tr>
+    <tr><td>5. 回滚知识库</td><td>如果知识库也更新过 → 从备份恢复 ChromaDB</td><td>复制 <code>backups/kb_v1.1.0/</code> 到 ChromaDB 数据目录</td></tr>
+    <tr><td>6. 重新部署</td><td><code>docker compose up -d --build</code></td><td>等待健康检查通过</td></tr>
+    <tr><td>7. 验证</td><td>跑评估数据集确认指标恢复到之前水平</td><td>对比回滚前后的评估报告</td></tr>
+    <tr><td>8. 记录事故</td><td>写 RCA（根因分析）文档，记录为什么回滚 + 如何防止再次发生</td><td><code>docs/rca_v1.2.0.md</code></td></tr>
+  </table>
+
+  <h3>18.7 变更日志（CHANGELOG.md）规范</h3>
+  <p>遵循 <a href="https://keepachangelog.com/zh-CN/1.1.0/" target="_blank">Keep a Changelog</a> 格式：</p>
+  <pre><code># Changelog — 软件开发多Agent系统
+
+## [1.2.0] - 2025-08-08
+
+### Added（新增）
+- Reviewer Agent：自动审查代码质量、安全漏洞、性能问题
+- Coder Agent 新增「自动修复」模式：Reviewer 发现问题后自动尝试修复
+
+### Changed（变更）
+- Prompt 变更：Architect Agent 的设计输出格式从 Markdown → JSON（便于下游解析）
+- 模型升级：Coder Agent 从 gpt-4-0613 → gpt-4-turbo-2024-04-09（成本降低 50%）
+
+### Fixed（修复）
+- [#12] 修复 Coder Agent 在 Go 项目中生成 Python 代码的问题
+- [#15] 修复 Tester Agent 对大文件（>500行）超时的问题（增加 timeout 到 60s）
+
+### Deprecated（废弃）
+- 旧版 A2A 协议 v0.8 自 v1.3.0 起将不再支持，请迁移到 v1.0
+
+### Removed（移除）
+- 移除 Docs Agent 中不再使用的 Javadoc 生成模板
+
+### Security（安全）
+- [#20] 修复 Coder Agent 的代码执行沙箱逃逸漏洞（沙箱现在使用 Docker 隔离）
+
+### Model Changes（模型变更）
+- Coder: gpt-4-0613 → gpt-4-turbo-2024-04-09
+- Reviewer: 固定为 gpt-4o-2024-08-06</code></pre>
+
+  <h3>18.8 版本号递增速查表</h3>
+  <table>
+    <tr><th>你做了什么</th><th>版本变化</th><th>示例</th></tr>
+    <tr><td>修了一个 Bug（Reviewer 误报 Python 缩进问题）</td><td>PATCH +1</td><td>1.2.0 → <strong>1.2.1</strong></td></tr>
+    <tr><td>给 Coder 新增了"自动生成注释"功能</td><td>MINOR +1, PATCH→0</td><td>1.2.1 → <strong>1.3.0</strong></td></tr>
+    <tr><td>优化了 Architect 的 System Prompt（输出更结构化）</td><td>MINOR +1, PATCH→0</td><td>1.3.0 → <strong>1.4.0</strong></td></tr>
+    <tr><td>新增了 Reviewer Agent（新增 1 个 Agent 角色）</td><td>MAJOR +1, MINOR→0, PATCH→0</td><td>1.4.0 → <strong>2.0.0</strong></td></tr>
+    <tr><td>将 A2A 协议从 v0.8 升级到 v1.0（不兼容变更）</td><td>MAJOR +1, MINOR→0, PATCH→0</td><td>2.0.0 → <strong>3.0.0</strong></td></tr>
+    <tr><td>更新依赖：openai 1.0 → 1.5（无 API 变化）</td><td>PATCH +1</td><td>3.0.0 → <strong>3.0.1</strong></td></tr>
+  </table>
+
+  <h3>18.9 框架文件自身的版本管理</h3>
+  <div class="note-banner warning">
+    <strong>框架一 HTML 文件</strong>也需要版本管理——每次你根据本章 SOP 修改框架内容后，都要在 footer 中更新版本号。
+  </div>
+  <table>
+    <tr><th>场景</th><th>版本变化</th></tr>
+    <tr><td>新增一节内容（如新增 §18 版本管理 SOP）</td><td>MINOR +1 → v1.4.0</td></tr>
+    <tr><td>修正一处错误/笔误</td><td>PATCH +1 → v1.4.1</td></tr>
+    <tr><td>重构整个框架结构（拆分为独立文件）</td><td>MAJOR +1 → v2.0.0</td></tr>
+  </table>
+  <pre><code># 框架一文件版本管理
+# 建议在文件名中标注版本：
+框架一_软件开发多Agent系统_v1.5.0.html
+
+# 或者在 footer 中标注：
+&lt;p&gt;框架版本：v1.5.0 | 最后更新：2025-08-08&lt;/p&gt;</code></pre>
+
+  <div class="callout" style="margin-top:24px;">
+    <div class="callout-title">📖 版本管理 SOP 总结</div>
+    <p>Agent 版本管理的核心原则：<strong>一切可变的都是版本——代码、Prompt、模型、知识库、配置，五维一体。</strong>面试时你可以说："我的 Agent 不只是用 Git 管代码——System Prompt 存在 <code>prompts/</code> 目录独立版本化，模型版本锁死到具体日期（gpt-4-0613 而非 gpt-4），ChromaDB 每次发布前完整备份，评估数据集随代码一起版本化。发布前跑 8 项检查清单，出问题能从代码+Prompt+模型+知识库四个维度完整回滚。" <strong>这句话直接对标大厂 Agent 工程标准。</strong></p>
+  </div>
+
+  </div>
+</section>
+
+<div class="footer">
+  <p>软件开发多Agent协作框架 v1.6.0 — 个人学习版 · Trae IDE 驱动 · AI Agent工程师养成完整学习包 · 2025</p>
+  <p>独立系统 | A2A + MCP | 6 Agents | 渐进式学习 | 职业导向 | 概念词典 | 面试准备 | 脚手架代码 | 踩坑指南 | 成本分析 | 资深开发者审查修复 | 稳定性加固 | 工程质量（安全/测试/并行/版本） | 需求补全（SLA/ROI/测试/生命周期） | 版本管理SOP</p>
+</div>
+
+</body>
+</html>

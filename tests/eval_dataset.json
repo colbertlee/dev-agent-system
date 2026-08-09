@@ -1,0 +1,62 @@
+[
+  {
+    "description": "编写一个命令行 TODO 工具：支持添加任务、列出任务、标记完成，数据保存在本地 JSON 文件中。",
+    "expected_files": ["todo.py", "test_todo.py"],
+    "min_test_coverage": 0.5,
+    "comment": "入门级：单文件脚本，练习文件读写与基础单元测试。"
+  },
+  {
+    "description": "实现一个支持加减乘除的 REST 计算器，使用 FastAPI，包含请求参数校验与错误处理。",
+    "expected_files": ["main.py", "calculator.py", "test_main.py"],
+    "min_test_coverage": 0.6,
+    "comment": "入门级：熟悉 FastAPI 路由与 Pydantic 校验。"
+  },
+ {
+    "description": "开发一个用户注册与登录模块：包含密码哈希、邮箱格式校验、SQLite 持久化与 Pytest 测试。",
+    "expected_files": ["auth.py", "models.py", "test_auth.py"],
+    "min_test_coverage": 0.7,
+    "comment": "初级：涉及数据库、安全与较完整测试。"
+  },
+  {
+    "description": "实现一个 JWT 认证中间件：从请求头解析 token，校验签名与过期时间，保护受保护路由。",
+    "expected_files": ["jwt_middleware.py", "test_jwt.py"],
+    "min_test_coverage": 0.7,
+    "comment": "初级：安全相关，重点测试过期与伪造 token。"
+  },
+  {
+    "description": "设计一个简单的任务队列服务：使用 Redis 作为后端，支持任务入队、出队、状态查询与结果回调。",
+    "expected_files": ["queue.py", "worker.py", "test_queue.py"],
+    "min_test_coverage": 0.65,
+    "comment": "中级：引入外部依赖 Redis，需要 Mock 测试。"
+  },
+  {
+    "description": "开发一个博客文章 CRUD API：包含分页、按作者过滤、创建/更新/删除，使用 SQLAlchemy 与异步 FastAPI。",
+    "expected_files": ["main.py", "crud.py", "schemas.py", "test_crud.py"],
+    "min_test_coverage": 0.75,
+    "comment": "中级：典型 CRUD，练习异步 ORM 与集成测试。"
+  },
+  {
+    "description": "实现一个文件上传与下载服务：限制文件类型与大小，生成唯一文件名，提供断点续传接口设计。",
+    "expected_files": ["upload.py", "storage.py", "test_upload.py"],
+    "min_test_coverage": 0.7,
+    "comment": "中级：文件 IO 与大对象处理。"
+  },
+  {
+    "description": "构建一个支持多房间 WebSocket 聊天室：用户加入/离开广播、消息持久化到数据库、在线用户列表。",
+    "expected_files": ["chat.py", "manager.py", "test_chat.py"],
+    "min_test_coverage": 0.6,
+    "comment": "中高级：并发与 WebSocket 状态管理。"
+  },
+  {
+    "description": "实现一个可水平扩展的短链接服务：包含生成短码、跳转统计、缓存命中、定时清理过期链接。",
+    "expected_files": ["shortener.py", "cache.py", "analytics.py", "test_shortener.py"],
+    "min_test_coverage": 0.75,
+    "comment": "高级：涉及缓存、统计与扩展性设计。"
+  },
+  {
+    "description": "设计一个多租户 SaaS 计费系统：支持按量计费、订阅套餐、账单生成、Stripe 支付回调与审计日志。",
+    "expected_files": ["billing.py", "tenant.py", "payments.py", "test_billing.py"],
+    "min_test_coverage": 0.8,
+    "comment": "高级：复杂业务逻辑、资金相关，必须高覆盖与严格测试。"
+  }
+]

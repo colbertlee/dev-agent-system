@@ -1,0 +1,22 @@
+mcp_servers:
+  filesystem:
+    command: python
+    args: ["-m", "mcp_server_filesystem", "./workspace"]
+    allowed_paths:
+      - "./workspace"
+  github:
+    api_key_env: GITHUB_TOKEN
+  terminal:
+    timeout: 5
+    whitelist:
+      - python
+      - pytest
+      - git
+      - ls
+      - cat
+      - echo
+      - "docker build"
+  db:
+    connection_env: DATABASE_URL
+  conda:
+    command: conda
