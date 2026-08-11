@@ -4,7 +4,38 @@
 
 ---
 
-## v0.19.0 — Skill 市场协议与 Agent 自动发现（最新）
+## v0.20.0 — Agent 架构四要素与 Prompting 规范文档（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 将“Agent 架构四要素”（角色/安全边界、上下文/IO 规范、工具/能力边界、工作流/异常处理）与 Coder Agent 的 Prompting 规范，从当前 `dev_agent_system` 实现中反推整理成可发布文档。
+- 帮助新手快速理解系统约束，并据此验证、迭代与扩展 Agent。
+
+### 关键变更
+
+- 新增 `docs/agent_framework_retrospective.md`：
+  - 四要素与 `prompts.yaml`、`agent_cards.json`、`mcp.py`、`security.py`、`orchestrator.py` 等实际代码的对应关系。
+  - Coder Agent 的 `Role/Goal`、`Inputs & Format`、`Workflow (SOP)`、`Constraints & Rules`、`Exception Handling` 模板。
+  - 新手验证 Agent 质量的“边界压力测试 → 精准反馈迭代 → 模块化拆解”三步法。
+- 新增 `docs/agent_framework_retrospective.html`：
+  - 响应式布局、侧边目录、锚点导航、代码块与表格样式、暗色模式支持。
+  - 离线可用，无外部 CDN 依赖。
+- `dev_agent_system/__init__.py` 版本号更新为 `0.20.0`。
+
+### 升级注意
+
+- 无破坏性接口变更。
+- 仅新增文档资产，不修改核心代码与 Prompt。
+
+### 已知问题
+
+- 文档引用 `<ref_file>` / `<ref_snippet>` 在 Markdown 中以标签形式保留；HTML 版本已将其转换为文件名/行号内联 `<code>` 显示。
+
+---
+
+## v0.19.0 — Skill 市场协议与 Agent 自动发现
 
 **发布日期**：2026-08-11
 

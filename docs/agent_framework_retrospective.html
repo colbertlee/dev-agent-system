@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dev_agent_system - Agent 架构四要素与 Prompting 规范</title>
+<style>
+:root {
+  --bg: #f6f8fa;
+  --fg: #1f2328;
+  --muted: #656d76;
+  --card: #ffffff;
+  --border: #d1d9e0;
+  --accent: #0969da;
+  --accent-light: #ddf4ff;
+  --code-bg: #f3f4f6;
+  --shadow: 0 2px 8px rgba(31, 35, 40, 0.04);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --fg: #c9d1d9;
+    --muted: #8b949e;
+    --card: #161b22;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-light: #112538;
+    --code-bg: #21262d;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.7;
+}
+header {
+  background: linear-gradient(135deg, var(--accent), #0550ae);
+  color: #fff;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+header h1 { margin: 0 0 .5rem; font-size: 1.9rem; }
+header p { margin: 0; opacity: .9; font-size: 1rem; }
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 1.5rem;
+}
+aside.toc {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+aside.toc h2 { margin: 0 0 .8rem; font-size: 1rem; color: var(--fg); }
+aside.toc ul { list-style: none; padding: 0; margin: 0; }
+aside.toc li { margin: .35rem 0; }
+aside.toc a { text-decoration: none; color: var(--muted); font-size: .88rem; display: block; padding: .15rem 0; }
+aside.toc a:hover { color: var(--accent); }
+main {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 2.4rem;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+main h1 { font-size: 1.75rem; margin-top: 0; border-bottom: 2px solid var(--accent); padding-bottom: .5rem; }
+main h2 { font-size: 1.4rem; margin-top: 2.2rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+main h3 { font-size: 1.15rem; margin-top: 1.6rem; color: var(--accent); }
+main h4 { font-size: 1.05rem; margin-top: 1.3rem; }
+main p { margin: .9rem 0; }
+main a { color: var(--accent); text-decoration: none; }
+main a:hover { text-decoration: underline; }
+main ul, main ol { margin: .8rem 0; padding-left: 1.5rem; }
+main li { margin: .35rem 0; }
+main blockquote {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-light);
+  padding: .75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .92rem;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: .65rem .85rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--bg); font-weight: 600; }
+tr:nth-child(even) { background: rgba(0,0,0,.015); }
+@media (prefers-color-scheme: dark) { tr:nth-child(even) { background: rgba(255,255,255,.025); } }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: .88rem;
+}
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: var(--code-bg);
+  padding: .15rem .35rem;
+  border-radius: 4px;
+  font-size: .9em;
+}
+pre code { background: transparent; padding: 0; font-size: .88rem; }
+.anchor {
+  margin-left: .4rem;
+  color: var(--muted);
+  font-size: .8em;
+  text-decoration: none;
+  visibility: hidden;
+}
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor { visibility: visible; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  aside.toc { position: static; max-height: none; margin-bottom: 1rem; }
+  main { padding: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>dev_agent_system</h1>
+  <p>Agent 架构四要素与 Prompting 规范（反推版）</p>
+</header>
+<div class="layout">
+<aside class="toc">
+  <h2>目录</h2>
+  <ul>
+<li><a href="#dev_agent_system-的-agent-架构四要素与-prompting-规范-反推版">dev_agent_system 的 Agent 架构四要素与 Prompting 规范（反推版）</a></li>
+  <li><a href="#1--四要素映射">1. 四要素映射</a></li>
+    <li><a href="#1--角色与安全边界-role---guardrails">1. 角色与安全边界（Role &amp;amp; Guardrails）</a></li>
+    <li><a href="#2--上下文与输入输出规范-context---io-format">2. 上下文与输入输出规范（Context &amp;amp; IO Format）</a></li>
+    <li><a href="#3--工具链与能力边界-tools---capabilities">3. 工具链与能力边界（Tools &amp;amp; Capabilities）</a></li>
+    <li><a href="#4--工作流与状态判断-workflow---exception-handling">4. 工作流与状态判断（Workflow &amp;amp; Exception Handling）</a></li>
+  <li><a href="#2--coder-agent-prompting-模板">2. Coder Agent Prompting 模板</a></li>
+    <li><a href="#role-goal"># Role/Goal</a></li>
+    <li><a href="#inputs---format"># Inputs &amp;amp; Format</a></li>
+    <li><a href="#workflow--sop"># Workflow (SOP)</a></li>
+    <li><a href="#constraints---rules"># Constraints &amp;amp; Rules</a></li>
+    <li><a href="#exception-handling"># Exception Handling</a></li>
+  <li><a href="#3--新手验证三步法">3. 新手验证三步法</a></li>
+    <li><a href="#step-1-边界压力测试-edge-case-testing">Step 1：边界压力测试（Edge Case Testing）</a></li>
+    <li><a href="#step-2-精准反馈迭代-precision-feedback-loop">Step 2：精准反馈迭代（Precision Feedback Loop）</a></li>
+    <li><a href="#step-3-模块化拆解-decomposition">Step 3：模块化拆解（Decomposition）</a></li>
+  <li><a href="#4--核查表">4. 核查表</a></li>
+  <li><a href="#5--结论">5. 结论</a></li>
+  </ul>
+</aside>
+<main>
+<h1 id="dev_agent_system-的-agent-架构四要素与-prompting-规范-反推版">dev_agent_system 的 Agent 架构四要素与 Prompting 规范（反推版）<a class="anchor" href="#dev_agent_system-的-agent-架构四要素与-prompting-规范-反推版" aria-hidden="true">#</a></h1>
+<blockquote>
+<p>以下内容严格依据当前 <code>dev_agent_system</code> 仓库（v0.13.0 ~ v0.19.0）中真实存在并发布的代码、测试与文档反推整理；未引入任何尚未实现的功能，也未编造系统中不存在的特性。</p>
+</blockquote>
+<hr />
+<h2 id="1--四要素映射">1. 四要素映射<a class="anchor" href="#1--四要素映射" aria-hidden="true">#</a></h2>
+<h3 id="1--角色与安全边界-role---guardrails">1. 角色与安全边界（Role &amp; Guardrails）<a class="anchor" href="#1--角色与安全边界-role---guardrails" aria-hidden="true">#</a></h3>
+<p><strong>角色身份</strong></p>
+<ul>
+<li><code>dev_agent_system/prompts.yaml</code> 为每个业务 Agent 明确定义了专业身份、核心职责和语气风格。例如 <code>coder</code> 是“代码实现引擎”，<code>tester</code> 是“测试工程师”，<code>reviewer</code> 必须“独立思考，不信任上游输出”。 <code>prompts.yaml (lines 1-86)</code></li>
+<li><code>dev_agent_system/agent_cards.json</code> 把这些角色暴露为 A2A Agent Card，包含 <code>name</code>、<code>skills</code>、<code>capabilities</code> 与自治级别（<code>autonomy: &quot;L2&quot; / &quot;L3&quot;</code>）。 <code>agent_cards.json</code></li>
+</ul>
+<p><strong>防御性设计 / 禁止做的事</strong></p>
+<ul>
+<li><code>coder</code> 的 prompt 明确禁止“直接生成实现代码”之外的行为：不能修改架构文档、不能部署到生产。 <code>prompts.yaml (lines 12-21)</code></li>
+<li><code>ToolSandbox</code> 对命令做白名单前缀限制，并通过 <code>SafetyScanner</code> 命中黑名单即拦截，例如 <code>rm -rf</code>、<code>curl | sh</code>、<code>wget -O-</code> 等危险模式。 <code>mcp.py (lines 13-63)</code></li>
+<li><code>PathValidator</code> 阻止目录穿越，确保 <code>read_file</code> / <code>write_file</code> / <code>run_command</code> 只能访问当前工作区内的路径。 <code>security.py (lines 87-103)</code></li>
+<li><code>SecretRedactor</code> 在进入 LLM 前与离开 LLM 后，对 API Key、手机号、邮箱、密码进行脱敏。 <code>security.py (lines 115-133)</code> <code>agents.py (lines 126-136)</code></li>
+<li><code>DevOpsAgent</code> 返回 <code>needs_approval: True</code>；配置 <code>devops_dry_run</code> 默认为 <code>true</code>，部署操作需要人工确认。 <code>agents.py (lines 448-478)</code> <code>config.py (lines 130-136)</code></li>
+<li>当未配置真实 LLM API Key 时，<code>LLMClient</code> 自动降级为 <code>MockProvider</code>，避免真实请求与潜在的数据泄露。 <code>llm.py (lines 31-49)</code></li>
+</ul>
+<h3 id="2--上下文与输入输出规范-context---io-format">2. 上下文与输入输出规范（Context &amp; IO Format）<a class="anchor" href="#2--上下文与输入输出规范-context---io-format" aria-hidden="true">#</a></h3>
+<p><strong>输入格式</strong></p>
+<ul>
+<li>用户通过 <code>Orchestrator.run(requirement, request_id=None, language=&quot;python&quot;)</code> 传入自然语言需求；<code>_build_state</code> 会把它封装进 <code>GraphState</code>。 <code>orchestrator.py (lines 99-117)</code></li>
+<li>A2A 接口使用 <code>Task</code> Schema：<code>description</code>、<code>task_id</code>、<code>language</code>（默认 <code>python</code>）、<code>payload</code>。 <code>schemas.py (lines 20-27)</code></li>
+<li>每个 Agent 的 <code>build_prompt(state)</code> 会从 <code>GraphState</code> 拉取上游输出，例如 <code>CoderAgent</code> 读取 <code>architect</code> / <code>dba</code> 的结果、目标语言模板、工作目录等。 <code>agents.py (lines 216-231)</code></li>
+</ul>
+<p><strong>输出格式</strong></p>
+<ul>
+<li>代码产物：每个代码块前必须带 <code># file: &lt;path&gt;</code> 头部，并置于 fenced code block 中；<code>BaseAgent._extract_code_blocks()</code> 负责统一解析。 <code>agents.py (lines 98-107)</code></li>
+<li>状态报告：各 Agent 输出固定 JSON 结构，例如<ul>
+<li><code>Architect</code>：<code>{modules, api_contract, tech_stack, mermaid, notes}</code> <code>prompts.yaml (lines 1-11)</code></li>
+<li><code>Coder</code>：<code>{status, files_modified, test_result, note}</code> <code>prompts.yaml (lines 12-21)</code></li>
+<li><code>Tester</code>：<code>{passed, failed, coverage, report}</code> <code>prompts.yaml (lines 23-30)</code></li>
+<li><code>Reviewer</code> / <code>Security</code>：<code>{severity, passed, issues, suggestions}</code> <code>prompts.yaml (lines 32-39,68-75)</code></li>
+</ul>
+</li>
+<li><code>WorkflowState</code> / <code>TaskResponse</code> 使用 <code>Literal</code> 状态：<code>submitted</code>、<code>working</code>、<code>completed</code>、<code>failed</code>、<code>skipped</code>。 <code>schemas.py (lines 29-33,69-75)</code></li>
+<li>A2A 协议使用 <code>JSONRPCRequest</code> / <code>JSONRPCResponse</code> 进行跨 Agent 通信。 <code>schemas.py (lines 35-46)</code></li>
+</ul>
+<p><strong>上下文压缩</strong></p>
+<ul>
+<li><code>MemoryAgent</code> 中的 <code>ContextCompressor</code> 在 prompt 超过阈值后保留头部与尾部，并在中间提示“上下文压缩：中间内容已省略”，防止 token 溢出。 <code>memory.py (lines 18-34)</code></li>
+</ul>
+<h3 id="3--工具链与能力边界-tools---capabilities">3. 工具链与能力边界（Tools &amp; Capabilities）<a class="anchor" href="#3--工具链与能力边界-tools---capabilities" aria-hidden="true">#</a></h3>
+<p><strong>工具注册与调用</strong></p>
+<ul>
+<li><code>MCPToolRegistry</code> 当前暴露三个核心工具：<code>read_file</code>、<code>write_file</code>、<code>run_command</code>。所有工具统一返回 <code>{success, error, ...}</code>。 <code>mcp.py (lines 92-130)</code></li>
+<li><code>ToolSandbox</code> 对 <code>run_command</code> 实行白名单前缀（<code>python</code>、<code>pytest</code>、<code>git</code>、<code>mvn</code>、<code>go</code>、<code>npm</code> 等）与黑名单正则，超时默认 5 秒。 <code>mcp.py (lines 13-83)</code></li>
+</ul>
+<p><strong>触发条件 / 何时调用</strong></p>
+<ul>
+<li><code>Coder</code> 被明确要求“先 <code>read_file</code> 了解现有结构，再写代码”。 <code>prompts.yaml (lines 12-21)</code></li>
+<li><code>Tester</code> 在 <code>Coder</code> 完成后执行，读取代码文件并生成测试。 <code>agents.py (lines 312-330)</code></li>
+<li><code>run_command</code> 仅在白名单命令且通过安全扫描时才执行；否则立即返回 <code>{&quot;success&quot;: false, &quot;error&quot;: &quot;...&quot;}</code>。</li>
+</ul>
+<p><strong>能力边界</strong></p>
+<ul>
+<li>多语言支持：<code>templates.py</code> 定义了 <code>python</code>、<code>java</code>、<code>go</code>、<code>typescript</code> 四种 <code>LangTemplate</code>，分别规定文件扩展名、构建命令、测试命令和默认依赖文件。 <code>templates.py (lines 39-124)</code></li>
+<li>Skill 动态扩展：<code>SkillManager</code> 将已安装 Skill 自动注册为 MCP 工具（前缀 <code>skill_</code>），每个 Agent 初始化时通过 <code>BaseAgent._register_skills()</code> 完成发现。 <code>skills.py (lines 272-286)</code> <code>agents.py (lines 52-61)</code></li>
+<li>可观测性：<code>BaseAgent.run()</code> 在每次 LLM 调用前后记录近似 token 数、延迟、<code>llm_calls_total</code> 等指标；<code>server.py</code> 暴露 <code>/metrics</code> Prometheus 端点。 <code>agents.py (lines 139-154)</code> <code>server.py (lines 104-110)</code></li>
+<li>评估：<code>eval.py</code> 提供 <code>EvaluationRunner</code> 与 <code>RegressionChecker</code>，通过 <code>tests/eval_dataset.json</code> 做回归。 <code>eval.py (lines 121-216,259-299)</code></li>
+</ul>
+<h3 id="4--工作流与状态判断-workflow---exception-handling">4. 工作流与状态判断（Workflow &amp; Exception Handling）<a class="anchor" href="#4--工作流与状态判断-workflow---exception-handling" aria-hidden="true">#</a></h3>
+<p><strong>标准 SOP（LangGraph DAG）</strong></p>
+<ul>
+<li><code>Orchestrator._build_graph()</code> 定义：可选 <code>product_manager</code> → <code>architect</code> → 可选 <code>dba</code> → <code>coder</code> → <code>tester</code> 与 <code>docs</code> 并行 → <code>reviewer</code> → 可选 <code>security</code> → 条件边（<code>continue</code> 回到 <code>architect</code> 或 <code>end</code>）→ 可选 <code>devops</code>。 <code>orchestrator.py (lines 118-168)</code></li>
+<li>条件边由 <code>_should_continue</code> 控制：如果 <code>reviewer</code> 未通过且未达 <code>max_iterations</code> 则 <code>continue</code>；若启用 <code>security</code>，还需 <code>security</code> 通过才 <code>end</code>。 <code>orchestrator.py (lines 332-347)</code></li>
+<li>默认 <code>max_iterations = 10</code>；超过后状态置为 <code>failed</code>。 <code>orchestrator.py (lines 99-117)</code></li>
+</ul>
+<p><strong>失败重试与降级机制</strong></p>
+<ul>
+<li>LLM 调用异常会被捕获，返回 <code>[LLM ERROR] {e}</code>，避免流程崩溃。 <code>llm.py (lines 78-99)</code></li>
+<li><code>run_command</code> 超时或被拦截时统一返回 <code>{&quot;success&quot;: false, &quot;error&quot;: &quot;...&quot;}</code>，不抛出未处理异常。 <code>mcp.py (lines 55-83)</code></li>
+<li><code>CoderAgent</code> 在无真实 LLM 且未生成文件时，调用 <code>_fallback_code</code> 生成占位代码，状态标记为 <code>mock_fallback</code>，保证 CI/演示可继续运行。 <code>agents.py (lines 253-264)</code></li>
+<li><code>ReviewerAgent</code> / <code>SecurityAgent</code> 输出无法解析为 JSON 时，采取保守策略，默认 <code>passed: false</code> 并记录“输出无法解析为 JSON”。 <code>agents.py (lines 396-410,529-542)</code></li>
+<li>断点续跑：<code>Orchestrator.resume(request_id)</code> 从 SQLite checkpoint 恢复并继续执行；<code>list_checkpoints</code> 可查询历史。 <code>orchestrator.py (lines 206-236)</code></li>
+</ul>
+<hr />
+<h2 id="2--coder-agent-prompting-模板">2. Coder Agent Prompting 模板<a class="anchor" href="#2--coder-agent-prompting-模板" aria-hidden="true">#</a></h2>
+<blockquote>
+<p>该模板完全来自 <code>prompts.yaml</code> 中的 <code>coder</code> prompt、<code>CoderAgent.build_prompt</code> 与 <code>CoderAgent.postprocess</code> 实际逻辑。</p>
+</blockquote>
+<h3 id="role-goal"># Role/Goal<a class="anchor" href="#role-goal" aria-hidden="true">#</a></h3>
+<p>你当前是 <code>dev_agent_system</code> 中的 <code>Coder Agent</code>（代码实现引擎）。核心任务：根据上游 <code>Architect Agent</code> 的架构设计，使用 <code>MCPToolRegistry</code> 工具生成可运行代码，并通过 <code>run_command</code> 调用 <code>pytest</code> 完成自测。</p>
+<h3 id="inputs---format"># Inputs &amp; Format<a class="anchor" href="#inputs---format" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>用户原始需求</strong>：<code>state[&quot;input&quot;]</code>，自然语言字符串（必填）。</li>
+<li><strong>目标语言 / 技术栈</strong>：<code>state[&quot;language&quot;]</code>（默认 <code>&quot;python&quot;</code>，可选 <code>&quot;java&quot;</code>、<code>&quot;go&quot;</code>、<code>&quot;typescript&quot;</code>），由 <code>templates.get_language(state)</code> 解析为 <code>LangTemplate</code>。</li>
+<li><strong>架构设计</strong>：<code>state[&quot;architect&quot;][&quot;output&quot;]</code>，JSON 字符串，字段包括 <code>modules</code>、<code>api_contract</code>、<code>tech_stack</code>、<code>mermaid</code>、<code>notes</code>。</li>
+<li><strong>数据库设计</strong>（可选）：<code>state[&quot;dba&quot;][&quot;output&quot;]</code>，SQL 代码块与 JSON 报告。</li>
+<li><strong>工作目录</strong>：<code>state[&quot;workspace&quot;]</code>，已按 <code>request_id</code> 隔离。</li>
+<li><strong>解析要求</strong>：<ul>
+<li>生成代码前，先调用 <code>read_file</code> 了解工作目录现有结构。</li>
+<li>每个代码块前使用 <code># file: &lt;relative_path&gt;</code> 头部。</li>
+<li>文件扩展名必须匹配 <code>LangTemplate.file_ext</code>（<code>py</code>、<code>java</code>、<code>go</code>、<code>ts</code>）。</li>
+<li>若架构中提到 API 接口，必须生成 FastAPI 路由。</li>
+</ul>
+</li>
+</ul>
+<h3 id="workflow--sop"># Workflow (SOP)<a class="anchor" href="#workflow--sop" aria-hidden="true">#</a></h3>
+<ol>
+<li>读取工作目录已有文件（<code>read_file</code>），识别入口与测试结构。</li>
+<li>根据 <code>LangTemplate</code> 与架构设计，生成对应语言的实现代码，按模块拆分文件。</li>
+<li>调用 <code>run_command(template.test_cmd)</code>（例如 <code>pytest -q</code>）执行自测；失败可重试，最多 3 次。</li>
+<li>输出 JSON 状态报告：<code>{status, files_modified, test_result, note}</code>。</li>
+</ol>
+<h3 id="constraints---rules"># Constraints &amp; Rules<a class="anchor" href="#constraints---rules" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>零臆造</strong>：不得生成架构设计未提及的功能；不得修改架构文档；不能部署到生产环境。</li>
+<li><strong>安全边界</strong>：仅允许执行 <code>ToolSandbox.ALLOWED_PREFIXES</code> 白名单中的命令；生成的代码若命中 <code>SafetyScanner.SUSPICIOUS_CODE_PATTERNS</code> 会被记录到 <code>security_issues</code>。</li>
+<li><strong>输出格式</strong>：每个产物前 <code># file: path</code>，最后必须跟 <code>```json</code> 状态报告。</li>
+<li><strong>权限</strong>：只能写入 <code>workspace/&lt;request_id&gt;</code> 目录；<code>PathValidator</code> 会拦截 <code>../</code> 等路径穿越。</li>
+<li><strong>重试次数</strong>：测试命令最多重试 3 次，仍失败则 <code>test_result</code> 置为 <code>&quot;failed&quot;</code>。</li>
+</ul>
+<h3 id="exception-handling"># Exception Handling<a class="anchor" href="#exception-handling" aria-hidden="true">#</a></h3>
+<ul>
+<li><strong>若上游架构缺失或无法解析 JSON</strong>：使用 <code>state[&quot;input&quot;]</code> 降级生成，并设置 <code>status: &quot;needs_help&quot;</code>、<code>note: &quot;未检测到架构设计&quot;</code>。</li>
+<li><strong>若 LLM 输出无法解析出代码块且当前为 MOCK 模式</strong>：调用 <code>_fallback_code</code> 生成占位代码，状态置为 <code>&quot;mock_fallback&quot;</code>，<code>test_result</code> 为 <code>&quot;unknown&quot;</code>。</li>
+<li><strong>若 <code>run_command</code> 失败</strong>：把 <code>stderr</code> 保存到 <code>note</code>，<code>test_result</code> 置为 <code>&quot;failed&quot;</code>。</li>
+<li><strong>若写入文件触发路径越界</strong>：工具返回 <code>{&quot;success&quot;: false, &quot;error&quot;: &quot;路径越界：禁止访问工作目录之外&quot;}</code>，Agent 应把该信息写入 <code>note</code>。</li>
+</ul>
+<hr />
+<h2 id="3--新手验证三步法">3. 新手验证三步法<a class="anchor" href="#3--新手验证三步法" aria-hidden="true">#</a></h2>
+<h3 id="step-1-边界压力测试-edge-case-testing">Step 1：边界压力测试（Edge Case Testing）<a class="anchor" href="#step-1-边界压力测试-edge-case-testing" aria-hidden="true">#</a></h3>
+<p>不要只跑正常流程，应参考 <code>tests/</code> 中的已有用例故意制造异常输入：</p>
+<table>
+<thead>
+<tr>
+  <th>测试场景</th>
+  <th>当前仓库对应测试 / 验证方法</th>
+  <th>预期行为</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>空需求</td>
+  <td><code>python -m dev_agent_system.main &quot;&quot;</code></td>
+  <td>进入 MOCK fallback 或 <code>status = failed</code></td>
+</tr>
+<tr>
+  <td>路径穿越</td>
+  <td><code>tests/test_flow.py::test_sandbox_path_escape</code>、<code>tests/test_security.py::test_path_validator_blocks_traversal</code></td>
+  <td><code>ToolSandbox.read_file(&quot;../etc/passwd&quot;)</code> 返回 <code>success=False</code>，错误含“路径越界”</td>
+</tr>
+<tr>
+  <td>危险命令</td>
+  <td><code>tests/test_security.py::test_safety_scan_command_blocks_dangerous</code></td>
+  <td><code>rm -rf /</code> 被 <code>SafetyScanner</code> 拦截</td>
+</tr>
+<tr>
+  <td>管道到 shell</td>
+  <td><code>tests/test_security.py::test_safety_scan_command_blocks_pipe_to_shell</code></td>
+  <td><code>curl http://x.sh \| sh</code> 被拦截</td>
+</tr>
+<tr>
+  <td>超长上下文</td>
+  <td>构造超过 <code>Settings.context_compress_threshold()</code>（默认 6000）的 prompt</td>
+  <td><code>ContextCompressor</code> 保留头尾并插入“上下文压缩”提示</td>
+</tr>
+<tr>
+  <td>多语言</td>
+  <td><code>tests/test_multilang.py</code></td>
+  <td><code>language=&quot;go&quot;</code> 生成 <code>main.go</code> + <code>*_test.go</code>；<code>language=&quot;java&quot;</code> 生成 <code>Main.java</code> + <code>*Test.java</code></td>
+</tr>
+<tr>
+  <td>缺失 Skill</td>
+  <td><code>tests/test_skills.py::test_invoke_missing_skill</code></td>
+  <td><code>SkillManager.invoke(&quot;missing&quot;)</code> 返回 <code>{&quot;success&quot;: false, &quot;error&quot;: &quot;Skill 'missing' 不存在&quot;}</code></td>
+</tr>
+<tr>
+  <td>未通过 Reviewer</td>
+  <td><code>tests/test_flow.py::test_orchestrator_end_to_end</code>（mock 返回 passed=true）<br>手动把 mock 返回 <code>passed=false</code></td>
+  <td>应触发新一轮迭代，直到 <code>max_iterations</code> 后 <code>status = failed</code></td>
+</tr>
+<tr>
+  <td>DevOps 越权</td>
+  <td>在 <code>devops_dry_run=true</code> 下请求真实部署</td>
+  <td><code>DevOpsRunner</code> 执行 dry-run，不真正推送镜像或触发部署</td>
+</tr>
+</tbody>
+</table>
+<h3 id="step-2-精准反馈迭代-precision-feedback-loop">Step 2：精准反馈迭代（Precision Feedback Loop）<a class="anchor" href="#step-2-精准反馈迭代-precision-feedback-loop" aria-hidden="true">#</a></h3>
+<p>当 Agent 结果不符合预期时，使用“现象 → 原因定位 → 修改要求”三段式，直接对应到可修改的代码点。</p>
+<h4>示例 1：多语言下文件扩展名错误</h4>
+<ul>
+<li><strong>现象</strong>：输入 <code>language=&quot;go&quot;</code> 后，<code>CoderAgent</code> 产物文件名为 <code>module_1.py</code>。</li>
+<li><strong>原因定位</strong>：<code>CoderAgent.postprocess</code> 处理无 <code>path</code> 的代码块时，虽然补了扩展名，但 <code>LangTemplate</code> 选择或 prompt 中对扩展名的强调不足。 <code>agents.py (lines 239-244)</code></li>
+<li><strong>修改要求</strong>：<ol>
+<li>在 <code>CoderAgent.build_prompt</code> 中继续保留 <code>&quot;用户生成文件扩展名：.{template.file_ext}&quot;</code> 提示。 <code>agents.py (lines 223-230)</code></li>
+<li>在 <code>postprocess</code> 中，若代码块无 <code># file:</code> 头，则默认使用 <code>template.main_file()</code> 而非 <code>module_1.{file_ext}</code>。</li>
+<li>在 <code>tests/test_multilang.py</code> 新增 <code>assert result[&quot;files&quot;][0].endswith(&quot;.go&quot;)</code>。</li>
+</ol>
+</li>
+</ul>
+<h4>示例 2：Reviewer 输出非 JSON 导致无限循环</h4>
+<ul>
+<li><strong>现象</strong>：<code>ReviewerAgent</code> 返回 Markdown 文本，<code>postprocess</code> 无法解析，<code>passed</code> 被保守地设为 <code>false</code>，工作流反复进入新一轮迭代。</li>
+<li><strong>原因定位</strong>：<code>_extract_json</code> 只搜索第一个 <code>{...}</code> 或 <code>[...]</code>，未处理被 <code>```json</code> 包裹的情况；prompt 中未强调“只输出纯 JSON”。 <code>agents.py (lines 88-96,396-410)</code></li>
+<li><strong>修改要求</strong>：<ol>
+<li>在 <code>prompts.yaml</code> 的 <code>reviewer</code> 与 <code>security</code> prompt 末尾增加“只输出纯 JSON，不要 markdown 代码块”。</li>
+<li>在 <code>BaseAgent._extract_json</code> 中先剥离 <code>```json</code> 包裹，再解析 JSON。</li>
+<li>新增 <code>tests/test_flow.py::test_reviewer_json_only</code> 用例。</li>
+</ol>
+</li>
+</ul>
+<h4>示例 3：生成的代码被误标 high severity</h4>
+<ul>
+<li><strong>现象</strong>：<code>SafetyScanner.scan_code(&quot;x = eval(user_input)&quot;)</code> 被标为 <code>eval 执行 / high</code>。</li>
+<li><strong>原因定位</strong>：<code>SUSPICIOUS_CODE_PATTERNS</code> 正则命中 <code>eval(</code>，但无法区分是“使用 eval”还是“文档示例”。 <code>security.py (lines 32-46)</code></li>
+<li><strong>修改要求</strong>：<ol>
+<li>优化正则，添加前后文黑名单（例如 <code># example</code>、<code>&quot;&quot;&quot;</code> 内字符串）。</li>
+<li>在 <code>CoderAgent.postprocess</code> 的 <code>security_issues</code> 中返回 <code>severity</code>，让 <code>Reviewer</code> 人工确认是否真正危险。</li>
+<li>更新 <code>tests/test_security.py::test_safety_scan_code_detects_eval</code> 的断言，避免误伤。</li>
+</ol>
+</li>
+</ul>
+<h3 id="step-3-模块化拆解-decomposition">Step 3：模块化拆解（Decomposition）<a class="anchor" href="#step-3-模块化拆解-decomposition" aria-hidden="true">#</a></h3>
+<p>如果新手发现 Agent 输出臃肿、步骤混淆，可按以下方式拆解：</p>
+<ol>
+<li><strong>多 Agent 协作</strong>：将 <code>Coder</code> 拆分为 <code>FrontendCoder</code> 与 <code>BackendCoder</code>，在 <code>orchestrator.py</code> 的 DAG 中新增 <code>frontend_coder_node</code> 与 <code>backend_coder_node</code>，并在 <code>agent_cards.json</code> 增加对应 Agent Card。</li>
+<li><strong>流水线化</strong>：把“生成代码 → 扫描安全 → 运行测试 → 审查”抽象为独立 Skill（<code>skills/code_gen/SKILL.md</code> + <code>skill.py</code>），通过 <code>SkillManager</code> 注册到 MCP，实现可插拔。</li>
+<li><strong>Prompt 与解析解耦</strong>：将“角色定义”与“输出格式示例”拆成两个 YAML key 或 <code>docs/prompt_templates.md</code> 中的独立章节；修改 prompt 后必须同步更新 <code>tests/</code> 中的 mock 响应，确保解析代码仍能工作。 <code>prompt_templates.md</code></li>
+<li><strong>能力下沉</strong>：通用文件/命令/路径能力统一放在 <code>ToolSandbox</code> / <code>MCPToolRegistry</code>；领域能力（数据库设计、安全审查）做成独立 Agent 或 Skill，避免单个 Agent 同时负责实现、测试、文档。</li>
+</ol>
+<hr />
+<h2 id="4--核查表">4. 核查表<a class="anchor" href="#4--核查表" aria-hidden="true">#</a></h2>
+<table>
+<thead>
+<tr>
+  <th>四要素</th>
+  <th>当前系统中的具体落地</th>
+  <th>关键文件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>角色与安全边界</td>
+  <td>9 个 Agent 的 system prompt、A2A Agent Card、ToolSandbox 白名单/黑名单、PathValidator、SecretRedactor、DevOps 人工确认</td>
+  <td><code>prompts.yaml</code>、<code>agent_cards.json</code>、<code>mcp.py</code>、<code>security.py</code>、<code>agents.py</code></td>
+</tr>
+<tr>
+  <td>上下文与 IO 规范</td>
+  <td><code>GraphState</code> / <code>Task</code> / <code>WorkflowState</code>、<code># file:</code> 代码块、固定 JSON 报告、A2A JSONRPC</td>
+  <td><code>schemas.py</code>、<code>agents.py</code>、<code>prompts.yaml</code>、<code>server.py</code></td>
+</tr>
+<tr>
+  <td>工具链与能力边界</td>
+  <td><code>MCPToolRegistry</code> 三件套、多语言 <code>LangTemplate</code>、Skill 自动注册、Memory、Telemetry、Metrics</td>
+  <td><code>mcp.py</code>、<code>templates.py</code>、<code>skills.py</code>、<code>memory.py</code>、<code>agents.py</code>、<code>metrics.py</code></td>
+</tr>
+<tr>
+  <td>工作流与异常处理</td>
+  <td>LangGraph DAG、<code>max_iterations</code>、Reviewer 条件边、MOCK fallback、checkpoint resume、错误字典</td>
+  <td><code>orchestrator.py</code>、<code>llm.py</code>、<code>mcp.py</code>、<code>eval.py</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5--结论">5. 结论<a class="anchor" href="#5--结论" aria-hidden="true">#</a></h2>
+<p><code>dev_agent_system</code> 已将“Agent 架构四要素”映射为可运行、可测试、可扩展的具体实现：</p>
+<ul>
+<li><strong>角色与安全边界</strong>由 <code>prompts.yaml</code> + <code>agent_cards.json</code> + 工具沙箱 + Secret 脱敏共同保证；</li>
+<li><strong>上下文与 IO 规范</strong>由 <code>GraphState</code>、<code>Task</code> / <code>WorkflowState</code> Schema、<code># file:</code> 代码块与固定 JSON 报告约束；</li>
+<li><strong>工具链与能力边界</strong>由 <code>MCPToolRegistry</code> / <code>ToolSandbox</code>、多语言 <code>LangTemplate</code> 与 <code>SkillManager</code> 界定；</li>
+<li><strong>工作流与异常处理</strong>由 LangGraph DAG、Reviewer 条件边、<code>max_iterations</code>、MOCK fallback 与 checkpoint resume 兜底。</li>
+</ul>
+<p>新手在验证 Agent 质量时，应优先复用 <code>tests/</code> 中的边界用例（路径穿越、危险命令、多语言、缺失 Skill），使用“现象 → 原因 → 修改”三段式反馈，并在 Agent 臃肿时按能力域拆分为新 Agent 或新 Skill。</p>
+
+</main>
+</div>
+</body>
+</html>

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.0] - 2026-08-11
+
+### Added
+
+- Agent 架构四要素与 Prompting 规范反推文档：
+  - 新增 `docs/agent_framework_retrospective.md`，系统梳理 4-Block Framework（角色/安全、上下文/IO、工具/能力、工作流/异常）在当前 `dev_agent_system` 中的映射。
+  - 新增 `docs/agent_framework_retrospective.html`，提供响应式布局、目录导航、代码块与表格样式、暗色模式支持的离线 HTML 版本。
+
+### Changed
+
+- 无代码功能变更。
+
+### Model Changes
+
+- 无。
+
 ## [0.19.0] - 2026-08-11
 
 ### Added
