@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-08-11
+
+### Added
+
+- 文档生态：
+  - 新增 `ARCHITECTURE.md`：系统架构图、核心数据流、模块依赖、部署形态。
+  - 新增 `CONTRIBUTE.md`：代码规范、Conventional Commits、分支策略、PR checklist。
+  - 新增 `RELEASE_NOTES.md`：版本价值、影响矩阵、升级建议。
+  - 新增 `docs/tools_spec.md`：MCP 工具 JSON Schema、白名单、错误码。
+  - 新增 `docs/prompt_templates.md`：System Prompt 版本管理、输出格式约定。
+  - 新增 `docs/usage_operations.md`：安装、部署、监控、备份、故障排查。
+- `README.md` 新增文档导航与项目结构补充。
+- `.env.example` 补充 `MEMORY_BACKEND`、`REDIS_URL`、`CONTEXT_COMPRESS_THRESHOLD`、`CONTEXT_WINDOW_LIMIT`。
+
+### Changed
+
+- 无
+
+### Fixed
+
+- 无
+
+### Security
+
+- 无
+
+### Model Changes
+
+- 无
+
 ## [0.5.0] - 2026-08-11
 
 ### Added

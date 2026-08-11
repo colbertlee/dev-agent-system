@@ -6,10 +6,24 @@
 
 - **6 个业务 Agent**：Architect、Coder、Tester、Reviewer、Docs、DevOps
 - **3 个支撑组件**：Orchestrator、Memory、Scheduler（迭代控制）
-- **编排**：LangGraph `StateGraph` DAG，`Architect → {Coder, Tester, Docs} → Reviewer`
+- **编排**：LangGraph `StateGraph` DAG，`Architect → Coder → {Tester, Docs} → Reviewer`
 - **通信**：A2A 协议，`/.well-known/agent.json` + `/tasks`
 - **工具**：MCP 风格工具沙箱（白名单+黑名单+路径限制+超时）
 - **记忆**：三层记忆（短期/工作/长期），默认内存+SQLite 降级
+
+## 文档导航
+
+| 文档 | 内容 |
+|---|---|
+| [README.md](README.md) | 快速开始、部署方式、设计要点 |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | 架构图、数据流、模块依赖、部署形态 |
+| [CONTRIBUTE.md](CONTRIBUTE.md) | 代码规范、Git 提交格式、分支策略、PR checklist |
+| [AGENTS.md](AGENTS.md) | 多 Agent 协作规则、状态图、扩展方式 |
+| [docs/usage_operations.md](docs/usage_operations.md) | 安装、部署、监控、备份、故障排查 |
+| [docs/tools_spec.md](docs/tools_spec.md) | MCP 工具 JSON Schema、白名单、错误码 |
+| [docs/prompt_templates.md](docs/prompt_templates.md) | System Prompt 版本管理、输出格式约定 |
+| [RELEASE_NOTES.md](RELEASE_NOTES.md) | 版本价值、影响矩阵、升级建议 |
+| [CHANGELOG.md](CHANGELOG.md) | 扁平化变更清单 |
 
 ## 快速开始
 
@@ -128,9 +142,17 @@ docker-compose logs -f
 ├── Dockerfile              # Docker 镜像
 ├── docker-compose.yml      # Docker Compose 编排
 ├── AGENTS.md               # 多 Agent 开发过程指导
+├── ARCHITECTURE.md         # 架构图与核心数据流
+├── CONTRIBUTE.md           # 代码规范与分支策略
+├── RELEASE_NOTES.md        # 版本价值与升级影响说明
 ├── requirements.txt
 ├── CHANGELOG.md
 └── README.md
+
+├── docs/
+│   ├── tools_spec.md       # 工具 JSON Schema
+│   ├── prompt_templates.md # System Prompt 版本管理
+│   └── usage_operations.md # 使用与运维手册
 ```
 
 ## 版本管理与发布
