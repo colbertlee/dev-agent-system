@@ -21,7 +21,7 @@ from dev_agent_system.agents import (
     ReviewerAgent,
     TesterAgent,
 )
-from dev_agent_system.types import Task, TaskResponse
+from dev_agent_system.schemas import Task, TaskResponse
 
 AGENT_CLASSES: Dict[str, Any] = {
     "architect": ArchitectAgent,

@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-08-11
+
+### Added
+
+- 监控与可观测性（路线图第 9 条）：
+  - 新增 `dev_agent_system/metrics.py`：轻量级内存指标收集器，支持 Counter / Gauge / Histogram，输出 Prometheus 文本协议。
+  - 新增 `dev_agent_system/telemetry.py`：OpenTelemetry 风格 `Span` 与 `Telemetry`，支持嵌套链路、结构化 JSON 日志与事件记录。
+  - `Orchestrator` 集成 Telemetry：自动记录 `orchestrator.run` / `orchestrator.resume` 跨度，以及每个 Agent 节点的执行跨度；自动写入 `agent_runs_total`、`workflow_total`、`review_decisions_total`、`workflow_iterations` 等指标。
+  - `BaseAgent.run` 集成 LLM 调用追踪：记录 `llm_calls_total`、近似 prompt / output token 分布。
+  - `server.py` 新增 `/metrics` 端点返回 Prometheus 格式指标；`/health` 返回当前 metrics 计数摘要。
+  - 新增 `tests/test_metrics.py`、`tests/test_telemetry.py`、`tests/test_server.py`，覆盖指标渲染、Span 记录、事件计数与端点可用性。
+
+### Changed
+
+- 将 `dev_agent_system/types.py` 重命名为 `dev_agent_system/schemas.py`，彻底避免 `types` 名称遮蔽 Python 标准库；同步更新所有导入路径与文档。
+- `metrics.py` 使用 `typing.Union` 替代 `|` 类型联合，兼容 Python 3.9 运行时。
+
+### Fixed
+
+- 修复 `types.py` 名称冲突导致的直接运行入口脚本失败。
+
+### Model Changes
+
+- 无。
+
 ## [0.11.0] - 2026-08-11
 
 ### Added

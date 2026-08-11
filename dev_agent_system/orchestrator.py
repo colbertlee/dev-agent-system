@@ -6,7 +6,7 @@ import json
 import uuid
 from datetime import datetime
 from pathlib import Path
-from typing import Any, AsyncIterator, Dict, Optional
+from typing import Any, AsyncIterator, Dict, List, Optional
 
 from langgraph.graph import END, StateGraph
 
@@ -26,7 +26,8 @@ from dev_agent_system.checkpoint import make_checkpointer
 from dev_agent_system.config import Settings
 from dev_agent_system.devops import DevOpsRunner
 from dev_agent_system.memory import MemoryAgent
-from dev_agent_system.types import GraphState
+from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY, Telemetry
+from dev_agent_system.schemas import GraphState
 
 
 def _review_passed(review: Dict[str, Any]) -> bool:
@@ -67,6 +68,7 @@ class Orchestrator:
         enable_product_manager: bool = False,
         enable_security: bool = False,
         enable_dba: bool = False,
+        telemetry: Optional[Telemetry] = None,
     ):
         self.max_iterations = max_iterations
         self.enable_devops = enable_devops
@@ -74,6 +76,7 @@ class Orchestrator:
         self.enable_product_manager = enable_product_manager
         self.enable_security = enable_security
         self.enable_dba = enable_dba
+        self.telemetry = telemetry or DEFAULT_TELEMETRY
         self.guard = IdempotencyGuard()
         self.memory = MemoryAgent()
         self.checkpointer = make_checkpointer()
@@ -166,32 +169,42 @@ class Orchestrator:
         if self.guard.is_duplicate(state["request_id"]):
             return {"request_id": state["request_id"], "status": "skipped", "reason": "duplicate"}
 
-        # 注入工作记忆
-        state["memory"] = self.agents["memory"].run(state)
+        with self.telemetry.span("orchestrator.run", {"request_id": state["request_id"]}):
+            # 注入工作记忆
+            state["memory"] = self.agents["memory"].run(state)
 
-        graph = self._build_graph()
-        config = self._thread_config(state["request_id"])
-        final_state = await graph.ainvoke(state, config)
-        final_state["finished_at"] = datetime.now().isoformat()
-        final_state["artifacts"] = self._collect_artifacts(final_state)
-        return final_state
+            graph = self._build_graph()
+            config = self._thread_config(state["request_id"])
+            final_state = await graph.ainvoke(state, config)
+            final_state["finished_at"] = datetime.now().isoformat()
+            final_state["artifacts"] = self._collect_artifacts(final_state)
+            self.telemetry.record_event(
+                "workflow.completed",
+                request_id=state["request_id"],
+                status=final_state.get("status", "unknown"),
+                iterations=str(final_state.get("iteration", 0)),
+            )
+            self._record_workflow_metrics(final_state)
+            return final_state
 
     async def resume(self, request_id: str) -> Dict[str, Any]:
         """从 SQLite checkpoint 恢复并继续执行工作流。"""
-        graph = self._build_graph()
-        config = self._thread_config(request_id)
-        snapshot = await graph.aget_state(config)
-        if snapshot is None or not snapshot.next:
-            # 任务已完成或不存在未执行任务，直接取最新状态
-            final_state = dict(snapshot.values) if snapshot else {}
-        else:
-            final_state = await graph.ainvoke(None, config)
-            if final_state is None:
-                snapshot = await graph.aget_state(config)
+        with self.telemetry.span("orchestrator.resume", {"request_id": request_id}):
+            graph = self._build_graph()
+            config = self._thread_config(request_id)
+            snapshot = await graph.aget_state(config)
+            if snapshot is None or not snapshot.next:
+                # 任务已完成或不存在未执行任务，直接取最新状态
                 final_state = dict(snapshot.values) if snapshot else {}
-        final_state["finished_at"] = datetime.now().isoformat()
-        final_state["artifacts"] = self._collect_artifacts(final_state)
-        return final_state
+            else:
+                final_state = await graph.ainvoke(None, config)
+                if final_state is None:
+                    snapshot = await graph.aget_state(config)
+                    final_state = dict(snapshot.values) if snapshot else {}
+            final_state["finished_at"] = datetime.now().isoformat()
+            final_state["artifacts"] = self._collect_artifacts(final_state)
+            self._record_workflow_metrics(final_state)
+            return final_state
 
     def list_checkpoints(self, request_id: str) -> List[Dict[str, Any]]:
         """返回指定 request_id 的历史 checkpoint 列表。"""
@@ -342,9 +355,39 @@ class Orchestrator:
 
     async def _run_agent(self, name: str, state: GraphState) -> Dict[str, Any]:
         agent = self.agents[name]
-        if asyncio.iscoroutinefunction(agent.run):
-            return await agent.run(state)
-        return agent.run(state)
+        with self.telemetry.span(f"agent.{name}", {"agent": name, "request_id": state.get("request_id", "")}):
+            if asyncio.iscoroutinefunction(agent.run):
+                result = await agent.run(state)
+            else:
+                result = agent.run(state)
+            status = "error" if result and not result.get("success", True) else "ok"
+            self.telemetry.collector.counter(
+                "agent_runs_total",
+                "Total number of agent runs",
+                labelnames=["agent", "status"],
+            ).inc(agent=name, status=status)
+            return result
+
+    def _record_workflow_metrics(self, state: GraphState) -> None:
+        request_id = state.get("request_id", "")
+        iterations = state.get("iteration", 0)
+        status = state.get("status", "unknown")
+        review = state.get("reviewer") or {}
+        review_passed = _review_passed(review)
+
+        self.telemetry.collector.gauge("workflow_iterations", "Workflow iteration count").set(
+            iterations, request_id=request_id
+        )
+        self.telemetry.collector.counter(
+            "workflow_total",
+            "Total number of workflow runs",
+            labelnames=["status"],
+        ).inc(status=status)
+        self.telemetry.collector.counter(
+            "review_decisions_total",
+            "Total number of review decisions",
+            labelnames=["passed"],
+        ).inc(passed=str(review_passed).lower())
 
     @staticmethod
     def _collect_artifacts(state: GraphState) -> Dict[str, Any]:

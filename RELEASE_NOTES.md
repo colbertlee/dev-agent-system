@@ -4,7 +4,38 @@
 
 ---
 
-## v0.11.0 — 新增角色 Agent（最新）
+## v0.12.0 — 监控与可观测性（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 为系统增加可观测性层，让多 Agent 工作流的每个节点、每次 LLM 调用、每次安全/审查决策都可被度量和追踪。
+- `/metrics` 端点直接输出 Prometheus 格式，可接入 Grafana/Alertmanager；`/health` 端点携带实时指标摘要。
+- 链路追踪采用 OpenTelemetry 风格 Span，输出结构化 JSON 日志，便于对接 Loki/ELK 等日志聚合系统。
+
+### 关键变更
+
+- 新增 `dev_agent_system/metrics.py`：Counter / Gauge / Histogram 内存实现，支持 Prometheus 文本渲染。
+- 新增 `dev_agent_system/telemetry.py`：`Span`、`Telemetry`、嵌套上下文、结构化日志。
+- `Orchestrator` 与 `BaseAgent` 自动埋点：工作流运行、Agent 节点、LLM 调用、Review 决策等。
+- `server.py` 新增 `/metrics` 与增强 `/health` 端点。
+- 将 `dev_agent_system/types.py` 重命名为 `dev_agent_system/schemas.py`，彻底修复 `types` 名称遮蔽 Python 标准库的问题，并同步更新所有导入路径与文档。
+- 新增 `tests/test_metrics.py`、`tests/test_telemetry.py`、`tests/test_server.py`，54 个测试全部通过。
+
+### 升级注意
+
+- 无破坏性接口变更。
+- `Telemetry` 默认使用 `NullHandler`，日志通过 `propagate=True` 交给上层 logger；生产环境可配置 root logger 或保留默认。
+- 直接运行入口脚本现在可以用 `python dev_agent_system/server.py` 或 `python -m dev_agent_system.server`；`types.py` 已重命名为 `schemas.py` 避免标准库遮蔽。
+
+### 已知问题
+
+- 无。
+
+---
+
+## v0.11.0 — 新增角色 Agent
 
 **发布日期**：2026-08-11
 

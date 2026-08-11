@@ -6,7 +6,7 @@ import asyncio
 from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
 import uvicorn
 
 from dev_agent_system.agents import (
@@ -20,8 +20,10 @@ from dev_agent_system.agents import (
     SecurityAgent,
     TesterAgent,
 )
+from dev_agent_system.metrics import DEFAULT as DEFAULT_METRICS
 from dev_agent_system.orchestrator import Orchestrator
-from dev_agent_system.types import JSONRPCRequest, JSONRPCResponse, Task, TaskResponse
+from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY
+from dev_agent_system.schemas import JSONRPCRequest, JSONRPCResponse, Task, TaskResponse
 
 app = FastAPI(title="Dev Agent System A2A Gateway")
 
@@ -83,7 +85,26 @@ for _name, _agent in AGENTS.items():
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "metrics": {
+            "spans_total": DEFAULT_METRICS._metrics.get("spans_total") and sum(
+                DEFAULT_METRICS._metrics["spans_total"]._values.values()
+            ) or 0,
+            "events_total": DEFAULT_METRICS._metrics.get("events_total") and sum(
+                DEFAULT_METRICS._metrics["events_total"]._values.values()
+            ) or 0,
+        },
+    }
+
+
+@app.get("/metrics")
+def metrics():
+    """Prometheus 格式指标暴露端点。"""
+    return PlainTextResponse(
+        content=DEFAULT_METRICS.render_prometheus(),
+        media_type="text/plain; version=0.0.4; charset=utf-8",
+    )
 
 
 @app.post("/orchestrate")

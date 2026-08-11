@@ -20,7 +20,8 @@ from dev_agent_system.memory import MemoryAgent
 from dev_agent_system.mcp import MCPToolRegistry, ToolSandbox
 from dev_agent_system.router import ModelRouter
 from dev_agent_system.security import SafetyScanner, SecretRedactor
-from dev_agent_system.types import AgentCard, AgentSkill
+from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY, Telemetry
+from dev_agent_system.schemas import AgentCard, AgentSkill
 
 
 class BaseAgent:
@@ -33,6 +34,7 @@ class BaseAgent:
         system_prompt: str,
         model: Optional[str] = None,
         skills: Optional[List[str]] = None,
+        telemetry: Optional[Telemetry] = None,
     ):
         self.name = name
         self.role = role
@@ -43,6 +45,7 @@ class BaseAgent:
         self.llm = LLMClient(model=self.model)
         self.memory = MemoryAgent()
         self.tools = MCPToolRegistry()
+        self.telemetry = telemetry or DEFAULT_TELEMETRY
 
     def build_prompt(self, state: Dict[str, Any]) -> str:
         return str(state.get("input", ""))
@@ -110,9 +113,32 @@ class BaseAgent:
         # 敏感信息脱敏：进入 LLM 前与离开 LLM 后都进行 redaction
         full_prompt = SecretRedactor.redact(full_prompt)
         resolved_model, kwargs = self.router.resolve(self.name, full_prompt)
-        output = self.llm.chat(self.system_prompt, full_prompt, model=resolved_model, **kwargs)
+
+        with self.telemetry.span(
+            f"agent.{self.name}.llm",
+            {"agent": self.name, "model": resolved_model, "request_id": session},
+        ):
+            output = self.llm.chat(self.system_prompt, full_prompt, model=resolved_model, **kwargs)
+
         output = SecretRedactor.redact(output)
         self.memory.remember("last_output", output, session_id=session, layer="short", ttl=3600)
+
+        # 近似 token 数与延迟统计
+        self.telemetry.collector.counter(
+            "llm_calls_total",
+            "Total number of LLM calls",
+            labelnames=["agent", "model"],
+        ).inc(agent=self.name, model=resolved_model)
+        self.telemetry.collector.histogram(
+            "llm_prompt_tokens_approx",
+            "Approximate prompt tokens",
+            labelnames=["agent", "model"],
+        ).observe(len(full_prompt) / 4, agent=self.name, model=resolved_model)
+        self.telemetry.collector.histogram(
+            "llm_output_tokens_approx",
+            "Approximate output tokens",
+            labelnames=["agent", "model"],
+        ).observe(len(output) / 4, agent=self.name, model=resolved_model)
 
         result: Dict[str, Any] = {
             "agent": self.name,

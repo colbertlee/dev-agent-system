@@ -93,7 +93,7 @@ graph TD
 | Memory | `dev_agent_system/memory.py` | 三层记忆：short/working/long，后端可切换 SQLite/Redis/ChromaDB |
 | MCP | `dev_agent_system/mcp.py` | 工具沙箱：read_file / write_file / run_command，路径隔离+白名单 |
 | Config | `dev_agent_system/config.py` | `.env` + YAML 统一加载，环境变量覆盖 |
-| Types | `dev_agent_system/types.py` | Pydantic 模型与 `GraphState` TypedDict |
+| Schemas | `dev_agent_system/schemas.py` | Pydantic 模型与 `GraphState` TypedDict |
 | Server | `dev_agent_system/server.py` | 统一 FastAPI A2A 网关，含 `/orchestrate/stream` SSE |
 | A2A Node | `dev_agent_system/a2a_node.py` | 独立启动单个 Agent 的 FastAPI 服务 |
 

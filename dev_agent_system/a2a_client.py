@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 
-from dev_agent_system.types import AgentCard, JSONRPCRequest, JSONRPCResponse, Task, TaskResponse
+from dev_agent_system.schemas import AgentCard, JSONRPCRequest, JSONRPCResponse, Task, TaskResponse
 
 
 class A2AClient:
