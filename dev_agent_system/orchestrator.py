@@ -13,10 +13,13 @@ from langgraph.graph import END, StateGraph
 from dev_agent_system.agents import (
     ArchitectAgent,
     CoderAgent,
+    DBAAgent,
     DevOpsAgent,
     DocsAgent,
     MemoryAgentFacade,
+    ProductManagerAgent,
     ReviewerAgent,
+    SecurityAgent,
     TesterAgent,
 )
 from dev_agent_system.checkpoint import make_checkpointer
@@ -61,10 +64,16 @@ class Orchestrator:
         max_iterations: int = 10,
         enable_devops: bool = False,
         devops_runner: Optional[Any] = None,
+        enable_product_manager: bool = False,
+        enable_security: bool = False,
+        enable_dba: bool = False,
     ):
         self.max_iterations = max_iterations
         self.enable_devops = enable_devops
         self.devops_runner = devops_runner
+        self.enable_product_manager = enable_product_manager
+        self.enable_security = enable_security
+        self.enable_dba = enable_dba
         self.guard = IdempotencyGuard()
         self.memory = MemoryAgent()
         self.checkpointer = make_checkpointer()
@@ -75,6 +84,9 @@ class Orchestrator:
             "docs": DocsAgent(),
             "reviewer": ReviewerAgent(),
             "devops": DevOpsAgent(),
+            "product_manager": ProductManagerAgent(),
+            "security": SecurityAgent(),
+            "dba": DBAAgent(),
             "memory": MemoryAgentFacade(),
         }
 
@@ -94,27 +106,49 @@ class Orchestrator:
     def _build_graph(self) -> StateGraph:
         """构建并返回编译后的 LangGraph。"""
         workflow = StateGraph(GraphState)
-        workflow.add_node("architect_node", self._architect_node)
+
+        if self.enable_product_manager:
+            workflow.add_node("product_manager_node", self._product_manager_node)
+            workflow.add_node("architect_node", self._architect_node)
+            workflow.set_entry_point("product_manager_node")
+            workflow.add_edge("product_manager_node", "architect_node")
+        else:
+            workflow.set_entry_point("architect_node")
+            workflow.add_node("architect_node", self._architect_node)
+
         workflow.add_node("coder_node", self._coder_node)
         workflow.add_node("tester_docs_node", self._tester_docs_node)
         workflow.add_node("reviewer_node", self._reviewer_node)
 
-        workflow.set_entry_point("architect_node")
-        workflow.add_edge("architect_node", "coder_node")
+        if self.enable_dba:
+            workflow.add_node("dba_node", self._dba_node)
+            workflow.add_edge("architect_node", "dba_node")
+            workflow.add_edge("dba_node", "coder_node")
+        else:
+            workflow.add_edge("architect_node", "coder_node")
+
         workflow.add_edge("coder_node", "tester_docs_node")
         workflow.add_edge("tester_docs_node", "reviewer_node")
+
+        # 确定条件边的挂载点
+        if self.enable_security:
+            workflow.add_node("security_node", self._security_node)
+            workflow.add_edge("reviewer_node", "security_node")
+            conditional_source = "security_node"
+        else:
+            conditional_source = "reviewer_node"
 
         if self.enable_devops:
             workflow.add_node("devops_node", self._devops_node)
             workflow.add_conditional_edges(
-                "reviewer_node",
+                conditional_source,
                 self._should_continue,
                 {"continue": "architect_node", "end": "devops_node"},
             )
             workflow.add_edge("devops_node", END)
         else:
             workflow.add_conditional_edges(
-                "reviewer_node",
+                conditional_source,
                 self._should_continue,
                 {"continue": "architect_node", "end": END},
             )
@@ -263,11 +297,32 @@ class Orchestrator:
 
     def _should_continue(self, state: GraphState) -> str:
         review = state.get("reviewer") or {}
-        if _review_passed(review):
-            return "end"
-        if state.get("iteration", 0) >= self.max_iterations:
-            return "end"
-        return "continue"
+        if not _review_passed(review):
+            if state.get("iteration", 0) >= self.max_iterations:
+                return "end"
+            return "continue"
+
+        # reviewer 通过后，若启用 Security Agent，还需通过安全审查
+        if self.enable_security:
+            security = state.get("security") or {}
+            if not _review_passed(security):
+                if state.get("iteration", 0) >= self.max_iterations:
+                    return "end"
+                return "continue"
+
+        return "end"
+
+    async def _product_manager_node(self, state: GraphState) -> GraphState:
+        state["product_manager"] = await self._run_agent("product_manager", state)
+        return state
+
+    async def _dba_node(self, state: GraphState) -> GraphState:
+        state["dba"] = await self._run_agent("dba", state)
+        return state
+
+    async def _security_node(self, state: GraphState) -> GraphState:
+        state["security"] = await self._run_agent("security", state)
+        return state
 
     async def _devops_node(self, state: GraphState) -> GraphState:
         devops_result = await self._run_agent("devops", state)
@@ -306,4 +361,9 @@ class Orchestrator:
             "docs": (state.get("docs") or {}).get("output", ""),
             "review": (state.get("reviewer") or {}).get("output", ""),
             "devops": (state.get("devops") or {}).get("output", "") if state.get("devops") else "",
+            "product_manager": (state.get("product_manager") or {}).get("output", "") if state.get("product_manager") else "",
+            "prd_file": (state.get("product_manager") or {}).get("prd_file"),
+            "security_report": (state.get("security") or {}).get("report_file"),
+            "security_passed": _review_passed(state.get("security") or {}),
+            "schema_files": (state.get("dba") or {}).get("files", []),
         }

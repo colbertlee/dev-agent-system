@@ -4,7 +4,39 @@
 
 ---
 
-## v0.10.0 — 安全与沙箱加固（最新）
+## v0.11.0 — 新增角色 Agent（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 将单一“需求→架构→代码”流水线扩展为可插拔的多角色协作矩阵，新增产品经理、安全审查、数据库架构三个角色。
+- 通过 `Orchestrator` 的 `enable_*` 参数按需启用新角色，默认保持原有 6 人工作流程不变，兼容历史调用。
+- 为后续更复杂的业务场景（金融、企业级后台、合规审计）提供角色扩展模板。
+
+### 关键变更
+
+- 新增 `dev_agent_system/agents.py` 三个类：`ProductManagerAgent`、`SecurityAgent`、`DBAAgent`。
+- `prompts.yaml` 新增 `product_manager`、`security`、`dba` 系统提示与输出格式规范。
+- `agent_cards.json` 与 `config/model.yaml` 同步扩展。
+- `Orchestrator` 支持 `enable_product_manager`、`enable_security`、`enable_dba`；工作流可扩展为：
+  `ProductManager → Architect → DBA → Coder → {Tester, Docs} → Reviewer → Security → (DevOps/End)`。
+- `types.py` 的 `GraphState` 增加新字段，确保状态在 LangGraph 中正确传递。
+- 新增 `tests/test_new_agents.py`，41 个测试全部通过。
+
+### 升级注意
+
+- 无破坏性接口变更。`Orchestrator` 新增参数均为可选，默认 `False`。
+- 若显式启用 `enable_security`，Security Agent 未通过时会和 Reviewer 不通过一样触发新一轮迭代。
+- `config/model.yaml` 新增模型配置，建议结合业务场景调整模型温度与模型版本。
+
+### 已知问题
+
+- 无。
+
+---
+
+## v0.10.0 — 安全与沙箱加固
 
 **发布日期**：2026-08-11
 

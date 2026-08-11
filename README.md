@@ -215,6 +215,7 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **状态持久化**：LangGraph checkpoint 自动写入 SQLite，支持断点续跑与 `POST /tasks/{request_id}/resume`。
 - **评估指标**：`eval.py` 跑通 `tests/eval_dataset.json` benchmark，产出 Review 通过率、文件召回率、覆盖率、迭代次数与耗时等多维报告。
 - **DevOps 闭环**：`devops.py` 支持 build → run → health → cleanup 真实 Docker 闭环，默认 dry-run 保障安全。
+- **角色扩展**：默认 6 个核心 Agent（Architect/Coder/Tester/Reviewer/Docs/DevOps），可通过 `Orchestrator` 的 `enable_product_manager`、`enable_security`、`enable_dba` 扩展为产品经理、安全审查、数据库架构等角色。
 
 ## 预发布检查
 

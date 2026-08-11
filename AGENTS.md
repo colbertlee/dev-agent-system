@@ -14,10 +14,13 @@
 
 | Agent | 职责 | 输入 | 输出 | 自治级别 |
 |---|---|---|---|---|
-| Architect | 需求分析、架构设计、技术选型 | 用户自然语言需求 | 架构文档、API 契约、Mermaid 图 | L2 |
-| Coder | 代码实现、自测 | Architect 输出 | 可运行代码、CoderReport JSON | L2 |
+| ProductManager | 需求澄清、PRD、用户故事、验收标准 | 用户自然语言需求 | `prd.md`、用户故事列表 | L2 |
+| Architect | 需求分析、架构设计、技术选型 | 用户自然语言需求 / ProductManager PRD | 架构文档、API 契约、Mermaid 图 | L2 |
+| DBA | 数据库 Schema 与迁移脚本 | Architect 架构设计 | `schema.sql`、迁移脚本 | L2 |
+| Coder | 代码实现、自测 | Architect 输出 / DBA 设计 | 可运行代码、CoderReport JSON | L2 |
 | Tester | 测试生成与执行 | Coder 输出、API 契约 | 测试报告、覆盖率 JSON | L3 |
 | Reviewer | 独立审查代码、测试、文档 | 需求 + 中间产物 | 审查报告 JSON | L2 |
+| Security | 独立安全审查 | 需求 + 代码 + 测试 + 架构 | `security_report.json` | L2 |
 | Docs | 文档同步 | 架构 + 代码 | README、API 文档 | L3 |
 | DevOps | CI/CD、部署脚本 | 代码 | Dockerfile、CI 配置、部署状态 | L2 |
 
@@ -33,7 +36,13 @@
 start
  │
  ▼
+product_manager_node  (可选 enable_product_manager)
+ │
+ ▼
 architect_node
+ │
+ ▼
+dba_node  (可选 enable_dba)
  │
  ▼
 coder_node
@@ -43,6 +52,9 @@ tester_docs_node (Tester / Docs 并行)
  │
  ▼
 reviewer_node
+ │
+ ▼
+security_node  (可选 enable_security)
  │
  ▼
 should_continue? （条件边）
@@ -200,5 +212,5 @@ docker-compose up --build -d
 
 - 接入真实 Redis + ChromaDB 替换内存降级实现。
 - 接入 `langgraph.checkpoint` 实现状态持久化与重放。
-- 增加 Security Agent、Product Manager Agent 等角色。
+- 增加更多垂直角色，如 Performance Agent、Cost Agent、Compliance Agent。
 - 对接 CI/CD 真实环境（GitHub Actions、Docker Registry）。

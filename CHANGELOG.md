@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-08-11
+
+### Added
+
+- 新增角色 Agent（路线图第 8 条）：
+  - `ProductManagerAgent`：把用户需求拆分为 PRD、用户故事、验收标准，输出 `prd.md`。
+  - `SecurityAgent`：独立安全审查，输出 `security_report.json`。
+  - `DBAAgent`：根据架构设计产出数据库 Schema 与迁移 SQL。
+  - `prompts.yaml` 新增 `product_manager`、`security`、`dba` 系统提示。
+  - `agent_cards.json` 新增 3 个 A2A Agent Card。
+  - `config/model.yaml` 锁定 3 个新 Agent 的模型版本。
+  - `Orchestrator` 新增 `enable_product_manager`、`enable_security`、`enable_dba` 参数，可把工作流扩展为：
+    - Product Manager → Architect → DBA → Coder → {Tester, Docs} → Reviewer → Security → (DevOps/End)。
+  - `server.py` 的 `AGENTS` 注册中心加入新角色。
+  - 新增 `tests/test_new_agents.py`，覆盖 3 个新 Agent 的 postprocess 与完整编排流程。
+
+### Changed
+
+- `GraphState` 增加 `product_manager`、`security`、`dba` 字段，支持新增节点状态传递。
+- `ArchitectAgent.build_prompt` 在启用 Product Manager 时自动读取 PRD 作为输入。
+- `CoderAgent.build_prompt` 在启用 DBA 时自动读取数据库设计作为输入。
+
+### Fixed
+
+- 无。
+
+### Model Changes
+
+- `config/model.yaml` 新增 `product_manager`、`security`、`dba` 模型配置。
+
 ## [0.10.0] - 2026-08-11
 
 ### Added

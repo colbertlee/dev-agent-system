@@ -12,9 +12,12 @@ import uvicorn
 from dev_agent_system.agents import (
     ArchitectAgent,
     CoderAgent,
+    DBAAgent,
     DevOpsAgent,
     DocsAgent,
+    ProductManagerAgent,
     ReviewerAgent,
+    SecurityAgent,
     TesterAgent,
 )
 from dev_agent_system.orchestrator import Orchestrator
@@ -29,6 +32,9 @@ AGENTS: Dict[str, Any] = {
     "docs": DocsAgent(),
     "reviewer": ReviewerAgent(),
     "devops": DevOpsAgent(),
+    "product_manager": ProductManagerAgent(),
+    "security": SecurityAgent(),
+    "dba": DBAAgent(),
 }
 
 INTERNAL_API_KEY = "dev-internal-key"  # 生产应通过环境变量配置

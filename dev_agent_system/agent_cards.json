@@ -58,5 +58,35 @@
       {"name": "deployment"}
     ],
     "capabilities": {"streaming": false, "autonomy": "L2", "modalities": ["text", "code"]}
+  },
+  "product_manager": {
+    "name": "Product Manager Agent",
+    "url": "http://localhost:8000/product_manager",
+    "skills": [
+      {"name": "requirement-analysis"},
+      {"name": "prd"},
+      {"name": "user-stories"}
+    ],
+    "capabilities": {"streaming": false, "autonomy": "L2", "modalities": ["text"]}
+  },
+  "security": {
+    "name": "Security Agent",
+    "url": "http://localhost:8000/security",
+    "skills": [
+      {"name": "security-review"},
+      {"name": "vulnerability"},
+      {"name": "compliance"}
+    ],
+    "capabilities": {"streaming": false, "autonomy": "L2", "modalities": ["text", "code"]}
+  },
+  "dba": {
+    "name": "DBA Agent",
+    "url": "http://localhost:8000/dba",
+    "skills": [
+      {"name": "database-design"},
+      {"name": "schema"},
+      {"name": "migration"}
+    ],
+    "capabilities": {"streaming": false, "autonomy": "L2", "modalities": ["text", "code"]}
   }
 }

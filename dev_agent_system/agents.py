@@ -146,8 +146,10 @@ class ArchitectAgent(BaseAgent):
         )
 
     def build_prompt(self, state: Dict[str, Any]) -> str:
+        prd = (state.get("product_manager") or {}).get("output", "")
         return (
             f"用户需求：{state.get('input', '')}\n"
+            f"PRD：{prd[:1500] if prd else '无'}\n"
             f"工作目录：{state.get('workspace', '')}\n"
             "请输出 JSON 格式架构设计：{modules, api_contract, tech_stack, mermaid, notes}"
         )
@@ -171,9 +173,11 @@ class CoderAgent(BaseAgent):
         )
 
     def build_prompt(self, state: Dict[str, Any]) -> str:
+        dba_output = (state.get("dba") or {}).get("output", "")
         return (
             f"用户需求：{state.get('input', '')}\n"
             f"架构设计：{(state.get('architect') or {}).get('output', '')[:2000]}\n"
+            f"数据库设计：{dba_output[:1500] if dba_output else '无'}\n"
             f"工作目录：{state.get('workspace', '')}\n"
             "请生成可运行代码。每个代码块前用注释标明文件路径，例如 '# file: main.py'。\n"
             "最后输出 JSON 状态报告：{status, files_modified, test_result, note}"
@@ -398,6 +402,113 @@ class DevOpsAgent(BaseAgent):
         return {"files": files, "needs_approval": True}
 
 
+class ProductManagerAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            "ProductManager",
+            "产品经理",
+            _load_prompt("product_manager"),
+            model=model,
+            skills=["requirement-analysis", "prd", "user-stories"],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -> str:
+        return (
+            f"用户需求：{state.get('input', '')}\n"
+            "请把需求拆分为 PRD、用户故事和验收标准。"
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
+        workspace = self._workspace(state)
+        report = self._extract_json(output) or {}
+        prd_file = "prd.md"
+        await self._write_file(prd_file, output, workspace)
+        return {
+            "prd_file": prd_file,
+            "user_stories": report.get("user_stories", []),
+            "acceptance_criteria": report.get("acceptance_criteria", []),
+            "parsed": report,
+        }
+
+
+class SecurityAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            "Security",
+            "安全审查",
+            _load_prompt("security"),
+            model=model,
+            skills=["security-review", "vulnerability", "compliance"],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -> str:
+        return (
+            f"原始需求：{state.get('input', '')}\n"
+            f"代码文件：{(state.get('coder') or {}).get('files', [])}\n"
+            f"测试文件：{(state.get('tester') or {}).get('files', [])}\n"
+            f"架构设计：{(state.get('architect') or {}).get('output', '')[:1500]}\n"
+            "请独立进行安全审查，输出 JSON {severity, passed, issues, suggestions}。"
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
+        workspace = self._workspace(state)
+        report = self._extract_json(output)
+        if not report:
+            report = {
+                "severity": "medium",
+                "passed": False,
+                "issues": ["Security Agent 输出无法解析为 JSON"],
+                "suggestions": ["请检查 LLM 输出格式"],
+            }
+        report_file = "security_report.json"
+        await self._write_file(report_file, json.dumps(report, ensure_ascii=False, indent=2), workspace)
+        report["report_file"] = report_file
+        return report
+
+
+class DBAAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            "DBA",
+            "数据库架构",
+            _load_prompt("dba"),
+            model=model,
+            skills=["database-design", "schema", "migration"],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -> str:
+        return (
+            f"原始需求：{state.get('input', '')}\n"
+            f"架构设计：{(state.get('architect') or {}).get('output', '')[:2000]}\n"
+            "请输出数据库 Schema 与迁移 SQL。"
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
+        workspace = self._workspace(state)
+        blocks = self._extract_code_blocks(output)
+        files: List[str] = []
+        for block in blocks:
+            path = block["path"]
+            if not path:
+                continue
+            if not path.endswith(".sql"):
+                path += ".sql"
+            res = await self._write_file(path, block["code"], workspace)
+            if res.get("success"):
+                files.append(path)
+
+        report = self._extract_json(output) or {}
+        if not files:
+            await self._write_file("schema.sql", output, workspace)
+            files.append("schema.sql")
+
+        return {
+            "files": files,
+            "tables": report.get("tables", []),
+            "notes": report.get("notes", ""),
+        }
+
+
 class MemoryAgentFacade:
     """对外的 Memory Agent 接口，供 Orchestrator 调用。"""
 
@@ -430,4 +541,7 @@ _FALLBACK_PROMPTS: Dict[str, str] = {
     "reviewer": "你是 Reviewer Agent，必须独立思考，不信任上游。",
     "docs": "你是 Docs Agent，负责同步文档。",
     "devops": "你是 DevOps Agent，负责 CI/CD 与部署。",
+    "product_manager": "你是 Product Manager Agent，负责需求分析与 PRD。",
+    "security": "你是 Security Agent，负责独立安全审查。",
+    "dba": "你是 DBA Agent，负责数据库 Schema 与迁移。",
 }
