@@ -18,6 +18,7 @@ from dev_agent_system.config import Settings
 from dev_agent_system.llm import LLMClient
 from dev_agent_system.memory import MemoryAgent
 from dev_agent_system.mcp import MCPToolRegistry, ToolSandbox
+from dev_agent_system.router import ModelRouter
 from dev_agent_system.types import AgentCard, AgentSkill
 
 
@@ -37,6 +38,7 @@ class BaseAgent:
         self.system_prompt = system_prompt
         self.model = model or Settings.agent_model(name.lower())
         self.skills = skills or [role]
+        self.router = ModelRouter()
         self.llm = LLMClient(model=self.model)
         self.memory = MemoryAgent()
         self.tools = MCPToolRegistry()
@@ -98,7 +100,8 @@ class BaseAgent:
         prompt = self.build_prompt(state)
         full_prompt = f"相关记忆：\n{memory_text}\n\n{prompt}" if memory_text else prompt
 
-        output = self.llm.chat(self.system_prompt, full_prompt)
+        resolved_model, kwargs = self.router.resolve(self.name, full_prompt)
+        output = self.llm.chat(self.system_prompt, full_prompt, model=resolved_model, **kwargs)
         self.memory.remember("last_output", output, session_id=session, layer="short", ttl=3600)
 
         result: Dict[str, Any] = {
@@ -106,7 +109,8 @@ class BaseAgent:
             "role": self.role,
             "output": output,
             "workspace": str(workspace),
-            "model": self.model,
+            "model": resolved_model,
+            "llm_kwargs": kwargs,
         }
         extra = await self.postprocess(output, state)
         result.update(extra)

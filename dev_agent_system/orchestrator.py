@@ -2,9 +2,10 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import uuid
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, AsyncIterator, Dict, Optional
 
 from langgraph.graph import END, StateGraph
 
@@ -17,8 +18,8 @@ from dev_agent_system.agents import (
     ReviewerAgent,
     TesterAgent,
 )
-from dev_agent_system.memory import MemoryAgent
 from dev_agent_system.config import Settings
+from dev_agent_system.memory import MemoryAgent
 from dev_agent_system.types import GraphState
 
 
@@ -50,7 +51,7 @@ class IdempotencyGuard:
 
 
 class Orchestrator:
-    """LangGraph 状态图编排器：Architect → {Coder,Tester,Docs} 并行 → Reviewer → 条件迭代。"""
+    """LangGraph 状态图编排器：Architect → Coder → {Tester, Docs} 并行 → Reviewer → 条件迭代。"""
 
     def __init__(self, max_iterations: int = 10, enable_devops: bool = False):
         self.max_iterations = max_iterations
@@ -67,13 +68,10 @@ class Orchestrator:
             "memory": MemoryAgentFacade(),
         }
 
-    async def run(self, requirement: str, request_id: Optional[str] = None) -> Dict[str, Any]:
+    def _build_state(self, requirement: str, request_id: Optional[str] = None) -> GraphState:
         request_id = request_id or str(uuid.uuid4())
-        if self.guard.is_duplicate(request_id):
-            return {"request_id": request_id, "status": "skipped", "reason": "duplicate"}
-
         workspace = str(Settings.workspace_dir() / request_id)
-        state: GraphState = {
+        return {
             "request_id": request_id,
             "input": requirement,
             "workspace": workspace,
@@ -83,11 +81,8 @@ class Orchestrator:
             "history": [],
         }
 
-        # 注入工作记忆
-        state["memory"] = self.agents["memory"].run(state)
-
-        # 构建 LangGraph StateGraph
-        # 流程：Architect -> Coder -> {Tester, Docs} 并行 -> Reviewer -> 条件迭代
+    def _build_graph(self) -> StateGraph:
+        """构建并返回编译后的 LangGraph。"""
         workflow = StateGraph(GraphState)
         workflow.add_node("architect_node", self._architect_node)
         workflow.add_node("coder_node", self._coder_node)
@@ -114,12 +109,66 @@ class Orchestrator:
                 {"continue": "architect_node", "end": END},
             )
 
-        graph = workflow.compile()
+        return workflow.compile()
+
+    async def run(self, requirement: str, request_id: Optional[str] = None) -> Dict[str, Any]:
+        state = self._build_state(requirement, request_id)
+        if self.guard.is_duplicate(state["request_id"]):
+            return {"request_id": state["request_id"], "status": "skipped", "reason": "duplicate"}
+
+        # 注入工作记忆
+        state["memory"] = self.agents["memory"].run(state)
+
+        graph = self._build_graph()
         config = {"recursion_limit": max(50, self.max_iterations * 5 + 10)}
         final_state = await graph.ainvoke(state, config=config)
         final_state["finished_at"] = datetime.now().isoformat()
         final_state["artifacts"] = self._collect_artifacts(final_state)
         return final_state
+
+    async def run_stream(
+        self, requirement: str, request_id: Optional[str] = None
+    ) -> AsyncIterator[str]:
+        """流式执行编排，SSE 格式输出每个节点的事件。"""
+        state = self._build_state(requirement, request_id)
+        if self.guard.is_duplicate(state["request_id"]):
+            yield f"data: {json.dumps({'event': 'duplicate', 'request_id': state['request_id']}, ensure_ascii=False)}\n\n"
+            return
+
+        state["memory"] = self.agents["memory"].run(state)
+        graph = self._build_graph()
+        config = {"recursion_limit": max(50, self.max_iterations * 5 + 10)}
+
+        yield f"data: {json.dumps({'event': 'start', 'request_id': state['request_id'], 'workspace': state['workspace']}, ensure_ascii=False)}\n\n"
+
+        # LangGraph 0.2.0 支持 astream_events，失败则降级到普通 ainvoke
+        try:
+            async for event in graph.astream_events(state, config, version="v1"):
+                kind = event.get("event")
+                name = event.get("name", "")
+                if kind in ("on_node_start", "on_node_end"):
+                    payload = {
+                        "event": kind,
+                        "node": name,
+                        "request_id": state["request_id"],
+                    }
+                    if kind == "on_node_end" and "data" in event and "state" in event["data"]:
+                        node_state = event["data"]["state"]
+                        payload["iteration"] = node_state.get("iteration", 0)
+                    yield f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
+        except Exception as exc:  # noqa: BLE001
+            # 降级：直接执行并输出结果
+            final_state = await graph.ainvoke(state, config=config)
+            yield f"data: {json.dumps({'event': 'fallback', 'error': str(exc), 'status': final_state.get('status')}, ensure_ascii=False)}\n\n"
+            final_state["finished_at"] = datetime.now().isoformat()
+            final_state["artifacts"] = self._collect_artifacts(final_state)
+            yield f"data: {json.dumps({'event': 'final', 'request_id': state['request_id'], **final_state}, ensure_ascii=False)}\n\n"
+            return
+
+        final_state = await graph.ainvoke(state, config=config)
+        final_state["finished_at"] = datetime.now().isoformat()
+        final_state["artifacts"] = self._collect_artifacts(final_state)
+        yield f"data: {json.dumps({'event': 'final', 'status': final_state.get('status'), 'request_id': state['request_id'], 'workspace': state['workspace']}, ensure_ascii=False)}\n\n"
 
     async def _architect_node(self, state: GraphState) -> GraphState:
         state["iteration"] = state.get("iteration", 0) + 1

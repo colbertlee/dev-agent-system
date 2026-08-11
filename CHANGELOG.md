@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-08-11
+
+### Added
+
+- 模型路由 `dev_agent_system/router.py`：根据 Agent 与提示长度自适应选择模型版本和温度。
+- LLM 流式生成：`LLMClient.stream` / `LLMClient.astream` 支持 OpenAI 风格流式输出。
+- 编排流式端点：
+  - `POST /orchestrate/stream`：以 SSE 实时推送节点开始/结束/最终结果。
+  - `POST /{agent}/stream`：单个 Agent 的 token 级 SSE 输出。
+  - `JSONRPC` `method=orchestrate_stream` 同样支持 SSE。
+- `LLMClient.chat` 支持 `model/temperature/max_tokens` 运行时覆盖。
+- `BaseAgent` 集成 `ModelRouter`，每次调用自动选择模型参数。
+
+### Changed
+
+- `server.py` 路由扩展：新增流式相关端点，保持 `/orchestrate` 与 `/rpc` 兼容。
+- `LLMClient` 在无 `LLM_API_KEY` 时仍然生成 `[MOCK ...]` 降级输出，但保留覆盖参数接口。
+
+### Fixed
+
+- `LLMClient.chat` 现在能正确把 `temperature` 等生成参数传给后端。
+
+### Security
+
+- 流式输出仍然通过 `LLMClient._mask` 做 PII 脱敏。
+
+### Model Changes
+
+- 无
+
 ## [0.3.0] - 2026-08-11
 
 ### Added

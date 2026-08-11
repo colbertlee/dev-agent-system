@@ -1,4 +1,4 @@
-"""FastAPI A2A 网关：统一暴露所有 Agent Card 与任务端点。"""
+"""FastAPI A2A 网关：统一暴露所有 Agent Card 与任务端点，支持流式编排。"""
 from __future__ import annotations
 
 import argparse
@@ -56,6 +56,22 @@ for _name, _agent in AGENTS.items():
         def _status(task_id: str):
             return {"task_id": task_id, "status": "completed"}
 
+        @app.post(f"/{name}/stream")
+        async def _stream(task: Task):
+            """单个 Agent 的流式输出：逐字返回 LLM 生成的 token。"""
+            state = {"input": task.description, "request_id": task.request_id or f"stream-{name}"}
+            from dev_agent_system.llm import LLMClient
+
+            llm = LLMClient(model=agent.model)
+            prompt = agent.build_prompt(state)
+
+            async def event_generator():
+                async for token in llm.astream(agent.system_prompt, prompt):
+                    yield f"data: {token}\n\n"
+                yield "data: [DONE]\n\n"
+
+            return StreamingResponse(event_generator(), media_type="text/event-stream")
+
     _register_agent_routes()
 
 
@@ -73,6 +89,21 @@ async def orchestrate(task: Task, internal_key: Optional[str] = Header(None, ali
     return JSONResponse(content=result)
 
 
+@app.post("/orchestrate/stream")
+async def orchestrate_stream(
+    task: Task, internal_key: Optional[str] = Header(None, alias="X-Internal-API-Key")
+):
+    _auth(internal_key)
+    max_iter = task.max_iterations or 10
+    orch = Orchestrator(max_iterations=max_iter)
+
+    async def event_generator():
+        async for chunk in orch.run_stream(task.description, request_id=task.request_id):
+            yield chunk
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
 @app.post("/rpc")
 async def rpc(req: JSONRPCRequest, internal_key: Optional[str] = Header(None, alias="X-Internal-API-Key")):
     _auth(internal_key)
@@ -83,6 +114,16 @@ async def rpc(req: JSONRPCRequest, internal_key: Optional[str] = Header(None, al
         orch = Orchestrator(max_iterations=max_iter)
         result = await orch.run(params.get("description", ""), request_id=req.id)
         return JSONRPCResponse(result=result, id=req.id)
+    if method == "orchestrate_stream":
+        params = req.params or {}
+        max_iter = params.get("max_iterations", 10)
+        orch = Orchestrator(max_iterations=max_iter)
+
+        async def event_generator():
+            async for chunk in orch.run_stream(params.get("description", ""), request_id=req.id):
+                yield chunk
+
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
     return JSONRPCResponse(result={"error": "unknown method"}, id=req.id)
 
 

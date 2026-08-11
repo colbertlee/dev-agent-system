@@ -97,7 +97,8 @@ docker-compose logs -f
 │   ├── main.py          # CLI 入口
 │   ├── config.py        # 统一配置加载（.env + YAML）
 │   ├── types.py         # Pydantic 模型
-│   ├── llm.py           # LLM 客户端
+│   ├── llm.py           # LLM 客户端（含流式输出）
+│   ├── router.py        # 模型路由
 │   ├── mcp.py           # MCP 工具沙箱
 │   ├── memory.py        # 三层记忆
 │   ├── prompts.yaml     # System Prompt 版本化
@@ -165,6 +166,8 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **幂等**：所有请求携带 `request_id`，A2A 服务端去重。
 - **安全**：LLM 生成代码不直接在宿主机执行，沙箱白名单+超时。
 - **产物落地**：Coder 写入 `main.py`、Tester 写入 `test_*.py` 并执行 `pytest`、Docs 写入 `README.md/API.md`、Reviewer 写入 `review_report.json`，全部落在 `workspace/<request_id>/` 下。
+- **模型路由**：`config/model.yaml` 配置各 Agent 的模型版本与温度；`router.py` 支持按提示长度自适应切换大模型。
+- **流式输出**：`POST /orchestrate/stream` 与 `POST /{agent}/stream` 返回 `text/event-stream` 实时推送进度。
 
 ## 预发布检查
 
