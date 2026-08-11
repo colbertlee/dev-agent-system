@@ -93,7 +93,7 @@ should_continue? （条件边）
 | Agent Card | `dev_agent_system/agent_cards.json` | Capability 变更时更新 |
 | 模型版本 | `config/model.yaml` | 锁定到具体版本号，禁止 `latest` |
 | MCP 配置 | `config/mcp.yaml` | 工具增删时更新 |
-| 评估数据集 | `tests/eval_dataset.json` | 新增用例时更新 |
+| 评估数据集 | `tests/eval_dataset.json` | 当前 15 条，新增用例时更新 |
 | 运行环境 | `requirements.txt` | 锁定依赖版本 |
 
 ### 5.2 语义化版本规范
@@ -143,7 +143,7 @@ bash scripts/release.sh patch
 |---|---|---|
 | 单元测试 | Agent 输入输出、沙箱规则、幂等 | `python -m pytest tests -q` |
 | 集成测试 | 完整 DAG 流程 | `python -m dev_agent_system.main "需求"` |
-| 评估数据集 | 10 条真实需求 | 查看 `tests/eval_dataset.json` |
+| 评估数据集 | 15 条真实需求 | 查看 `tests/eval_dataset.json` |
 | 预发布检查 | pytest + model.yaml + CHANGELOG + ChromaDB 备份 | `bash pre-release-check.sh` |
 
 Mock LLM：测试通过 monkeypatch `LLMClient.chat` 实现，无需真实 API Key。
@@ -214,3 +214,4 @@ docker-compose up --build -d
 - 接入 `langgraph.checkpoint` 实现状态持久化与重放。
 - 增加更多垂直角色，如 Performance Agent、Cost Agent、Compliance Agent。
 - 对接 CI/CD 真实环境（GitHub Actions、Docker Registry）。
+- 扩充 `tests/eval_dataset.json` 并接入真实 LLM 跑分，利用 `RegressionChecker` 做持续回归检测。

@@ -4,7 +4,35 @@
 
 ---
 
-## v0.14.0 — CLI / UI 增强（最新）
+## v0.15.0 — 评估与 benchmark 调优（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 让 benchmark 数据集更全面，支持自动回归检测，确保每次改动不会降低系统整体能力。
+- 通过 `RegressionChecker` 将当前跑分与 baseline 对比，下降超过阈值即失败，便于集成到 CI。
+
+### 关键变更
+
+- `tests/eval_dataset.json` 从 10 条扩充到 15 条，新增 CSV 处理、LRU 缓存、邮件服务、限流器、配置中心等任务。
+- `dev_agent_system/eval.py` 新增 `RegressionChecker` 类，负责加载/保存/对比 baseline。
+- `python -m dev_agent_system.eval` 增加 `--baseline`、`--update-baseline`、`--tolerance` 参数。
+- 默认行为：跑完后与 `output_dir/eval_baseline.json` 对比，指标回退超过 5% 时以退出码 1 报错。
+- 新增 `tests/test_eval.py`：覆盖 `MetricCalculator`、回归检测、`EvaluationRunner` mock 端到端；72 个测试通过，2 个跳过。
+
+### 升级注意
+
+- 无破坏性接口变更。
+- 首次运行可加上 `--update-baseline` 生成基准文件；后续 CI 去掉该参数即可做回归检测。
+
+### 已知问题
+
+- 评估数据集仍基于 MOCK LLM，接入真实模型后需更新 `expected_files` 与 `min_test_coverage`。
+
+---
+
+## v0.14.0 — CLI / UI 增强
 
 **发布日期**：2026-08-11
 

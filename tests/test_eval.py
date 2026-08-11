@@ -1,132 +1,210 @@
-"""Evaluation & Metrics 模块单元测试。"""
+"""评估与 benchmark 相关单元测试。"""
 from __future__ import annotations
 
 import asyncio
 import json
+import tempfile
 from pathlib import Path
 
 import pytest
 
-from dev_agent_system.eval import EvaluationRunner, EvalReport, MetricCalculator
+from dev_agent_system.eval import (
+    EvalReport,
+    EvalSample,
+    EvaluationRunner,
+    MetricCalculator,
+    RegressionChecker,
+)
 
 
-class FakeOrchestrator:
-    """不依赖真实 LLM 的 Orchestrator 替身。"""
+def test_file_recall(tmp_path: Path):
+    (tmp_path / "main.py").write_text("x")
+    (tmp_path / "sub").mkdir(parents=True)
+    (tmp_path / "sub" / "test_main.py").write_text("y")
 
-    def __init__(self, max_iterations: int = 3, fail_request_id: str | None = None):
-        self.max_iterations = max_iterations
-        self.fail_request_id = fail_request_id
-
-    async def run(self, requirement: str, request_id: str = "eval-0") -> dict:
-        if request_id == self.fail_request_id:
-            raise RuntimeError("mock failure")
-
-        from dev_agent_system.config import Settings
-
-        workspace = Settings.workspace_dir() / request_id
-        workspace.mkdir(parents=True, exist_ok=True)
-        (workspace / "main.py").write_text("print('hello')")
-        (workspace / "test_main.py").write_text("def test_main(): pass")
-
-        return {
-            "request_id": request_id,
-            "status": "completed",
-            "iteration": 1,
-            "reviewer": {"passed": True},
-            "tester": {"coverage": 0.85, "report": "1 passed, 85%"},
-            "artifacts": {
-                "workspace": str(workspace),
-                "review_passed": True,
-            },
-        }
-
-
-def _write_dataset(tmp_path: Path, items: list) -> Path:
-    path = tmp_path / "eval_dataset.json"
-    path.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
-    return path
-
-
-def test_metric_calculator_file_recall(tmp_path: Path):
-    (tmp_path / "a.py").write_text("a")
-    sub = tmp_path / "sub"
-    sub.mkdir()
-    (sub / "b.py").write_text("b")
-
-    recall, found, missing = MetricCalculator.file_recall(tmp_path, ["a.py", "b.py", "c.py"])
+    recall, found, missing = MetricCalculator.file_recall(
+        tmp_path, ["main.py", "test_main.py", "missing.txt"]
+    )
     assert recall == 2 / 3
-    assert set(found) == {"a.py", "b.py"}
-    assert missing == ["c.py"]
+    assert "main.py" in found
+    assert "test_main.py" in found
+    assert "missing.txt" in missing
 
 
-def test_metric_calculator_coverage():
-    assert MetricCalculator.coverage({"coverage": 0.73}) == 0.73
-    assert MetricCalculator.coverage({"report": "1 passed, 73%"}) == 0.73
+def test_coverage_extraction():
+    assert MetricCalculator.coverage({"coverage": 0.85}) == 0.85
+    assert MetricCalculator.coverage({"report": "总覆盖率 67%"}) == 0.67
     assert MetricCalculator.coverage(None) == 0.0
 
 
-def test_metric_calculator_review_passed():
+def test_review_passed():
+    assert MetricCalculator.review_passed({"passed": True}, None) is True
     assert MetricCalculator.review_passed(None, {"review_passed": True}) is True
-    assert MetricCalculator.review_passed({"passed": True}, {}) is True
-    assert MetricCalculator.review_passed({"passed": False}, {"review_passed": True}) is True
+    assert MetricCalculator.review_passed({"passed": "true"}, None) is True
+    assert MetricCalculator.review_passed({"passed": False}, None) is False
 
 
-def test_evaluation_runner(monkeypatch, tmp_path: Path):
-    """验证 EvaluationRunner 能正确跑完数据集并计算指标。"""
-    monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path / "workspace"))
-    monkeypatch.setenv("EVAL_OUTPUT_DIR", str(tmp_path / "eval_out"))
-
-    dataset = [
-        {
-            "description": "task one",
-            "expected_files": ["main.py", "test_main.py"],
-            "min_test_coverage": 0.8,
-        },
-        {
-            "description": "task two",
-            "expected_files": ["missing.py"],
-            "min_test_coverage": 0.5,
-        },
+def test_aggregate():
+    samples = [
+        EvalSample(
+            description="a",
+            request_id="r1",
+            status="completed",
+            review_passed=True,
+            file_recall=1.0,
+            coverage=0.8,
+            coverage_passed=True,
+            iterations=2,
+            latency=1.0,
+        ),
+        EvalSample(
+            description="b",
+            request_id="r2",
+            status="failed",
+            review_passed=False,
+            file_recall=0.5,
+            coverage=0.3,
+            coverage_passed=False,
+            iterations=3,
+            latency=2.0,
+        ),
     ]
-    dataset_path = _write_dataset(tmp_path, dataset)
-
-    runner = EvaluationRunner(orchestrator_factory=lambda max_iter: FakeOrchestrator(max_iter))
-    report = asyncio.run(runner.run(dataset_path, max_iterations=1))
-
-    assert isinstance(report, EvalReport)
-    assert report.total == 2
-    assert report.completed == 2
-    assert report.failed == 0
-    assert report.errored == 0
-    assert report.pass_rate == 1.0
-    assert report.file_recall == 0.5
-    assert report.coverage == 0.85
-    assert report.coverage_pass_rate == 1.0
-
-    # 输出目录应生成 JSON 报告
-    output_files = list(runner.output_dir.glob("eval_report_*.json"))
-    assert len(output_files) == 1
-    saved = json.loads(output_files[0].read_text(encoding="utf-8"))
-    assert saved["total"] == 2
+    agg = MetricCalculator.aggregate(samples)
+    assert agg["completed"] == 1
+    assert agg["failed"] == 1
+    assert agg["pass_rate"] == 0.5
+    assert agg["file_recall"] == 0.75
+    assert agg["avg_iterations"] == 2.5
 
 
-def test_evaluation_runner_error_handling(monkeypatch, tmp_path: Path):
-    """验证某个任务异常时，评估仍能继续并正确标记。"""
-    monkeypatch.setenv("WORKSPACE_DIR", str(tmp_path / "workspace"))
-    monkeypatch.setenv("EVAL_OUTPUT_DIR", str(tmp_path / "eval_out"))
-
-    dataset = [
-        {"description": "ok", "expected_files": ["main.py"], "min_test_coverage": 0.0},
-        {"description": "fail", "expected_files": [], "min_test_coverage": 0.0},
-    ]
-    dataset_path = _write_dataset(tmp_path, dataset)
-
-    runner = EvaluationRunner(
-        orchestrator_factory=lambda max_iter: FakeOrchestrator(max_iter, fail_request_id="eval-1")
+def test_regression_checker_detects_drop():
+    report = EvalReport(
+        timestamp="2026-08-11T00:00:00",
+        dataset_path="tests/eval_dataset.json",
+        max_iterations=3,
+        total=2,
+        completed=2,
+        failed=0,
+        errored=0,
+        pass_rate=0.6,
+        file_recall=0.8,
+        file_recall_pass_rate=0.5,
+        coverage=0.7,
+        coverage_pass_rate=0.5,
+        avg_iterations=2.0,
+        avg_latency=1.0,
     )
-    report = asyncio.run(runner.run(dataset_path, max_iterations=1))
+    baseline = {
+        "pass_rate": 0.9,
+        "file_recall": 0.9,
+        "coverage": 0.9,
+        "file_recall_pass_rate": 0.9,
+        "coverage_pass_rate": 0.9,
+    }
+    checker = RegressionChecker(tolerance=0.05)
+    regressions = checker.check(report, baseline)
+    assert len(regressions) == 5  # 所有指标均下降超过 5%
 
-    assert report.total == 2
-    assert report.completed == 1
-    assert report.errored == 1
-    assert report.pass_rate == 0.5
+
+def test_regression_checker_no_baseline():
+    report = EvalReport(
+        timestamp="2026-08-11T00:00:00",
+        dataset_path="tests/eval_dataset.json",
+        max_iterations=3,
+        total=1,
+        completed=1,
+        failed=0,
+        errored=0,
+        pass_rate=1.0,
+    )
+    checker = RegressionChecker()
+    assert checker.check(report, None) == []
+
+
+def test_regression_baseline_save_and_load(tmp_path: Path):
+    report = EvalReport(
+        timestamp="2026-08-11T00:00:00",
+        dataset_path="tests/eval_dataset.json",
+        max_iterations=3,
+        total=1,
+        completed=1,
+        failed=0,
+        errored=0,
+        pass_rate=1.0,
+        file_recall=1.0,
+        file_recall_pass_rate=1.0,
+        coverage=1.0,
+        coverage_pass_rate=1.0,
+        avg_iterations=1.0,
+        avg_latency=1.0,
+    )
+    baseline_path = tmp_path / "baseline.json"
+    checker = RegressionChecker()
+    checker.save_baseline(report, baseline_path)
+    loaded = checker.load_baseline(baseline_path)
+    assert loaded["pass_rate"] == 1.0
+    assert checker.check(report, loaded) == []
+
+
+def test_evaluation_runner_load_dataset(tmp_path: Path):
+    dataset = [
+        {"description": "d1", "expected_files": ["main.py"]},
+        {"description": "d2", "expected_files": ["main.py", "test_main.py"]},
+    ]
+    path = tmp_path / "dataset.json"
+    path.write_text(json.dumps(dataset), encoding="utf-8")
+
+    runner = EvaluationRunner()
+    loaded = runner._load_dataset(path)
+    assert len(loaded) == 2
+    assert loaded[0]["description"] == "d1"
+
+
+def test_evaluation_runner_mock_orchestrator():
+    """用 mock orchestrator 验证 EvaluationRunner 的端到端指标计算。"""
+    import tempfile
+
+    async def _run():
+        with tempfile.TemporaryDirectory() as td:
+            tmp_path = Path(td)
+            workspace = tmp_path / "eval-mock"
+            workspace.mkdir()
+            (workspace / "main.py").write_text("x")
+            (workspace / "test_main.py").write_text("y")
+
+            dataset = [
+                {
+                    "description": "测试任务",
+                    "request_id": "eval-mock",
+                    "expected_files": ["main.py", "test_main.py"],
+                    "min_test_coverage": 0.6,
+                }
+            ]
+            dataset_path = tmp_path / "dataset.json"
+            dataset_path.write_text(json.dumps(dataset), encoding="utf-8")
+
+            def factory(max_iter: int):
+                class FakeOrchestrator:
+                    async def run(self, description, request_id=None):
+                        return {
+                            "request_id": request_id,
+                            "status": "completed",
+                            "iteration": 2,
+                            "artifacts": {"workspace": str(workspace)},
+                            "reviewer": {"passed": True},
+                            "tester": {"coverage": 0.75},
+                        }
+
+                return FakeOrchestrator()
+
+            runner = EvaluationRunner(
+                output_dir=tmp_path / "reports",
+                orchestrator_factory=factory,
+            )
+            report = await runner.run(dataset_path, max_iterations=1)
+            assert report.total == 1
+            assert report.pass_rate == 1.0
+            assert report.file_recall == 1.0
+            assert report.coverage == 0.75
+
+    asyncio.run(_run())

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.0] - 2026-08-11
+
+### Added
+
+- 评估与 benchmark 调优（路线图第 4 条）：
+  - `tests/eval_dataset.json` 从 10 条扩充到 15 条，覆盖 CSV 处理、LRU 缓存、邮件服务、限流器、配置中心等场景。
+  - `dev_agent_system/eval.py` 新增 `RegressionChecker`：支持 `--baseline`、`--update-baseline`、`--tolerance`，自动检测指标回退。
+  - `python -m dev_agent_system.eval` 默认与 `output_dir/eval_baseline.json` 对比，回退超过阈值时退出码 1。
+  - 新增 `tests/test_eval.py`：覆盖 `MetricCalculator`、文件召回、覆盖率提取、回归检测与 `EvaluationRunner` mock 端到端。
+
+### Changed
+
+- `README.md` 更新 eval 使用说明，增加 `--update-baseline` 与回归检测示例。
+
+### Model Changes
+
+- 无。
+
 ## [0.14.0] - 2026-08-11
 
 ### Added

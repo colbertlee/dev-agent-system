@@ -59,6 +59,12 @@ pytest -q
 # 运行评估 benchmark（默认使用 tests/eval_dataset.json）
 python -m dev_agent_system.eval --max-iter 3 --output-dir eval_results
 
+# 首次跑 benchmark 并保存 baseline
+python -m dev_agent_system.eval --max-iter 3 --output-dir eval_results --update-baseline
+
+# 后续做回归检测（指标下降超过 5% 会返回非 0 退出码）
+python -m dev_agent_system.eval --max-iter 3 --output-dir eval_results --baseline eval_results/eval_baseline.json
+
 # 运行完整工作流并启用 DevOps 闭环（dry-run，不实际部署）
 python -m dev_agent_system.main "开发一个加法模块" --max-iter 1 --devops
 
@@ -165,7 +171,7 @@ docker-compose logs -f
 │   ├── model.yaml       # 模型版本锁定（无 latest）
 │   └── mcp.yaml         # MCP Server 配置
 ├── tests/
-│   ├── eval_dataset.json    # 10 条评估数据集
+│   ├── eval_dataset.json    # 15 条评估数据集
 │   ├── test_flow.py         # 集成测试
 │   ├── test_checkpoint.py   # checkpoint 持久化测试
 │   ├── test_memory.py       # 记忆后端测试
@@ -248,7 +254,7 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **记忆后端**：支持 Redis / ChromaDB / SQLite 三档记忆，通过 `MEMORY_BACKEND` 切换；自动降级确保可用性。
 - **上下文压缩**：超过 `CONTEXT_COMPRESS_THRESHOLD` 时自动截断中间文本，保护 LLM 上下文窗口。
 - **状态持久化**：LangGraph checkpoint 自动写入 SQLite，支持断点续跑与 `POST /tasks/{request_id}/resume`。
-- **评估指标**：`eval.py` 跑通 `tests/eval_dataset.json` benchmark，产出 Review 通过率、文件召回率、覆盖率、迭代次数与耗时等多维报告。
+- **评估指标**：`eval.py` 跑通 `tests/eval_dataset.json` benchmark（15 条任务），产出 Review 通过率、文件召回率、覆盖率、迭代次数与耗时等多维报告，支持 `--update-baseline` 与自动回归检测。
 - **DevOps 闭环**：`devops.py` 支持 build → run → health → cleanup 真实 Docker 闭环，默认 dry-run 保障安全。
 - **角色扩展**：默认 6 个核心 Agent（Architect/Coder/Tester/Reviewer/Docs/DevOps），可通过 `Orchestrator` 的 `enable_product_manager`、`enable_security`、`enable_dba` 扩展为产品经理、安全审查、数据库架构等角色。
 - **可观测性**：`metrics.py` + `telemetry.py` 提供 Prometheus 格式指标、OpenTelemetry 风格 Span 与结构化日志；`server.py` 暴露 `/metrics` 与 `/health` 端点；`tui.py` 与 `dashboard.py` 提供终端/Web 实时进度面板。

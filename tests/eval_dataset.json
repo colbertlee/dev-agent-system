@@ -58,5 +58,35 @@
     "expected_files": ["billing.py", "tenant.py", "payments.py", "test_billing.py"],
     "min_test_coverage": 0.8,
     "comment": "高级：复杂业务逻辑、资金相关，必须高覆盖与严格测试。"
+  },
+  {
+    "description": "实现一个命令行 CSV 数据处理工具：读取 CSV 文件，支持按列过滤、聚合统计（sum/avg/max）并输出到新 CSV。",
+    "expected_files": ["csv_tool.py", "test_csv_tool.py"],
+    "min_test_coverage": 0.6,
+    "comment": "入门级：文件 IO 与基础数据处理。"
+  },
+  {
+    "description": "开发一个内存 LRU 缓存库：支持 get/put、过期时间、最大容量淘汰与线程安全，附带单元测试。",
+    "expected_files": ["lru_cache.py", "test_lru_cache.py"],
+    "min_test_coverage": 0.75,
+    "comment": "初级：数据结构与并发基础。"
+  },
+  {
+    "description": "构建一个基于 SMTP 的邮件发送服务：支持 HTML/文本模板、附件、批量发送与重试机制。",
+    "expected_files": ["mailer.py", "test_mailer.py"],
+    "min_test_coverage": 0.65,
+    "comment": "中级：外部服务 Mock 与错误重试。"
+  },
+  {
+    "description": "实现一个分布式限流器：基于滑动窗口算法，支持内存与 Redis 两种后端，提供 FastAPI 中间件示例。",
+    "expected_files": ["rate_limiter.py", "middleware.py", "test_rate_limiter.py"],
+    "min_test_coverage": 0.7,
+    "comment": "中高级：算法与中间件。"
+  },
+  {
+    "description": "设计一个配置中心客户端：支持从环境变量、YAML 文件与远程 HTTP 接口加载配置，并提供热更新回调接口。",
+    "expected_files": ["config_client.py", "test_config_client.py"],
+    "min_test_coverage": 0.7,
+    "comment": "中级：配置管理与可测试性。"
   }
 ]

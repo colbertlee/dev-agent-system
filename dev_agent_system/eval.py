@@ -255,6 +255,48 @@ class EvaluationRunner:
         return "\n".join(lines)
 
 
+class RegressionChecker:
+    """与基准报告对比，检测指标回退。"""
+
+    METRICS: List[str] = [
+        "pass_rate",
+        "file_recall",
+        "file_recall_pass_rate",
+        "coverage",
+        "coverage_pass_rate",
+    ]
+
+    def __init__(self, tolerance: float = 0.05):
+        self.tolerance = tolerance
+
+    def load_baseline(self, path: Path) -> Optional[Dict[str, Any]]:
+        if not path.exists():
+            return None
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+
+    def check(self, report: EvalReport, baseline: Optional[Dict[str, Any]]) -> List[str]:
+        """返回所有指标回退的列表。baseline 为 None 时返回空列表。"""
+        regressions: List[str] = []
+        if not baseline:
+            return regressions
+        for key in self.METRICS:
+            current = float(getattr(report, key, 0.0))
+            prev = float(baseline.get(key, current))
+            if current < prev - self.tolerance:
+                regressions.append(
+                    f"{key}: {prev:.4f} -> {current:.4f} (下降超过 {self.tolerance:.1%})"
+                )
+        return regressions
+
+    def save_baseline(self, report: EvalReport, path: Path) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        baseline = {key: round(float(getattr(report, key, 0.0)), 4) for key in self.METRICS}
+        baseline["timestamp"] = report.timestamp
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(baseline, f, ensure_ascii=False, indent=2)
+
+
 def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="多 Agent 系统评估 benchmark")
     parser.add_argument("--dataset", default="tests/eval_dataset.json", help="评估数据集 JSON 路径")
@@ -265,6 +307,23 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         type=int,
         default=1,
         help="并发任务数（默认 1，避免 SQLite checkpoint 锁）",
+    )
+    parser.add_argument(
+        "--baseline",
+        type=Path,
+        default=None,
+        help="基准报告 JSON 路径（默认 output_dir/eval_baseline.json）",
+    )
+    parser.add_argument(
+        "--update-baseline",
+        action="store_true",
+        help="将本次结果保存为新的 baseline",
+    )
+    parser.add_argument(
+        "--tolerance",
+        type=float,
+        default=0.05,
+        help="允许指标下降的最大容忍度（默认 0.05 = 5%）",
     )
     return parser.parse_args(argv)
 
@@ -279,11 +338,32 @@ async def main_async(argv: Optional[List[str]] = None) -> EvalReport:
         f"coverage={report.coverage:.2%}"
     )
     print(f"报告已保存：{runner.output_dir}")
+
+    baseline_path = args.baseline or (runner.output_dir / "eval_baseline.json")
+    checker = RegressionChecker(tolerance=args.tolerance)
+
+    if args.update_baseline:
+        checker.save_baseline(report, baseline_path)
+        print(f"已更新 baseline：{baseline_path}")
+    else:
+        baseline = checker.load_baseline(baseline_path)
+        regressions = checker.check(report, baseline)
+        if regressions:
+            print("检测到指标回退：")
+            for r in regressions:
+                print(f"  - {r}")
+            raise SystemExit(1)
+        elif baseline:
+            print("未检测到指标回退，基准通过。")
+
     return report
 
 
 def main(argv: Optional[List[str]] = None) -> None:
-    asyncio.run(main_async(argv))
+    try:
+        asyncio.run(main_async(argv))
+    except SystemExit as exc:
+        raise
 
 
 if __name__ == "__main__":
