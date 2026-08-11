@@ -4,7 +4,36 @@
 
 ---
 
-## v0.6.0 — 文档生态与运维可观测性（最新）
+## v0.7.0 — 状态持久化与断点续跑（最新）
+
+**发布日期**：2026-08-11
+
+### 🚀 核心价值
+
+- 让工作流具备“断点续跑”能力：进程重启、容器重启后仍可从中断处继续执行。
+- 以 `request_id` 作为 `thread_id` 自动持久化每一步 LangGraph checkpoint 到 SQLite。
+- 为后续 Human-in-the-Loop（人工审批后继续）和故障恢复打下基础设施。
+
+### 🔧 关键变更
+
+- 新增 `dev_agent_system/checkpoint.py`：`SQLiteCheckpointSaver` 实现 `BaseCheckpointSaver` 全部同步/异步接口。
+- `Orchestrator` 编译 LangGraph 时传入 `checkpointer`，并新增 `resume(request_id)` 方法。
+- FastAPI 网关新增 `GET /tasks/{request_id}/checkpoints` 与 `POST /tasks/{request_id}/resume`。
+- `config.py` 新增 `checkpoint_db()` 与 `checkpoint_enabled()`；`.env.example` 补充相关配置项。
+- 新增 `tests/test_checkpoint.py` 验证 checkpoint 读写、writes 持久化、断点续跑。
+
+### ⚠️ 升级注意
+
+- 无破坏性接口变更；新增状态文件默认写入 `memory_store/checkpoints.sqlite`（已在 `.gitignore` 中忽略）。
+- 如需禁用持久化，设置环境变量 `CHECKPOINT_ENABLED=false`，将自动降级为 `MemorySaver`。
+
+### 🛤️ 已知问题
+
+- 无。
+
+---
+
+## v0.6.0 — 文档生态与运维可观测性
 
 **发布日期**：2026-08-11
 

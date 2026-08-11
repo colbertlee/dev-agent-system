@@ -18,6 +18,7 @@ from dev_agent_system.agents import (
     ReviewerAgent,
     TesterAgent,
 )
+from dev_agent_system.checkpoint import make_checkpointer
 from dev_agent_system.config import Settings
 from dev_agent_system.memory import MemoryAgent
 from dev_agent_system.types import GraphState
@@ -58,6 +59,7 @@ class Orchestrator:
         self.enable_devops = enable_devops
         self.guard = IdempotencyGuard()
         self.memory = MemoryAgent()
+        self.checkpointer = make_checkpointer()
         self.agents = {
             "architect": ArchitectAgent(),
             "coder": CoderAgent(),
@@ -109,7 +111,13 @@ class Orchestrator:
                 {"continue": "architect_node", "end": END},
             )
 
-        return workflow.compile()
+        return workflow.compile(checkpointer=self.checkpointer)
+
+    def _thread_config(self, request_id: str) -> Dict[str, Any]:
+        return {
+            "configurable": {"thread_id": request_id},
+            "recursion_limit": max(50, self.max_iterations * 5 + 10),
+        }
 
     async def run(self, requirement: str, request_id: Optional[str] = None) -> Dict[str, Any]:
         state = self._build_state(requirement, request_id)
@@ -120,11 +128,39 @@ class Orchestrator:
         state["memory"] = self.agents["memory"].run(state)
 
         graph = self._build_graph()
-        config = {"recursion_limit": max(50, self.max_iterations * 5 + 10)}
-        final_state = await graph.ainvoke(state, config=config)
+        config = self._thread_config(state["request_id"])
+        final_state = await graph.ainvoke(state, config)
         final_state["finished_at"] = datetime.now().isoformat()
         final_state["artifacts"] = self._collect_artifacts(final_state)
         return final_state
+
+    async def resume(self, request_id: str) -> Dict[str, Any]:
+        """从 SQLite checkpoint 恢复并继续执行工作流。"""
+        graph = self._build_graph()
+        config = self._thread_config(request_id)
+        snapshot = await graph.aget_state(config)
+        if snapshot is None or not snapshot.next:
+            # 任务已完成或不存在未执行任务，直接取最新状态
+            final_state = dict(snapshot.values) if snapshot else {}
+        else:
+            final_state = await graph.ainvoke(None, config)
+            if final_state is None:
+                snapshot = await graph.aget_state(config)
+                final_state = dict(snapshot.values) if snapshot else {}
+        final_state["finished_at"] = datetime.now().isoformat()
+        final_state["artifacts"] = self._collect_artifacts(final_state)
+        return final_state
+
+    def list_checkpoints(self, request_id: str) -> List[Dict[str, Any]]:
+        """返回指定 request_id 的历史 checkpoint 列表。"""
+        config: Dict[str, Any] = {"configurable": {"thread_id": request_id}}
+        return [
+            {
+                "checkpoint_id": tuple_item.config["configurable"].get("checkpoint_id"),
+                "metadata": tuple_item.metadata,
+            }
+            for tuple_item in self.checkpointer.list(config)
+        ]
 
     async def run_stream(
         self, requirement: str, request_id: Optional[str] = None
@@ -137,7 +173,7 @@ class Orchestrator:
 
         state["memory"] = self.agents["memory"].run(state)
         graph = self._build_graph()
-        config = {"recursion_limit": max(50, self.max_iterations * 5 + 10)}
+        config = self._thread_config(state["request_id"])
 
         yield f"data: {json.dumps({'event': 'start', 'request_id': state['request_id'], 'workspace': state['workspace']}, ensure_ascii=False)}\n\n"
 

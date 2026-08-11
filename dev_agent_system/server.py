@@ -127,6 +127,22 @@ async def rpc(req: JSONRPCRequest, internal_key: Optional[str] = Header(None, al
     return JSONRPCResponse(result={"error": "unknown method"}, id=req.id)
 
 
+@app.get("/tasks/{request_id}/checkpoints")
+def list_checkpoints(request_id: str):
+    """查询指定任务的历史 checkpoint 列表。"""
+    orch = Orchestrator()
+    checkpoints = orch.list_checkpoints(request_id)
+    return {"request_id": request_id, "checkpoints": checkpoints}
+
+
+@app.post("/tasks/{request_id}/resume")
+async def resume_task(request_id: str):
+    """从最近的 checkpoint 恢复并继续执行工作流。"""
+    orch = Orchestrator()
+    result = await orch.resume(request_id)
+    return result
+
+
 @app.get("/tasks/{task_id}/stream")
 def stream(task_id: str):
     async def event_generator():

@@ -192,6 +192,7 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **流式输出**：`POST /orchestrate/stream` 与 `POST /{agent}/stream` 返回 `text/event-stream` 实时推送进度。
 - **记忆后端**：支持 Redis / ChromaDB / SQLite 三档记忆，通过 `MEMORY_BACKEND` 切换；自动降级确保可用性。
 - **上下文压缩**：超过 `CONTEXT_COMPRESS_THRESHOLD` 时自动截断中间文本，保护 LLM 上下文窗口。
+- **状态持久化**：LangGraph checkpoint 自动写入 SQLite，支持断点续跑与 `POST /tasks/{request_id}/resume`。
 
 ## 预发布检查
 

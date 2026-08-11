@@ -100,6 +100,14 @@ class Settings:
         return int(os.getenv("CONTEXT_WINDOW_LIMIT", "8000"))
 
     @staticmethod
+    def checkpoint_db() -> Path:
+        return Path(os.getenv("CHECKPOINT_DB", str(Settings.memory_dir() / "checkpoints.sqlite"))).resolve()
+
+    @staticmethod
+    def checkpoint_enabled() -> bool:
+        return os.getenv("CHECKPOINT_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+
+    @staticmethod
     def sanitize(text: str) -> str:
         """PII 脱敏。"""
         text = re.sub(r"sk-[a-zA-Z0-9]{20,}", "[API_KEY_REDACTED]", text)

@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-08-11
+
+### Added
+
+- 状态持久化与断点续跑：
+  - 新增 `dev_agent_system/checkpoint.py`：自定义 `SQLiteCheckpointSaver`，基于 `langgraph.checkpoint.base.BaseCheckpointSaver` 实现。
+  - Orchestrator 编译 LangGraph 时传入 `checkpointer`，以 `request_id` 作为 `thread_id` 自动持久化每步状态。
+  - 新增 `Orchestrator.resume(request_id)` 方法，支持从最近 checkpoint 恢复并继续执行。
+  - 新增 `GET /tasks/{request_id}/checkpoints` 与 `POST /tasks/{request_id}/resume` 端点。
+  - 新增 `Settings.checkpoint_db()` 与 `Settings.checkpoint_enabled()` 配置项，`.env.example` 补充 `CHECKPOINT_ENABLED` / `CHECKPOINT_DB`。
+  - 新增 `tests/test_checkpoint.py` 覆盖 checkpoint 读写、writes 持久化、Orchestrator 断点续跑。
+
+### Changed
+
+- `Orchestrator.run` 与 `run_stream` 使用 `configurable.thread_id` 作为运行配置，触发 LangGraph checkpoint。
+
+### Fixed
+
+- 无
+
+### Security
+
+- SQLite checkpoint 数据库默认写入 `memory_store/`（已在 `.gitignore` 中忽略）。
+
+### Model Changes
+
+- 无
+
 ## [0.6.0] - 2026-08-11
 
 ### Added
