@@ -96,12 +96,18 @@ class Orchestrator:
             "memory": MemoryAgentFacade(),
         }
 
-    def _build_state(self, requirement: str, request_id: Optional[str] = None) -> GraphState:
+    def _build_state(
+        self,
+        requirement: str,
+        request_id: Optional[str] = None,
+        language: Optional[str] = "python",
+    ) -> GraphState:
         request_id = request_id or str(uuid.uuid4())
         workspace = str(Settings.workspace_dir() / request_id)
         return {
             "request_id": request_id,
             "input": requirement,
+            "language": language or "python",
             "workspace": workspace,
             "iteration": 0,
             "max_iterations": self.max_iterations,
@@ -167,8 +173,13 @@ class Orchestrator:
             "recursion_limit": max(50, self.max_iterations * 5 + 10),
         }
 
-    async def run(self, requirement: str, request_id: Optional[str] = None) -> Dict[str, Any]:
-        state = self._build_state(requirement, request_id)
+    async def run(
+        self,
+        requirement: str,
+        request_id: Optional[str] = None,
+        language: Optional[str] = "python",
+    ) -> Dict[str, Any]:
+        state = self._build_state(requirement, request_id, language=language)
         if self.guard.is_duplicate(state["request_id"]):
             return {"request_id": state["request_id"], "status": "skipped", "reason": "duplicate"}
 
@@ -225,10 +236,13 @@ class Orchestrator:
         ]
 
     async def run_stream(
-        self, requirement: str, request_id: Optional[str] = None
+        self,
+        requirement: str,
+        request_id: Optional[str] = None,
+        language: Optional[str] = "python",
     ) -> AsyncIterator[str]:
         """流式执行编排，SSE 格式输出每个节点的事件。"""
-        state = self._build_state(requirement, request_id)
+        state = self._build_state(requirement, request_id, language=language)
         if self.guard.is_duplicate(state["request_id"]):
             yield f"data: {json.dumps({'event': 'duplicate', 'request_id': state['request_id']}, ensure_ascii=False)}\n\n"
             return

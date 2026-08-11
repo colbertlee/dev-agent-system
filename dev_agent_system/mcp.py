@@ -13,7 +13,10 @@ from dev_agent_system.security import PathValidator, SafetyScanner
 class ToolSandbox:
     """MCP 工具沙箱：白名单 + 安全扫描 + 路径限制 + 超时。"""
 
-    ALLOWED_PREFIXES = ("python", "pytest", "git", "ls", "cat", "echo", "docker build")
+    ALLOWED_PREFIXES = (
+        "python", "pytest", "git", "ls", "cat", "echo", "docker build",
+        "mvn", "gradle", "javac", "java", "go", "npm", "npx", "node",
+    )
     WORK_DIR = Path("workspace").resolve()
 
     _write_lock = asyncio.Lock()

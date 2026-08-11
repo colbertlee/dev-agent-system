@@ -1,6 +1,7 @@
 """终端交互式 UI：用 rich 实时展示多 Agent 工作流进度。"""
 from __future__ import annotations
 
+import argparse
 import asyncio
 import sys
 from typing import Any, Dict, Optional
@@ -122,39 +123,54 @@ class OrchestratorTUI:
                 self._live.update(self._render())
             await asyncio.sleep(0.2)
 
-    async def _run_workflow(self, requirement: str, request_id: Optional[str] = None) -> Dict[str, Any]:
-        result = await self.orchestrator.run(requirement, request_id)
+    async def _run_workflow(
+        self, requirement: str, request_id: Optional[str] = None, language: Optional[str] = "python"
+    ) -> Dict[str, Any]:
+        result = await self.orchestrator.run(requirement, request_id, language=language)
         self.request_id = result.get("request_id", self.request_id)
         self._sync_from_tracker()
         self._on_event("workflow.completed", result.get("status"))
         return result
 
-    async def _run(self, requirement: str, request_id: Optional[str] = None) -> Dict[str, Any]:
+    async def _run(
+        self, requirement: str, request_id: Optional[str] = None, language: Optional[str] = "python"
+    ) -> Dict[str, Any]:
         with Live(self._render(), refresh_per_second=4) as live:
             self._live = live
             try:
                 return await asyncio.gather(
-                    self._run_workflow(requirement, request_id),
+                    self._run_workflow(requirement, request_id, language=language),
                     self._poll(),
                 )[0]
             finally:
                 self._live = None
 
-    def run(self, requirement: str, request_id: Optional[str] = None) -> Dict[str, Any]:
-        return asyncio.run(self._run(requirement, request_id))
+    def run(
+        self, requirement: str, request_id: Optional[str] = None, language: Optional[str] = "python"
+    ) -> Dict[str, Any]:
+        return asyncio.run(self._run(requirement, request_id, language=language))
 
 
 def main() -> None:
     if not RICH_AVAILABLE:
         print("rich is required. Install it with: pip install rich", file=sys.stderr)
         sys.exit(1)
-    requirement = (
-        " ".join(sys.argv[1:])
-        if len(sys.argv) > 1
-        else "开发一个支持 JWT 的用户登录模块"
+    parser = argparse.ArgumentParser(description="DevAgent System TUI")
+    parser.add_argument(
+        "requirement",
+        nargs="?",
+        default="开发一个支持 JWT 的用户登录模块",
+        help="自然语言需求",
     )
+    parser.add_argument(
+        "--language",
+        default="python",
+        choices=["python", "java", "go", "typescript"],
+        help="目标语言",
+    )
+    args = parser.parse_args()
     tui = OrchestratorTUI()
-    result = tui.run(requirement)
+    result = tui.run(args.requirement, language=args.language)
     print(
         f"\n工作流结束：{result.get('status')}，"
         f"产物目录：{result.get('artifacts', {}).get('workspace', 'N/A')}"

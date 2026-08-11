@@ -21,6 +21,7 @@ from dev_agent_system.mcp import MCPToolRegistry, ToolSandbox
 from dev_agent_system.router import ModelRouter
 from dev_agent_system.security import SafetyScanner, SecretRedactor
 from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY, Telemetry
+from dev_agent_system.templates import get_language, TEMPLATES
 from dev_agent_system.schemas import AgentCard, AgentSkill
 
 
@@ -173,7 +174,9 @@ class ArchitectAgent(BaseAgent):
 
     def build_prompt(self, state: Dict[str, Any]) -> str:
         prd = (state.get("product_manager") or {}).get("output", "")
+        template = get_language(state)
         return (
+            f"目标语言/技术栈：{template.display}\n"
             f"用户需求：{state.get('input', '')}\n"
             f"PRD：{prd[:1500] if prd else '无'}\n"
             f"工作目录：{state.get('workspace', '')}\n"
@@ -200,26 +203,33 @@ class CoderAgent(BaseAgent):
 
     def build_prompt(self, state: Dict[str, Any]) -> str:
         dba_output = (state.get("dba") or {}).get("output", "")
+        template = get_language(state)
         return (
+            f"目标语言/技术栈：{template.display}\n"
+            f"构建命令：{template.build_cmd or '无'}\n"
+            f"测试命令：{template.test_cmd}\n"
+            f"用户生成文件扩展名：.{template.file_ext}，测试文件扩展名：.{template.test_ext}\n"
             f"用户需求：{state.get('input', '')}\n"
             f"架构设计：{(state.get('architect') or {}).get('output', '')[:2000]}\n"
             f"数据库设计：{dba_output[:1500] if dba_output else '无'}\n"
             f"工作目录：{state.get('workspace', '')}\n"
-            "请生成可运行代码。每个代码块前用注释标明文件路径，例如 '# file: main.py'。\n"
-            "最后输出 JSON 状态报告：{status, files_modified, test_result, note}"
+            "请生成可运行代码。每个代码块前用注释标明文件路径，例如 '# file: main."
+            f"{template.file_ext}'。最后输出 JSON 状态报告："
+            "{status, files_modified, test_result, note}"
         )
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
+        template = get_language(state)
         blocks = self._extract_code_blocks(output)
         files: List[str] = []
         security_issues: List[Dict[str, Any]] = []
         for idx, block in enumerate(blocks, start=1):
             path = block["path"]
             if not path:
-                path = f"module_{idx}.py"
-            if not path.endswith(".py"):
-                path += ".py"
+                path = f"module_{idx}.{template.file_ext}"
+            if not path.endswith(f".{template.file_ext}"):
+                path += f".{template.file_ext}"
             issues = SafetyScanner.scan_code(block["code"])
             security_issues.extend(issues)
             res = await self._write_file(path, block["code"], workspace)
@@ -230,15 +240,15 @@ class CoderAgent(BaseAgent):
 
         # MOCK 降级：没有真实 LLM 时写一段占位代码，方便 CLI/测试继续跑
         if not files and self.llm.is_mock():
-            stub = self._fallback_code(state.get("input", ""))
-            res = await self._write_file("main.py", stub, workspace)
+            stub = self._fallback_code(state.get("input", ""), template)
+            res = await self._write_file(template.main_file(), stub, workspace)
             if res.get("success"):
-                files.append("main.py")
+                files.append(template.main_file())
             report = {
                 "status": "mock_fallback",
                 "files_modified": files,
                 "test_result": "unknown",
-                "note": "MOCK 模式生成的占位代码",
+                "note": f"MOCK 模式生成的占位代码 ({template.display})",
             }
 
         return {
@@ -250,8 +260,30 @@ class CoderAgent(BaseAgent):
         }
 
     @staticmethod
-    def _fallback_code(requirement: str) -> str:
+    def _fallback_code(requirement: str, template: Any) -> str:
         safe = re.sub(r"[^\w\u4e00-\u9fff]+", "_", requirement)[:30].strip("_") or "agent"
+        if template.name == "java":
+            class_name = safe.capitalize()
+            return (
+                f"package com.devagent;\n\n"
+                f"public class {class_name} {{\n"
+                f"    public static void main(String[] args) {{\n"
+                f"        System.out.println(\"Hello from {safe}\");\n"
+                f"    }}\n"
+                f"}}\n"
+            )
+        if template.name == "go":
+            return (
+                f"package main\n\n"
+                f"import \"fmt\"\n\n"
+                f"func main() {{\n"
+                f"    fmt.Println(\"Hello from {safe}\")\n"
+                f"}}\n"
+            )
+        if template.name == "typescript":
+            return (
+                f"console.log(\"Hello from {safe}\");\n"
+            )
         return f'"""Generated from requirement: {requirement}"""\n\ndef main():\n    print("Hello from {safe}")\n\nif __name__ == "__main__":\n    main()\n'
 
 
@@ -267,6 +299,7 @@ class TesterAgent(BaseAgent):
 
     def build_prompt(self, state: Dict[str, Any]) -> str:
         workspace = state.get("workspace", "")
+        template = get_language(state)
         code_files = (state.get("coder") or {}).get("files", [])
         code_snippets: List[str] = []
         for f in code_files[:3]:
@@ -274,49 +307,54 @@ class TesterAgent(BaseAgent):
             if res.get("success"):
                 code_snippets.append(f"--- {f} ---\n{res['content'][:1500]}")
         return (
+            f"目标语言：{template.display}\n"
+            f"测试框架/命令：{template.test_cmd}\n"
+            f"测试文件命名：*.{template.test_ext}\n"
             f"代码文件：{code_files}\n"
             f"{''.join(code_snippets)[:2500]}\n"
             f"工作目录：{workspace}\n"
-            "请生成 pytest 测试用例。每个测试代码块前标明文件路径，如 '# file: test_main.py'。\n"
-            "最后输出 JSON 测试报告：{passed, failed, coverage, report}"
+            "请生成对应语言的测试用例。每个测试代码块前标明文件路径，如 '# file: test_"
+            f"{template.file_ext}'。最后输出 JSON 测试报告："
+            "{passed, failed, coverage, report}"
         )
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
+        template = get_language(state)
         blocks = self._extract_code_blocks(output)
         files: List[str] = []
         for idx, block in enumerate(blocks, start=1):
             path = block["path"]
             if not path:
-                path = f"test_module_{idx}.py"
-            if not path.startswith("test_"):
-                path = "test_" + path
+                path = f"test_module_{idx}.{template.test_ext}"
+            if not path.endswith(f".{template.test_ext}"):
+                path += f".{template.test_ext}"
             res = await self._write_file(path, block["code"], workspace)
             if res.get("success"):
                 files.append(path)
 
         if files:
-            pytest_res = await self._run_command("pytest -q", workspace, timeout=15)
+            test_res = await self._run_command(f"{template.test_cmd} -q", workspace, timeout=15)
         else:
-            pytest_res = {"success": False, "stdout": "", "stderr": "no tests generated"}
+            test_res = {"success": False, "stdout": "", "stderr": "no tests generated"}
 
         report = self._extract_json(output) or {}
         passed = report.get("passed")
         failed = report.get("failed")
         if passed is None or failed is None:
-            passed, failed = self._parse_pytest_summary(pytest_res.get("stdout", ""))
+            passed, failed = self._parse_test_summary(test_res.get("stdout", ""))
 
         return {
             "files": files,
             "passed": passed,
             "failed": failed,
             "coverage": report.get("coverage", 0.0),
-            "report": (pytest_res.get("stdout", "") + "\n" + pytest_res.get("stderr", "")).strip(),
-            "test_command_success": pytest_res.get("success", False),
+            "report": (test_res.get("stdout", "") + "\n" + test_res.get("stderr", "")).strip(),
+            "test_command_success": test_res.get("success", False),
         }
 
     @staticmethod
-    def _parse_pytest_summary(stdout: str):
+    def _parse_test_summary(stdout: str):
         m = re.search(r"(\d+)\s+passed", stdout)
         passed = int(m.group(1)) if m else 0
         m = re.search(r"(\d+)\s+failed", stdout)

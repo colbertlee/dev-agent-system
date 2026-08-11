@@ -185,7 +185,7 @@ def test_evaluation_runner_mock_orchestrator():
 
             def factory(max_iter: int):
                 class FakeOrchestrator:
-                    async def run(self, description, request_id=None):
+                    async def run(self, description, request_id=None, language="python"):
                         return {
                             "request_id": request_id,
                             "status": "completed",

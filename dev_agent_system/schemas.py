@@ -22,6 +22,7 @@ class Task(BaseModel):
     task_id: Optional[str] = None
     request_id: Optional[str] = None
     max_iterations: Optional[int] = None
+    language: Optional[str] = "python"
     payload: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
 
@@ -68,6 +69,7 @@ class TestReport(BaseModel):
 class WorkflowState(BaseModel):
     request_id: str
     input: str
+    language: Optional[str] = "python"
     iteration: int = 0
     max_iterations: int = 10
     status: Literal["submitted", "working", "completed", "failed"] = "submitted"
@@ -85,6 +87,7 @@ class GraphState(typing.TypedDict, total=False):
 
     request_id: str
     input: str
+    language: Optional[str]
     workspace: str
     iteration: int
     max_iterations: int

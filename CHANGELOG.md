@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.16.0] - 2026-08-11
+
+### Added
+
+- 多语言支持（路线图第 5 条）：
+  - 新增 `dev_agent_system/templates.py`：Python、Java、Go、TypeScript 语言模板，包含文件扩展名、主文件/测试文件命名、构建/测试命令、包管理文件与默认骨架。
+  - `GraphState` / `WorkflowState` / `Task` 增加 `language` 字段，支持按任务指定目标语言。
+  - `Orchestrator.run` / `run_stream` / `resume` 与 `EvaluationRunner` 透传 `language`。
+  - `ArchitectAgent`、`CoderAgent`、`TesterAgent` 根据 `language` 动态生成对应语言产物与测试命令。
+  - `ToolSandbox` 命令白名单扩展 `mvn`、`gradle`、`javac`、`java`、`go`、`npm`、`npx`、`node`。
+  - `main.py` 与 `tui.py` 增加 `--language` 参数。
+  - `tests/eval_dataset.json` 增加 Java / Go / TypeScript 多语言 benchmark 用例。
+  - 新增 `tests/test_templates.py`、`tests/test_multilang.py`。
+
+### Changed
+
+- `tests/test_flow.py` 的 `_mock_chat` 改用更精确的系统 prompt 关键词匹配，避免 Coder/Tester 子串误匹配。
+- `README.md` 与 `AGENTS.md` 更新多语言使用说明。
+
+### Model Changes
+
+- `GraphState`、`WorkflowState`、`Task` 新增 `language: Optional[str]`。
+
 ## [0.15.0] - 2026-08-11
 
 ### Added

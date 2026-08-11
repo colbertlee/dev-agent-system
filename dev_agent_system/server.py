@@ -139,7 +139,9 @@ async def orchestrate(task: Task, internal_key: Optional[str] = Header(None, ali
     _auth(internal_key)
     max_iter = task.max_iterations or 10
     orch = Orchestrator(max_iterations=max_iter)
-    result = await orch.run(task.description, request_id=task.request_id)
+    result = await orch.run(
+        task.description, request_id=task.request_id, language=task.language
+    )
     return JSONResponse(content=result)
 
 
@@ -152,7 +154,9 @@ async def orchestrate_stream(
     orch = Orchestrator(max_iterations=max_iter)
 
     async def event_generator():
-        async for chunk in orch.run_stream(task.description, request_id=task.request_id):
+        async for chunk in orch.run_stream(
+            task.description, request_id=task.request_id, language=task.language
+        ):
             yield chunk
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

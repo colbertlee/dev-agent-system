@@ -17,6 +17,12 @@ async def cli():
         help="自然语言需求",
     )
     parser.add_argument("--max-iter", type=int, default=3, help="最大迭代次数")
+    parser.add_argument(
+        "--language",
+        default="python",
+        choices=["python", "java", "go", "typescript"],
+        help="目标语言",
+    )
     parser.add_argument("--devops", action="store_true", help="启用 DevOps Agent")
     parser.add_argument(
         "--output",
@@ -26,7 +32,7 @@ async def cli():
     args = parser.parse_args()
 
     orch = Orchestrator(max_iterations=args.max_iter, enable_devops=args.devops)
-    result = await orch.run(args.requirement)
+    result = await orch.run(args.requirement, language=args.language)
     with open(args.output, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
     print(f"✅ 工作流完成，状态：{result.get('status')}")

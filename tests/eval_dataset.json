@@ -88,5 +88,26 @@
     "expected_files": ["config_client.py", "test_config_client.py"],
     "min_test_coverage": 0.7,
     "comment": "中级：配置管理与可测试性。"
+  },
+  {
+    "description": "用 Java 实现一个带 JUnit 测试的栈（Stack）类，支持 push、pop、peek 与 isEmpty。",
+    "expected_files": ["Stack.java", "StackTest.java"],
+    "min_test_coverage": 0.8,
+    "language": "java",
+    "comment": "多语言：Java + Maven/Gradle 测试。"
+  },
+  {
+    "description": "用 Go 实现一个并发安全的计数器 Counter，支持 Inc、Dec、Get 方法，并提供单元测试。",
+    "expected_files": ["counter.go", "counter_test.go"],
+    "min_test_coverage": 0.8,
+    "language": "go",
+    "comment": "多语言：Go + go test。"
+  },
+  {
+    "description": "用 TypeScript 实现一个验证邮箱与手机号格式的工具类，并附带 Jest 测试。",
+    "expected_files": ["validator.ts", "validator.test.ts"],
+    "min_test_coverage": 0.7,
+    "language": "typescript",
+    "comment": "多语言：TypeScript + Jest。"
   }
 ]

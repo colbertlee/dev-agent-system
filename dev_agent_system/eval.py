@@ -171,12 +171,13 @@ class EvaluationRunner:
     async def _evaluate_one(self, idx: int, item: Dict[str, Any], max_iterations: int) -> EvalSample:
         description = item.get("description", "")
         request_id = item.get("request_id") or f"eval-{idx}"
+        language = item.get("language", "python")
         expected_files = item.get("expected_files", [])
         min_coverage = float(item.get("min_test_coverage", 0.0) or 0.0)
         start = time.perf_counter()
         try:
             orch = self.orchestrator_factory(max_iterations)
-            result = await orch.run(description, request_id=request_id)
+            result = await orch.run(description, request_id=request_id, language=language)
             status = result.get("status", "unknown")
             artifacts = result.get("artifacts", {}) or {}
             workspace = Path(

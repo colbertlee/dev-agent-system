@@ -4,7 +4,38 @@
 
 ---
 
-## v0.15.0 — 评估与 benchmark 调优（最新）
+## v0.16.0 — 多语言支持（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 让同一套多 Agent 工作流支持 Python、Java、Go、TypeScript 四种语言，自动根据 `language` 字段选择文件命名、测试命令与包管理模板。
+- 为后续扩展更多语言提供统一的 `LangTemplate` 抽象。
+
+### 关键变更
+
+- 新增 `dev_agent_system/templates.py`：`LangTemplate` 数据类 + `TEMPLATES` 注册表，覆盖 Python / Java / Go / TypeScript。
+- `GraphState` / `WorkflowState` / `Task` 增加 `language: Optional[str]` 字段，默认 `python`。
+- `Orchestrator.run`、`run_stream`、`EvaluationRunner._evaluate_one` 透传 `language`。
+- `ArchitectAgent`、`CoderAgent`、`TesterAgent` 读取 `language` 并生成对应技术栈产物与测试。
+- `ToolSandbox.ALLOWED_PREFIXES` 扩展 Java/Go/TS 工具链命令。
+- `dev_agent_system/main.py` 与 `dev_agent_system/tui.py` 增加 `--language` 参数。
+- `tests/eval_dataset.json` 增加 3 条 Java / Go / TypeScript 评估用例，总数达 18 条。
+- 新增 `tests/test_templates.py`、`tests/test_multilang.py`；84 个测试通过，2 个跳过。
+
+### 升级注意
+
+- 无破坏性接口变更；未指定 `language` 时默认仍按 Python 处理。
+- 真实运行 Java/Go/TS 测试需要本地安装对应工具链（maven / go / node）。
+
+### 已知问题
+
+- MOCK 模式仅生成占位代码，无法真正覆盖多语言语法与测试。
+
+---
+
+## v0.15.0 — 评估与 benchmark 调优
 
 **发布日期**：2026-08-11
 
