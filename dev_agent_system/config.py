@@ -144,6 +144,14 @@ class Settings:
         return os.getenv("SAFETY_REDACT_SECRETS", "true").lower() in ("1", "true", "yes", "on")
 
     @staticmethod
+    def skills_dir() -> Path:
+        return Path(os.getenv("SKILLS_DIR", str(ROOT / "skills"))).resolve()
+
+    @staticmethod
+    def skills_enabled() -> bool:
+        return os.getenv("SKILLS_ENABLED", "true").lower() in ("1", "true", "yes", "on")
+
+    @staticmethod
     def safety_code_scan() -> bool:
         return os.getenv("SAFETY_CODE_SCAN", "true").lower() in ("1", "true", "yes", "on")
 

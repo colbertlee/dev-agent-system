@@ -67,6 +67,19 @@ python scripts/run_a2a_cluster.py
 # 或单独启动某个 Agent
 python -m dev_agent_system.a2a_node --agent architect --port 8081
 
+# 安装并调用一个 Skill（示例）
+python - <<'PY'
+from dev_agent_system.skills import SkillManager
+manager = SkillManager()
+manager.install({
+    "id": "greet",
+    "name": "问候",
+    "description": "返回问候语",
+    "code": "def run(name='world'):\n    return {'success': True, 'message': f'Hello, {name}'}\n",
+})
+print(manager.invoke("greet", name="dev"))
+PY
+
 # 运行测试
 pytest -q
 
@@ -173,6 +186,7 @@ docker-compose logs -f
 │   ├── memory.py        # 三层记忆
 │   ├── security.py         # 基础安全扫描、路径校验、敏感信息脱敏
 │   ├── security_scanner.py # Secret/依赖漏洞扫描、容器沙箱
+│   ├── skills.py          # 最小版 Skill 管理器（安装/卸载/调用/注册 MCP）
 │   ├── metrics.py       # Prometheus 格式指标收集
 │   ├── telemetry.py      # OpenTelemetry 风格 Span 与结构化日志
 │   ├── tracker.py        # 工作流全局状态追踪
@@ -274,6 +288,7 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **DevOps 闭环**：`devops.py` 支持 build → run → health → cleanup 真实 Docker 闭环，默认 dry-run 保障安全。
 - **角色扩展**：默认 6 个核心 Agent（Architect/Coder/Tester/Reviewer/Docs/DevOps），可通过 `Orchestrator` 的 `enable_product_manager`、`enable_security`、`enable_dba` 扩展为产品经理、安全审查、数据库架构等角色。
 - **可观测性**：`metrics.py` + `telemetry.py` 提供 Prometheus 格式指标、OpenTelemetry 风格 Span 与结构化日志；`server.py` 暴露 `/metrics` 与 `/health` 端点；`tui.py` 与 `dashboard.py` 提供终端/Web 实时进度面板。
+- **Skill 系统**：`skills.py` 提供最小版 Skill 管理器，支持安装/卸载/调用，并可将 Skill 注册为 MCP 工具。
 
 ## 预发布检查
 

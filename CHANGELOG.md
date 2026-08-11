@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.18.0] - 2026-08-11
+
+### Added
+
+- 最小版 Skill 管理系统：
+  - 新增 `dev_agent_system/skills.py`：
+    - `Skill` 数据类、`SkillStore` 本地仓库、`SkillManager` 管理器。
+    - 支持从本地目录或字典安装 Skill，自动生成 `SKILL.md` + `skill.py` 骨架。
+    - 支持卸载、列出、调用（`invoke`）与向 `MCPToolRegistry` 注册为 MCP 工具。
+  - `config.py` 增加 `skills_dir()` 与 `skills_enabled()` 配置。
+  - 新增 `tests/test_skills.py`，覆盖安装、调用、卸载、本地路径安装与 MCP 注册。
+
+### Changed
+
+- `README.md` 与 `AGENTS.md` 增加 Skill 使用说明。
+
+### Model Changes
+
+- 无。
+
 ## [0.17.0] - 2026-08-11
 
 ### Added

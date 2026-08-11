@@ -217,3 +217,4 @@ docker-compose up --build -d
 - 对接 CI/CD 真实环境（GitHub Actions、Docker Registry）。
 - 接入真实 LLM 跑分，利用 `RegressionChecker` 做持续回归检测。
 - 进一步扩展语言模板（如 Rust / C# / Kotlin）。
+- 完善 Skill 系统：增加 Skill 签名校验、沙箱执行、版本管理与 Skill 市场协议。

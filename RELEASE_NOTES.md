@@ -4,7 +4,40 @@
 
 ---
 
-## v0.17.0 — 安全加固进阶（最新）
+## v0.18.0 — 最小版 Skill 管理（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 让系统支持动态安装、卸载、调用 Skill，并为每个 Skill 自动生成标准包结构与可执行 `run()` 入口。
+- Skill 可以注册为 MCP 工具，供 Agent 在工作流中调用。
+
+### 关键变更
+
+- 新增 `dev_agent_system/skills.py`：
+  - `Skill`：元数据 + 动态模块加载 + `invoke()`。
+  - `SkillStore`：扫描 `skills/` 目录，解析 `SKILL.md` YAML frontmatter，加载 `skill.py`。
+  - `SkillManager`：
+    - `install(source)`：支持本地目录或 `{id, name, description, prompt, code}` 字典安装。
+    - `uninstall(skill_id)` / `list()` / `get(skill_id)`。
+    - `invoke(skill_id, *args, **kwargs)`。
+    - `register_to_mcp(registry, prefix)`：把有 `run()` 的 Skill 注册为 MCP 工具。
+- `dev_agent_system/config.py` 增加 `skills_dir()`（默认 `skills/`）与 `skills_enabled()`。
+- 新增 `tests/test_skills.py`；95 个测试通过，2 个跳过。
+
+### 升级注意
+
+- 无破坏性接口变更。
+- 通过 `SkillManager` 安装的代码来自 `skills/` 目录下的 Python 文件；生产环境建议对来源做校验或沙箱化。
+
+### 已知问题
+
+- 当前 `SkillStore` 直接 `exec_module` 加载 `skill.py`，存在与运行环境共享全局状态的风险，后续应增加沙箱或签名机制。
+
+---
+
+## v0.17.0 — 安全加固进阶
 
 **发布日期**：2026-08-11
 
