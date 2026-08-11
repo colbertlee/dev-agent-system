@@ -4,7 +4,40 @@
 
 ---
 
-## v0.16.0 — 多语言支持（最新）
+## v0.17.0 — 安全加固进阶（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 为 Agent 产物与运行环境增加高阶安全扫描能力：Secret 泄露检测、依赖漏洞扫描、容器沙箱执行，并在 CI 中落地。
+- 降低真实使用 LLM 生成代码时引入敏感信息或依赖漏洞的风险。
+
+### 关键变更
+
+- 新增 `dev_agent_system/security_scanner.py`：
+  - `SecretScanner`：扫描文件中的 API Key、GitHub/GitLab Token、AWS Key、私钥、硬编码密码等模式。
+  - `DependencyScanner`：优先调用 `safety`，回退 `pip-audit`，对 `requirements.txt` 做依赖漏洞扫描。
+  - `ContainerSandbox`：把命令包装为 `docker run --rm --network none -v workspace:/workspace ...`，提供额外隔离。
+  - `SecurityPipeline`：组合 Secret 扫描、依赖扫描与命令执行，返回 `safe` 标志与详细 findings。
+- 新增 `.github/workflows/security.yml`：
+  - TruffleHog Secret 扫描（PR/Push + 定时每周一）。
+  - Safety 依赖漏洞扫描。
+  - Bandit 静态代码安全扫描，并上传报告 Artifact。
+- 新增 `tests/test_security_scanner.py`；88 个测试通过，2 个跳过。
+
+### 升级注意
+
+- 无破坏性接口变更。
+- 真实运行依赖扫描需要安装 `safety` 或 `pip-audit`；容器沙箱需要本地 Docker。
+
+### 已知问题
+
+- `SecretScanner` 为正则启发式扫描，可能存在误报；重要场景建议结合 TruffleHog 等专业工具。
+
+---
+
+## v0.16.0 — 多语言支持
 
 **发布日期**：2026-08-11
 

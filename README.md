@@ -49,6 +49,14 @@ python -m dev_agent_system.server --port 8000
 # 查看 Prometheus 指标
 curl http://localhost:8000/metrics
 
+# 运行安全扫描（Secret + 依赖漏洞 + 容器沙箱示例，依赖 safety/pip-audit/docker）
+python - <<'PY'
+from pathlib import Path
+from dev_agent_system.security_scanner import SecurityPipeline
+pipeline = SecurityPipeline(Path("workspace/<request_id>"), Path("requirements.txt"))
+print(pipeline.run(command="pytest -q", use_container=False))
+PY
+
 # 打开 Web Dashboard
 open http://localhost:8000/dashboard  # Linux/macOS
 # start http://localhost:8000/dashboard  # Windows
@@ -163,7 +171,8 @@ docker-compose logs -f
 │   ├── router.py        # 模型路由
 │   ├── mcp.py           # MCP 工具沙箱
 │   ├── memory.py        # 三层记忆
-│   ├── security.py      # 安全扫描、路径校验、敏感信息脱敏
+│   ├── security.py         # 基础安全扫描、路径校验、敏感信息脱敏
+│   ├── security_scanner.py # Secret/依赖漏洞扫描、容器沙箱
 │   ├── metrics.py       # Prometheus 格式指标收集
 │   ├── telemetry.py      # OpenTelemetry 风格 Span 与结构化日志
 │   ├── tracker.py        # 工作流全局状态追踪
@@ -254,7 +263,7 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **无回流边**：Reviewer 未通过时，由 Scheduler 发起新一轮，避免 DAG 循环依赖。
 - **最大迭代**：默认 10 轮，超过后强制结束。
 - **幂等**：所有请求携带 `request_id`，A2A 服务端去重。
-- **安全**：LLM 生成代码不直接在宿主机执行；`security.py` 提供 `SafetyScanner`（命令/代码危险模式扫描）、`PathValidator`（路径越界校验）、`SecretRedactor`（API Key/手机号/邮箱/密码脱敏），沙箱白名单+超时。
+- **安全**：LLM 生成代码不直接在宿主机执行；`security.py` 提供 `SafetyScanner`（命令/代码危险模式扫描）、`PathValidator`（路径越界校验）、`SecretRedactor`（API Key/手机号/邮箱/密码脱敏）；`security_scanner.py` 提供 Secret 扫描、依赖漏洞扫描与 `ContainerSandbox` 容器隔离。
 - **产物落地**：Coder 写入 `main.py`、Tester 写入 `test_*.py` 并执行 `pytest`、Docs 写入 `README.md/API.md`、Reviewer 写入 `review_report.json`，全部落在 `workspace/<request_id>/` 下。
 - **模型路由**：`config/model.yaml` 配置各 Agent 的模型版本与温度；`router.py` 支持按提示长度自适应切换大模型。
 - **流式输出**：`POST /orchestrate/stream` 与 `POST /{agent}/stream` 返回 `text/event-stream` 实时推送进度。

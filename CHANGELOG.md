@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.17.0] - 2026-08-11
+
+### Added
+
+- 安全加固进阶（路线图第 6 条）：
+  - 新增 `dev_agent_system/security_scanner.py`：
+    - `SecretScanner`：基于正则扫描工作区文件中的 API Key、Token、密码、私钥等 Secret。
+    - `DependencyScanner`：调用 `safety` 或 `pip-audit` 对 `requirements.txt` 做依赖漏洞扫描。
+    - `ContainerSandbox`：把命令包装成 `docker run --rm --network none ...` 容器执行，增强隔离。
+    - `SecurityPipeline`：组合 Secret 扫描、依赖扫描与命令执行，输出 `safe` 判定。
+  - 新增 `.github/workflows/security.yml`：TruffleHog Secret 扫描、Safety 依赖漏洞扫描、Bandit 静态代码安全扫描，并定时每周运行。
+  - 新增 `tests/test_security_scanner.py`。
+
+### Changed
+
+- `README.md` 与 `AGENTS.md` 增加安全扫描使用说明与 CI 说明。
+
+### Model Changes
+
+- 无。
+
 ## [0.16.0] - 2026-08-11
 
 ### Added

@@ -152,11 +152,12 @@ Mock LLM：测试通过 monkeypatch `LLMClient.chat` 实现，无需真实 API K
 
 1. LLM 生成的代码不直接在宿主机执行，必须经过 `ToolSandbox`。
 2. 文件操作限制在 `workspace/` 目录内，禁止目录穿越。
-3. 终端命令白名单：`python`, `pytest`, `git`, `ls`, `cat`, `echo`, `docker build`。
+3. 终端命令白名单：`python`, `pytest`, `git`, `ls`, `cat`, `echo`, `docker build`，以及 Java/Go/TS 工具链 `mvn`, `gradle`, `javac`, `java`, `go`, `npm`, `npx`, `node`。
 4. 黑名单拦截：`rm -rf`, `curl | sh`, `wget -O-` 等危险模式。
 5. 命令执行默认超时 5 秒。
 6. 调用 LLM 前自动脱敏 API Key、手机号、密码。
 7. 涉及部署、资金、删除、发布的操作必须 Human-in-the-Loop（L2 以下）。
+8. 进阶安全：`security_scanner.py` 提供 Secret 扫描、依赖漏洞扫描与 `ContainerSandbox` 容器隔离；CI 通过 `.github/workflows/security.yml` 定时扫描。
 
 ## 8. 常用命令
 
