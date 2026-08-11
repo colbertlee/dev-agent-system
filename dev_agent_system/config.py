@@ -88,6 +88,18 @@ class Settings:
         return Path(os.getenv("MEMORY_DIR", str(ROOT / "memory_store"))).resolve()
 
     @staticmethod
+    def memory_backend() -> str:
+        return os.getenv("MEMORY_BACKEND", "sqlite").lower()
+
+    @staticmethod
+    def context_compress_threshold() -> int:
+        return int(os.getenv("CONTEXT_COMPRESS_THRESHOLD", "6000"))
+
+    @staticmethod
+    def context_window_limit() -> int:
+        return int(os.getenv("CONTEXT_WINDOW_LIMIT", "8000"))
+
+    @staticmethod
     def sanitize(text: str) -> str:
         """PII 脱敏。"""
         text = re.sub(r"sk-[a-zA-Z0-9]{20,}", "[API_KEY_REDACTED]", text)

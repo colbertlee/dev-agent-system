@@ -100,6 +100,12 @@ class BaseAgent:
         prompt = self.build_prompt(state)
         full_prompt = f"相关记忆：\n{memory_text}\n\n{prompt}" if memory_text else prompt
 
+        # 上下文压缩：超过阈值后保留头部和尾部
+        if len(full_prompt) > Settings.context_compress_threshold():
+            full_prompt = self.memory.compress_context(
+                full_prompt, max_chars=Settings.context_window_limit()
+            )
+
         resolved_model, kwargs = self.router.resolve(self.name, full_prompt)
         output = self.llm.chat(self.system_prompt, full_prompt, model=resolved_model, **kwargs)
         self.memory.remember("last_output", output, session_id=session, layer="short", ttl=3600)

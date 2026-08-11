@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-08-11
+
+### Added
+
+- 记忆后端可插拔：
+  - 新增 `MemoryBackend` 协议、`SQLiteMemoryBackend`、`RedisMemoryBackend`、`ChromaMemoryBackend`。
+  - 通过 `MEMORY_BACKEND` 环境变量选择 `sqlite` / `redis` / `chroma`，未配置或依赖缺失时自动降级到 SQLite。
+- `ContextCompressor` 上下文压缩：超过 `CONTEXT_COMPRESS_THRESHOLD` 字符时保留头部/尾部，避免 LLM 上下文过长。
+- `BaseAgent.run` 在发送给 LLM 前自动调用上下文压缩。
+- `config.py` 新增 `memory_backend()`、`context_compress_threshold()`、`context_window_limit()`。
+- `tests/test_memory.py`：覆盖短期/工作记忆、上下文压缩、记忆条数压缩。
+
+### Changed
+
+- `MemoryAgent` 重构为统一后端入口，保留旧 `MemoryAgentFacade` 兼容。
+
+### Fixed
+
+- 长提示不再直接传入 LLM，避免触发上下文限制或 Token 浪费。
+
+### Security
+
+- 记忆后端切换不影响现有沙箱路径安全策略。
+
+### Model Changes
+
+- 无
+
 ## [0.4.0] - 2026-08-11
 
 ### Added

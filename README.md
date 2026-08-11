@@ -168,6 +168,8 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **产物落地**：Coder 写入 `main.py`、Tester 写入 `test_*.py` 并执行 `pytest`、Docs 写入 `README.md/API.md`、Reviewer 写入 `review_report.json`，全部落在 `workspace/<request_id>/` 下。
 - **模型路由**：`config/model.yaml` 配置各 Agent 的模型版本与温度；`router.py` 支持按提示长度自适应切换大模型。
 - **流式输出**：`POST /orchestrate/stream` 与 `POST /{agent}/stream` 返回 `text/event-stream` 实时推送进度。
+- **记忆后端**：支持 Redis / ChromaDB / SQLite 三档记忆，通过 `MEMORY_BACKEND` 切换；自动降级确保可用性。
+- **上下文压缩**：超过 `CONTEXT_COMPRESS_THRESHOLD` 时自动截断中间文本，保护 LLM 上下文窗口。
 
 ## 预发布检查
 
