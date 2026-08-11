@@ -22,6 +22,7 @@ from dev_agent_system.router import ModelRouter
 from dev_agent_system.security import SafetyScanner, SecretRedactor
 from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY, Telemetry
 from dev_agent_system.templates import get_language, TEMPLATES
+from dev_agent_system.skills import SkillManager
 from dev_agent_system.schemas import AgentCard, AgentSkill
 
 
@@ -47,6 +48,17 @@ class BaseAgent:
         self.memory = MemoryAgent()
         self.tools = MCPToolRegistry()
         self.telemetry = telemetry or DEFAULT_TELEMETRY
+
+        # 自动发现并注册已安装的 Skill 到 MCP 工具箱
+        self._register_skills()
+
+    def _register_skills(self) -> None:
+        if not Settings.skills_enabled():
+            return
+        try:
+            SkillManager().register_to_mcp(self.tools)
+        except Exception:  # noqa: BLE001
+            pass
 
     def build_prompt(self, state: Dict[str, Any]) -> str:
         return str(state.get("input", ""))

@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.19.0] - 2026-08-11
+
+### Added
+
+- Skill 市场协议与 Agent 自动发现：
+  - `SkillManager.find(query)`：按 id/name/description 关键词匹配 Skill。
+  - `BaseAgent` 初始化时自动将已安装 Skill 注册到 `MCPToolRegistry`，每个 Agent 都能发现调用。
+  - `server.py` 新增 `/skills`、`/skills/{skill_id}`、`/skills/{skill_id}/invoke` 端点，形成最小 Skill 市场协议。
+  - 新增 `tests/test_server_skills.py`：覆盖 Skill 市场端点的 list/get/invoke。
+
+### Changed
+
+- `README.md` 与 `AGENTS.md` 更新 Skill 市场协议说明。
+
+### Model Changes
+
+- 无。
+
 ## [0.18.0] - 2026-08-11
 
 ### Added

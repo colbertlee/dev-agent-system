@@ -4,7 +4,40 @@
 
 ---
 
-## v0.18.0 — 最小版 Skill 管理（最新）
+## v0.19.0 — Skill 市场协议与 Agent 自动发现（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 把 Skill 从本地工具升级为可发现、可远程调用的市场协议，并让每个 Agent 在初始化时自动加载已安装 Skill。
+- 为后续构建 Skill Store / Agent 间 Skill 共享打下基础。
+
+### 关键变更
+
+- `dev_agent_system/skills.py`：
+  - `SkillManager.find(query, limit)`：关键词匹配 Skill。
+  - `SkillManager` 可通过 `register_to_mcp` 将 Skill 注册到 MCP 工具箱。
+- `dev_agent_system/agents.py`：
+  - `BaseAgent.__init__` 自动调用 `SkillManager().register_to_mcp(self.tools)`，实现 Agent 自动发现。
+- `dev_agent_system/server.py`：
+  - `GET /skills`：列出所有已安装 Skill。
+  - `GET /skills/{skill_id}`：获取 Skill 元数据。
+  - `POST /skills/{skill_id}/invoke`：远程调用 Skill。
+- 新增 `tests/test_server_skills.py`；99 个测试通过，2 个跳过。
+
+### 升级注意
+
+- 无破坏性接口变更。
+- 默认 `SKILLS_ENABLED=true`，Agent 启动时会扫描 `skills/` 目录；如不需要可设置 `SKILLS_ENABLED=false`。
+
+### 已知问题
+
+- `/skills/{skill_id}/invoke` 当前直接执行 `skill.py` 中的 `run()`，未做输入校验与沙箱化；对外暴露时建议前置鉴权与参数校验。
+
+---
+
+## v0.18.0 — 最小版 Skill 管理
 
 **发布日期**：2026-08-11
 

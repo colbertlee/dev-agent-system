@@ -245,6 +245,24 @@ class SkillManager:
     def uninstall(self, skill_id: str) -> bool:
         return self.store.uninstall(skill_id)
 
+    def find(self, query: str, limit: int = 5) -> List[Skill]:
+        """按 id/name/description 关键词匹配 Skill。"""
+        query_lower = query.lower()
+        scored: List[tuple] = []
+        for skill in self.list():
+            score = 0
+            text = f"{skill.id} {skill.name} {skill.description}".lower()
+            if query_lower in skill.id.lower():
+                score += 3
+            if query_lower in skill.name.lower():
+                score += 2
+            if query_lower in skill.description.lower():
+                score += 1
+            if query_lower in text:
+                scored.append((score, skill))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        return [s for score, s in scored[:limit] if score > 0]
+
     def invoke(self, skill_id: str, *args: Any, **kwargs: Any) -> Any:
         skill = self.get(skill_id)
         if not skill:

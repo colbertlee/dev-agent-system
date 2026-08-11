@@ -25,6 +25,7 @@ from dev_agent_system.metrics import DEFAULT as DEFAULT_METRICS
 from dev_agent_system.orchestrator import Orchestrator
 from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY
 from dev_agent_system.schemas import JSONRPCRequest, JSONRPCResponse, Task, TaskResponse
+from dev_agent_system.skills import SkillManager
 from dev_agent_system.tracker import WorkflowTracker
 
 app = FastAPI(title="Dev Agent System A2A Gateway")
@@ -132,6 +133,47 @@ def status_detail(request_id: str):
     if not snapshot:
         raise HTTPException(status_code=404, detail="request_id not found")
     return snapshot
+
+
+# Skill 市场协议端点
+@app.get("/skills")
+def list_skills():
+    """列出已安装的所有 Skill。"""
+    manager = SkillManager()
+    return [
+        {
+            "id": s.id,
+            "name": s.name,
+            "description": s.description,
+            "has_runner": s.has_runner(),
+        }
+        for s in manager.list()
+    ]
+
+
+@app.get("/skills/{skill_id}")
+def get_skill(skill_id: str):
+    """获取单个 Skill 元数据。"""
+    manager = SkillManager()
+    skill = manager.get(skill_id)
+    if not skill:
+        raise HTTPException(status_code=404, detail="skill not found")
+    return {
+        "id": skill.id,
+        "name": skill.name,
+        "description": skill.description,
+        "prompt": skill.prompt,
+        "has_runner": skill.has_runner(),
+        "metadata": skill.metadata,
+    }
+
+
+@app.post("/skills/{skill_id}/invoke")
+async def invoke_skill(skill_id: str, payload: Dict[str, Any]):
+    """调用指定 Skill。"""
+    manager = SkillManager()
+    result = manager.invoke(skill_id, **payload)
+    return {"skill_id": skill_id, "result": result}
 
 
 @app.post("/orchestrate")

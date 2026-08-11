@@ -288,7 +288,7 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **DevOps 闭环**：`devops.py` 支持 build → run → health → cleanup 真实 Docker 闭环，默认 dry-run 保障安全。
 - **角色扩展**：默认 6 个核心 Agent（Architect/Coder/Tester/Reviewer/Docs/DevOps），可通过 `Orchestrator` 的 `enable_product_manager`、`enable_security`、`enable_dba` 扩展为产品经理、安全审查、数据库架构等角色。
 - **可观测性**：`metrics.py` + `telemetry.py` 提供 Prometheus 格式指标、OpenTelemetry 风格 Span 与结构化日志；`server.py` 暴露 `/metrics` 与 `/health` 端点；`tui.py` 与 `dashboard.py` 提供终端/Web 实时进度面板。
-- **Skill 系统**：`skills.py` 提供最小版 Skill 管理器，支持安装/卸载/调用，并可将 Skill 注册为 MCP 工具。
+- **Skill 系统**：`skills.py` 提供最小版 Skill 管理器，支持安装/卸载/调用/发现；`server.py` 暴露 `/skills` 市场协议端点；每个 `BaseAgent` 初始化时自动加载已安装 Skill。
 
 ## 预发布检查
 
