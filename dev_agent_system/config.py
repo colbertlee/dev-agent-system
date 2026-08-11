@@ -124,9 +124,20 @@ class Settings:
         return int(os.getenv("DEVOPS_TIMEOUT", "120"))
 
     @staticmethod
+    def safety_block_dangerous_commands() -> bool:
+        return os.getenv("SAFETY_BLOCK_DANGEROUS_COMMANDS", "true").lower() in ("1", "true", "yes", "on")
+
+    @staticmethod
+    def safety_redact_secrets() -> bool:
+        return os.getenv("SAFETY_REDACT_SECRETS", "true").lower() in ("1", "true", "yes", "on")
+
+    @staticmethod
+    def safety_code_scan() -> bool:
+        return os.getenv("SAFETY_CODE_SCAN", "true").lower() in ("1", "true", "yes", "on")
+
+    @staticmethod
     def sanitize(text: str) -> str:
         """PII 脱敏。"""
-        text = re.sub(r"sk-[a-zA-Z0-9]{20,}", "[API_KEY_REDACTED]", text)
-        text = re.sub(r"1[3-9]\d{9}", "[PHONE_REDACTED]", text)
-        text = re.sub(r"password[:=]\s*\S+", "password=[REDACTED]", text, flags=re.I)
-        return text
+        from dev_agent_system.security import SecretRedactor
+
+        return SecretRedactor.redact(text)

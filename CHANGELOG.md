@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-08-11
+
+### Added
+
+- 安全与沙箱加固：
+  - 新增 `dev_agent_system/security.py`：`SafetyScanner`（命令/代码安全扫描）、`PathValidator`（路径越界校验）、`SecretRedactor`（敏感信息脱敏）。
+  - `ToolSandbox` 集成 `SafetyScanner` 与 `PathValidator`，命令执行前扫描危险模式，文件读写前校验工作目录边界。
+  - `BaseAgent.run` 在 LLM 调用前后通过 `SecretRedactor` 脱敏，防止 API Key、手机号、邮箱、密码进入记忆或返回结果。
+  - `CoderAgent.postprocess` 对生成的每段代码调用 `SafetyScanner.scan_code`，将可疑模式（eval/exec/subprocess 等）作为 `security_issues` 上报。
+  - `config.py` 新增 `safety_block_dangerous_commands()`、`safety_redact_secrets()`、`safety_code_scan()`；`.env.example` 同步补充。
+  - 新增 `tests/test_security.py`，覆盖危险命令拦截、路径穿越、敏感信息脱敏、代码扫描与 ToolSandbox 集成。
+
+### Changed
+
+- `ToolSandbox` 路径校验统一收敛到 `PathValidator.resolve`，错误信息更明确。
+- `Settings.sanitize` 复用 `SecretRedactor.redact`，避免规则重复。
+
+### Fixed
+
+- 无。
+
+### Model Changes
+
+- 无。
+
 ## [0.9.0] - 2026-08-11
 
 ### Added

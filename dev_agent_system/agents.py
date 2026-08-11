@@ -19,6 +19,7 @@ from dev_agent_system.llm import LLMClient
 from dev_agent_system.memory import MemoryAgent
 from dev_agent_system.mcp import MCPToolRegistry, ToolSandbox
 from dev_agent_system.router import ModelRouter
+from dev_agent_system.security import SafetyScanner, SecretRedactor
 from dev_agent_system.types import AgentCard, AgentSkill
 
 
@@ -106,8 +107,11 @@ class BaseAgent:
                 full_prompt, max_chars=Settings.context_window_limit()
             )
 
+        # 敏感信息脱敏：进入 LLM 前与离开 LLM 后都进行 redaction
+        full_prompt = SecretRedactor.redact(full_prompt)
         resolved_model, kwargs = self.router.resolve(self.name, full_prompt)
         output = self.llm.chat(self.system_prompt, full_prompt, model=resolved_model, **kwargs)
+        output = SecretRedactor.redact(output)
         self.memory.remember("last_output", output, session_id=session, layer="short", ttl=3600)
 
         result: Dict[str, Any] = {
@@ -179,12 +183,15 @@ class CoderAgent(BaseAgent):
         workspace = self._workspace(state)
         blocks = self._extract_code_blocks(output)
         files: List[str] = []
+        security_issues: List[Dict[str, Any]] = []
         for idx, block in enumerate(blocks, start=1):
             path = block["path"]
             if not path:
                 path = f"module_{idx}.py"
             if not path.endswith(".py"):
                 path += ".py"
+            issues = SafetyScanner.scan_code(block["code"])
+            security_issues.extend(issues)
             res = await self._write_file(path, block["code"], workspace)
             if res.get("success"):
                 files.append(path)
@@ -209,6 +216,7 @@ class CoderAgent(BaseAgent):
             "status": report.get("status", "completed" if files else "needs_help"),
             "test_result": report.get("test_result", "unknown"),
             "note": report.get("note", ""),
+            "security_issues": security_issues,
         }
 
     @staticmethod

@@ -3,42 +3,28 @@ from __future__ import annotations
 
 import asyncio
 import json
-import re
 import subprocess
-import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from dev_agent_system.security import PathValidator, SafetyScanner
+
 
 class ToolSandbox:
-    """MCP 工具沙箱：白名单 + 黑名单 + 路径限制 + 超时。"""
+    """MCP 工具沙箱：白名单 + 安全扫描 + 路径限制 + 超时。"""
 
-    BLACKLIST = re.compile(
-        r"(rm\s+-rf\s*/|>\s*/dev/null\s*;|&&\s*rm\b|\|\s*sh\b|curl\s+.*\|.*sh|\|\s*bash|wget\s+-O-)",
-        re.I,
-    )
     ALLOWED_PREFIXES = ("python", "pytest", "git", "ls", "cat", "echo", "docker build")
     WORK_DIR = Path("workspace").resolve()
 
     _write_lock = asyncio.Lock()
 
     @classmethod
-    def _safe_path(cls, relative_path: str) -> Path:
-        target = (cls.WORK_DIR / relative_path).resolve()
-        try:
-            target.relative_to(cls.WORK_DIR)
-        except ValueError as exc:
-            raise ValueError("路径越界：禁止访问工作目录之外") from exc
-        return target
-
-    @classmethod
     def read_file(cls, path: str, base_dir: Optional[str] = None) -> Dict[str, Any]:
         work = Path(base_dir).resolve() if base_dir else cls.WORK_DIR
-        target = (work / path).resolve()
         try:
-            target.relative_to(work)
-        except ValueError:
-            return {"success": False, "error": "路径越界"}
+            target = PathValidator.resolve(work, path)
+        except ValueError as exc:
+            return {"success": False, "error": str(exc)}
         if not target.exists():
             return {"success": False, "error": "文件不存在"}
         try:
@@ -52,11 +38,10 @@ class ToolSandbox:
     ) -> Dict[str, Any]:
         async with cls._write_lock:
             work = Path(base_dir).resolve() if base_dir else cls.WORK_DIR
-            target = (work / path).resolve()
             try:
-                target.relative_to(work)
-            except ValueError:
-                return {"success": False, "error": "路径越界"}
+                target = PathValidator.resolve(work, path)
+            except ValueError as exc:
+                return {"success": False, "error": str(exc)}
             try:
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_text(content, encoding="utf-8")
@@ -68,8 +53,9 @@ class ToolSandbox:
     def run_command(cls, command: str, timeout: int = 5, base_dir: Optional[str] = None) -> Dict[str, Any]:
         if not command:
             return {"success": False, "error": "空命令"}
-        if cls.BLACKLIST.search(command):
-            return {"success": False, "error": "命令命中黑名单"}
+        safe, issues = SafetyScanner.scan_command(command)
+        if not safe:
+            return {"success": False, "error": f"命令命中安全规则：{', '.join(issues)}"}
         if not any(command.strip().startswith(prefix) for prefix in cls.ALLOWED_PREFIXES):
             return {"success": False, "error": f"仅允许以 {cls.ALLOWED_PREFIXES} 开头的命令"}
         work = Path(base_dir).resolve() if base_dir else cls.WORK_DIR

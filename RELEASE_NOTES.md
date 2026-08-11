@@ -4,7 +4,38 @@
 
 ---
 
-## v0.9.0 — DevOps 真实闭环（最新）
+## v0.10.0 — 安全与沙箱加固（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 将安全防护从“黑名单正则”升级为“扫描 + 校验 + 脱敏”三层体系，降低 LLM 生成危险命令或泄露敏感信息的风险。
+- `SafetyScanner` 对命令和代码分别做危险模式检测，路径操作统一由 `PathValidator` 校验，避免目录穿越。
+- `SecretRedactor` 在 LLM 调用前后自动脱敏 API Key、手机号、邮箱、密码等敏感信息。
+
+### 关键变更
+
+- 新增 `dev_agent_system/security.py`：`SafetyScanner`、`PathValidator`、`SecretRedactor`。
+- `ToolSandbox` 命令执行前调用 `SafetyScanner.scan_command`，文件读写前调用 `PathValidator.resolve`。
+- `BaseAgent.run` 对 prompt 和 output 做 `SecretRedactor.redact`。
+- `CoderAgent.postprocess` 对每段生成代码做 `SafetyScanner.scan_code`，可疑模式写入 `security_issues`。
+- `config.py` 新增 `safety_block_dangerous_commands()`、`safety_redact_secrets()`、`safety_code_scan()`。
+- 新增 `tests/test_security.py`，37 个测试全部通过。
+
+### 升级注意
+
+- 无破坏性接口变更。
+- 默认开启所有安全开关；如需关闭，可设置 `SAFETY_BLOCK_DANGEROUS_COMMANDS=false`、`SAFETY_REDACT_SECRETS=false`、`SAFETY_CODE_SCAN=false`。
+- 命令白名单仍以 `ToolSandbox.ALLOWED_PREFIXES` 为准，`SafetyScanner` 作为额外的语义层加固。
+
+### 已知问题
+
+- 无。
+
+---
+
+## v0.9.0 — DevOps 真实闭环
 
 **发布日期**：2026-08-11
 

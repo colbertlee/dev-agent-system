@@ -125,14 +125,24 @@ docker-compose logs -f
 │   ├── router.py        # 模型路由
 │   ├── mcp.py           # MCP 工具沙箱
 │   ├── memory.py        # 三层记忆
+│   ├── security.py      # 安全扫描、路径校验、敏感信息脱敏
+│   ├── devops.py        # DevOps 真实闭环（build/run/health/cleanup）
+│   ├── eval.py          # 评估与指标体系
+│   ├── checkpoint.py    # 状态持久化与断点续跑
 │   ├── prompts.yaml     # System Prompt 版本化
 │   └── agent_cards.json # A2A Agent Card 汇总
 ├── config/
 │   ├── model.yaml       # 模型版本锁定（无 latest）
 │   └── mcp.yaml         # MCP Server 配置
 ├── tests/
-│   ├── eval_dataset.json  # 10 条评估数据集
-│   └── test_flow.py       # 集成测试
+│   ├── eval_dataset.json    # 10 条评估数据集
+│   ├── test_flow.py         # 集成测试
+│   ├── test_checkpoint.py   # checkpoint 持久化测试
+│   ├── test_memory.py       # 记忆后端测试
+│   ├── test_eval.py         # 评估指标测试
+│   ├── test_devops.py       # DevOps 闭环测试
+│   ├── test_security.py     # 安全与沙箱测试
+│   └── test_a2a.py          # A2A 协议测试
 ├── scripts/
 │   ├── run_a2a_cluster.py     # 一键启动 6 个独立 A2A Agent
 │   ├── install_windows.ps1    # Windows 安装脚本
@@ -196,13 +206,15 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **无回流边**：Reviewer 未通过时，由 Scheduler 发起新一轮，避免 DAG 循环依赖。
 - **最大迭代**：默认 10 轮，超过后强制结束。
 - **幂等**：所有请求携带 `request_id`，A2A 服务端去重。
-- **安全**：LLM 生成代码不直接在宿主机执行，沙箱白名单+超时。
+- **安全**：LLM 生成代码不直接在宿主机执行；`security.py` 提供 `SafetyScanner`（命令/代码危险模式扫描）、`PathValidator`（路径越界校验）、`SecretRedactor`（API Key/手机号/邮箱/密码脱敏），沙箱白名单+超时。
 - **产物落地**：Coder 写入 `main.py`、Tester 写入 `test_*.py` 并执行 `pytest`、Docs 写入 `README.md/API.md`、Reviewer 写入 `review_report.json`，全部落在 `workspace/<request_id>/` 下。
 - **模型路由**：`config/model.yaml` 配置各 Agent 的模型版本与温度；`router.py` 支持按提示长度自适应切换大模型。
 - **流式输出**：`POST /orchestrate/stream` 与 `POST /{agent}/stream` 返回 `text/event-stream` 实时推送进度。
 - **记忆后端**：支持 Redis / ChromaDB / SQLite 三档记忆，通过 `MEMORY_BACKEND` 切换；自动降级确保可用性。
 - **上下文压缩**：超过 `CONTEXT_COMPRESS_THRESHOLD` 时自动截断中间文本，保护 LLM 上下文窗口。
 - **状态持久化**：LangGraph checkpoint 自动写入 SQLite，支持断点续跑与 `POST /tasks/{request_id}/resume`。
+- **评估指标**：`eval.py` 跑通 `tests/eval_dataset.json` benchmark，产出 Review 通过率、文件召回率、覆盖率、迭代次数与耗时等多维报告。
+- **DevOps 闭环**：`devops.py` 支持 build → run → health → cleanup 真实 Docker 闭环，默认 dry-run 保障安全。
 
 ## 预发布检查
 
