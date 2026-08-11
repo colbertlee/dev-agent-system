@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-08-11
+
+### Added
+
+- CLI / UI 增强（路线图第 3 条）：
+  - 新增 `dev_agent_system/tracker.py`：全局工作流状态追踪器，支持 `start`/`update`/`finish`/`list`/`snapshot`。
+  - `Orchestrator` 集成 `WorkflowTracker`，实时记录当前 Agent、迭代、状态与产物。
+  - 新增 `dev_agent_system/tui.py`：基于 `rich` 的终端进度面板，展示 Agent 执行状态、工作流指标与最近事件；支持 `python -m dev_agent_system.tui "需求"`。
+  - 新增 `dev_agent_system/dashboard.py`：Web Dashboard HTML 模板与数据聚合。
+  - `server.py` 新增 `/dashboard`、`/api/status`、`/api/status/{request_id}` 端点。
+  - 新增 `tests/test_dashboard.py`、`tests/test_tui.py`；`requirements.txt` 增加 `rich==13.9.4`。
+
+### Changed
+
+- `README.md` 增加 TUI 与 Dashboard 使用说明。
+
+### Model Changes
+
+- 无。
+
 ## [0.13.0] - 2026-08-11
 
 ### Added

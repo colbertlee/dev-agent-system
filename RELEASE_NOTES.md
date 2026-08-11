@@ -4,7 +4,38 @@
 
 ---
 
-## v0.13.0 — 真实 LLM 联调（最新）
+## v0.14.0 — CLI / UI 增强（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 为工作流增加实时可观测界面：终端 TUI 进度面板与 Web Dashboard。
+- `Orchestrator` 在运行期间把工作流状态写入内存追踪器，`/api/status` 与 `/dashboard` 可直接查看当前 Agent、迭代、耗时与产物。
+
+### 关键变更
+
+- 新增 `dev_agent_system/tracker.py`：单例 `WorkflowTracker`，线程安全，记录 `request_id` 级工作流状态。
+- `Orchestrator` 集成 `WorkflowTracker`：`run`/`resume`/`_run_agent` 自动同步状态。
+- 新增 `dev_agent_system/tui.py`：基于 `rich` 的 `OrchestratorTUI`，运行 `python -m dev_agent_system.tui "需求"` 可在终端实时查看进度。
+- 新增 `dev_agent_system/dashboard.py`：Web Dashboard 页面与数据聚合。
+- `server.py` 新增 `/dashboard`、 `/api/status`、 `/api/status/{request_id}` 三个端点。
+- `requirements.txt` 增加 `rich==13.9.4`。
+- 新增 `tests/test_dashboard.py` 与 `tests/test_tui.py`；68 个测试通过，2 个因未安装 `rich`/`openai` 跳过。
+
+### 升级注意
+
+- 无破坏性接口变更。
+- 使用 TUI 前需要 `pip install -r requirements.txt` 安装 `rich`。
+- `WorkflowTracker` 为内存实现，进程重启会丢失历史记录；生产可替换为 Redis 实现。
+
+### 已知问题
+
+- `WorkflowTracker` 当前为单进程内存存储，不支持多实例共享。
+
+---
+
+## v0.13.0 — 真实 LLM 联调
 
 **发布日期**：2026-08-11
 

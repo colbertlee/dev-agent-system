@@ -28,6 +28,7 @@ from dev_agent_system.devops import DevOpsRunner
 from dev_agent_system.memory import MemoryAgent
 from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY, Telemetry
 from dev_agent_system.schemas import GraphState
+from dev_agent_system.tracker import WorkflowTracker
 
 
 def _review_passed(review: Dict[str, Any]) -> bool:
@@ -69,6 +70,7 @@ class Orchestrator:
         enable_security: bool = False,
         enable_dba: bool = False,
         telemetry: Optional[Telemetry] = None,
+        tracker: Optional[WorkflowTracker] = None,
     ):
         self.max_iterations = max_iterations
         self.enable_devops = enable_devops
@@ -77,6 +79,7 @@ class Orchestrator:
         self.enable_security = enable_security
         self.enable_dba = enable_dba
         self.telemetry = telemetry or DEFAULT_TELEMETRY
+        self.tracker = tracker or WorkflowTracker()
         self.guard = IdempotencyGuard()
         self.memory = MemoryAgent()
         self.checkpointer = make_checkpointer()
@@ -169,6 +172,7 @@ class Orchestrator:
         if self.guard.is_duplicate(state["request_id"]):
             return {"request_id": state["request_id"], "status": "skipped", "reason": "duplicate"}
 
+        self.tracker.start(state["request_id"], requirement)
         with self.telemetry.span("orchestrator.run", {"request_id": state["request_id"]}):
             # 注入工作记忆
             state["memory"] = self.agents["memory"].run(state)
@@ -185,10 +189,12 @@ class Orchestrator:
                 iterations=str(final_state.get("iteration", 0)),
             )
             self._record_workflow_metrics(final_state)
+            self.tracker.finish(state["request_id"], final_state)
             return final_state
 
     async def resume(self, request_id: str) -> Dict[str, Any]:
         """从 SQLite checkpoint 恢复并继续执行工作流。"""
+        self.tracker.update(request_id, status="resumed")
         with self.telemetry.span("orchestrator.resume", {"request_id": request_id}):
             graph = self._build_graph()
             config = self._thread_config(request_id)
@@ -204,6 +210,7 @@ class Orchestrator:
             final_state["finished_at"] = datetime.now().isoformat()
             final_state["artifacts"] = self._collect_artifacts(final_state)
             self._record_workflow_metrics(final_state)
+            self.tracker.finish(request_id, final_state)
             return final_state
 
     def list_checkpoints(self, request_id: str) -> List[Dict[str, Any]]:
@@ -355,7 +362,14 @@ class Orchestrator:
 
     async def _run_agent(self, name: str, state: GraphState) -> Dict[str, Any]:
         agent = self.agents[name]
-        with self.telemetry.span(f"agent.{name}", {"agent": name, "request_id": state.get("request_id", "")}):
+        request_id = state.get("request_id", "")
+        self.tracker.update(
+            request_id,
+            current_agent=name,
+            iteration=state.get("iteration", 0),
+            status="working",
+        )
+        with self.telemetry.span(f"agent.{name}", {"agent": name, "request_id": request_id}):
             if asyncio.iscoroutinefunction(agent.run):
                 result = await agent.run(state)
             else:

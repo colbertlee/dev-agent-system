@@ -34,11 +34,18 @@ pip install -r requirements.txt
 # 运行完整工作流（MOCK 模式）
 python -m dev_agent_system.main "开发一个支持 JWT 的用户登录模块"
 
-# 启动统一 A2A 网关（含 /health 与 /metrics）
+# TUI 终端进度面板（需安装 rich）
+python -m dev_agent_system.tui "开发一个支持 JWT 的用户登录模块"
+
+# 启动统一 A2A 网关（含 /health、/metrics、/dashboard）
 python -m dev_agent_system.server --port 8000
 
 # 查看 Prometheus 指标
 curl http://localhost:8000/metrics
+
+# 打开 Web Dashboard
+open http://localhost:8000/dashboard  # Linux/macOS
+# start http://localhost:8000/dashboard  # Windows
 
 # 启动 6 个独立 A2A Agent 服务
 python scripts/run_a2a_cluster.py
@@ -146,6 +153,9 @@ docker-compose logs -f
 │   ├── security.py      # 安全扫描、路径校验、敏感信息脱敏
 │   ├── metrics.py       # Prometheus 格式指标收集
 │   ├── telemetry.py      # OpenTelemetry 风格 Span 与结构化日志
+│   ├── tracker.py        # 工作流全局状态追踪
+│   ├── tui.py            # rich 终端进度面板
+│   ├── dashboard.py      # Web Dashboard 页面
 │   ├── devops.py        # DevOps 真实闭环（build/run/health/cleanup）
 │   ├── eval.py          # 评估与指标体系
 │   ├── checkpoint.py    # 状态持久化与断点续跑
@@ -165,6 +175,8 @@ docker-compose logs -f
 │   ├── test_metrics.py      # 指标收集测试
 │   ├── test_telemetry.py     # 链路追踪测试
 │   ├── test_server.py        # Server 端点测试
+│   ├── test_dashboard.py    # Dashboard 端点测试
+│   ├── test_tui.py          # TUI 与 Tracker 测试
 │   └── test_a2a.py          # A2A 协议测试
 ├── scripts/
 │   ├── run_a2a_cluster.py     # 一键启动 6 个独立 A2A Agent
@@ -239,7 +251,7 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **评估指标**：`eval.py` 跑通 `tests/eval_dataset.json` benchmark，产出 Review 通过率、文件召回率、覆盖率、迭代次数与耗时等多维报告。
 - **DevOps 闭环**：`devops.py` 支持 build → run → health → cleanup 真实 Docker 闭环，默认 dry-run 保障安全。
 - **角色扩展**：默认 6 个核心 Agent（Architect/Coder/Tester/Reviewer/Docs/DevOps），可通过 `Orchestrator` 的 `enable_product_manager`、`enable_security`、`enable_dba` 扩展为产品经理、安全审查、数据库架构等角色。
-- **可观测性**：`metrics.py` + `telemetry.py` 提供 Prometheus 格式指标、OpenTelemetry 风格 Span 与结构化日志；`server.py` 暴露 `/metrics` 与 `/health` 端点。
+- **可观测性**：`metrics.py` + `telemetry.py` 提供 Prometheus 格式指标、OpenTelemetry 风格 Span 与结构化日志；`server.py` 暴露 `/metrics` 与 `/health` 端点；`tui.py` 与 `dashboard.py` 提供终端/Web 实时进度面板。
 
 ## 预发布检查
 

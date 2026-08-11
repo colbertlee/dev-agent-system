@@ -6,7 +6,7 @@ import asyncio
 from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, Header, HTTPException
-from fastapi.responses import JSONResponse, PlainTextResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, StreamingResponse
 import uvicorn
 
 from dev_agent_system.agents import (
@@ -20,10 +20,12 @@ from dev_agent_system.agents import (
     SecurityAgent,
     TesterAgent,
 )
+from dev_agent_system.dashboard import dashboard_html
 from dev_agent_system.metrics import DEFAULT as DEFAULT_METRICS
 from dev_agent_system.orchestrator import Orchestrator
 from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY
 from dev_agent_system.schemas import JSONRPCRequest, JSONRPCResponse, Task, TaskResponse
+from dev_agent_system.tracker import WorkflowTracker
 
 app = FastAPI(title="Dev Agent System A2A Gateway")
 
@@ -105,6 +107,31 @@ def metrics():
         content=DEFAULT_METRICS.render_prometheus(),
         media_type="text/plain; version=0.0.4; charset=utf-8",
     )
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    """Web Dashboard 主页。"""
+    return HTMLResponse(content=dashboard_html())
+
+
+@app.get("/api/status")
+def status():
+    """返回当前所有工作流状态快照。"""
+    tracker = WorkflowTracker()
+    return {
+        "workflows": tracker.all_snapshots(limit=50),
+    }
+
+
+@app.get("/api/status/{request_id}")
+def status_detail(request_id: str):
+    """返回单个工作流状态快照。"""
+    tracker = WorkflowTracker()
+    snapshot = tracker.snapshot(request_id)
+    if not snapshot:
+        raise HTTPException(status_code=404, detail="request_id not found")
+    return snapshot
 
 
 @app.post("/orchestrate")
