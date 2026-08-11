@@ -116,6 +116,14 @@ class Settings:
         return int(os.getenv("EVAL_MAX_WORKERS", "1"))
 
     @staticmethod
+    def devops_dry_run() -> bool:
+        return os.getenv("DEVOPS_DRY_RUN", "true").lower() in ("1", "true", "yes", "on")
+
+    @staticmethod
+    def devops_timeout() -> int:
+        return int(os.getenv("DEVOPS_TIMEOUT", "120"))
+
+    @staticmethod
     def sanitize(text: str) -> str:
         """PII 脱敏。"""
         text = re.sub(r"sk-[a-zA-Z0-9]{20,}", "[API_KEY_REDACTED]", text)

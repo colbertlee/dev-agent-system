@@ -5,6 +5,7 @@ import asyncio
 import json
 import uuid
 from datetime import datetime
+from pathlib import Path
 from typing import Any, AsyncIterator, Dict, Optional
 
 from langgraph.graph import END, StateGraph
@@ -20,6 +21,7 @@ from dev_agent_system.agents import (
 )
 from dev_agent_system.checkpoint import make_checkpointer
 from dev_agent_system.config import Settings
+from dev_agent_system.devops import DevOpsRunner
 from dev_agent_system.memory import MemoryAgent
 from dev_agent_system.types import GraphState
 
@@ -54,9 +56,15 @@ class IdempotencyGuard:
 class Orchestrator:
     """LangGraph 状态图编排器：Architect → Coder → {Tester, Docs} 并行 → Reviewer → 条件迭代。"""
 
-    def __init__(self, max_iterations: int = 10, enable_devops: bool = False):
+    def __init__(
+        self,
+        max_iterations: int = 10,
+        enable_devops: bool = False,
+        devops_runner: Optional[Any] = None,
+    ):
         self.max_iterations = max_iterations
         self.enable_devops = enable_devops
+        self.devops_runner = devops_runner
         self.guard = IdempotencyGuard()
         self.memory = MemoryAgent()
         self.checkpointer = make_checkpointer()
@@ -262,7 +270,19 @@ class Orchestrator:
         return "continue"
 
     async def _devops_node(self, state: GraphState) -> GraphState:
-        state["devops"] = await self._run_agent("devops", state)
+        devops_result = await self._run_agent("devops", state)
+        runner = self.devops_runner or DevOpsRunner(
+            dry_run=Settings.devops_dry_run(),
+            timeout=Settings.devops_timeout(),
+        )
+        workspace = Path(state.get("workspace", Settings.workspace_dir() / state.get("request_id", "default")))
+        deployment = await asyncio.to_thread(
+            runner.run,
+            state.get("request_id", "default"),
+            workspace,
+        )
+        devops_result["deployment"] = deployment
+        state["devops"] = devops_result
         return state
 
     async def _run_agent(self, name: str, state: GraphState) -> Dict[str, Any]:

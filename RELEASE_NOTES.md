@@ -4,7 +4,36 @@
 
 ---
 
-## v0.8.0 — 评估与指标体系（最新）
+## v0.9.0 — DevOps 真实闭环（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 让 DevOps 从“生成 Dockerfile 和 CI 配置”升级为“真实构建、运行、健康检查、清理”的完整闭环。
+- `DevOpsRunner` 默认 dry-run，确保安全性；关闭 `DEVOPS_DRY_RUN` 后即可在本机 Docker 环境真实部署验证。
+- 为后续 CI/CD 集成、自动部署、发布流水线提供可验证的底层能力。
+
+### 关键变更
+
+- 新增 `dev_agent_system/devops.py`：`DevOpsRunner` 支持 `docker build -t <image> .`、`docker run -d`、`docker ps` 健康检查、`docker stop/rm` 清理。
+- `Orchestrator` 在 `enable_devops=True` 路径下，Reviewer 通过后进入 `devops_node`，执行 DevOpsAgent 生成产物并调用 `DevOpsRunner`。
+- `config.py` 新增 `devops_dry_run()`（默认 `True`）与 `devops_timeout()`（默认 `120s`）。
+- 新增 `tests/test_devops.py`，26 个测试全部通过。
+
+### 升级注意
+
+- 无破坏性接口变更。旧版本命令与 API 保持兼容。
+- 默认 `DEVOPS_DRY_RUN=true`，不会真正调用 docker；如需真实闭环，请确保本机已安装 Docker 并设置 `DEVOPS_DRY_RUN=false`。
+- 涉及真实部署、删除容器等操作属于 L2 以下，建议在 CI 或受控环境中启用。
+
+### 已知问题
+
+- 无。
+
+---
+
+## v0.8.0 — 评估与指标体系
 
 **发布日期**：2026-08-11
 

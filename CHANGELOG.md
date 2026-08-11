@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-08-11
+
+### Added
+
+- DevOps 真实闭环：
+  - 新增 `dev_agent_system/devops.py`：`DevOpsRunner` 实现 build → run → health → cleanup 闭环。
+  - 默认 `DEVOPS_DRY_RUN=true`，仅生成部署报告；关闭后可真实执行 `docker build/run`。
+  - `Orchestrator` 在 `enable_devops=True` 时调用 `DevOpsRunner`，将部署结果写入 `state["devops"]`。
+  - `config.py` 新增 `devops_dry_run()` 与 `devops_timeout()`；`.env.example` 同步补充。
+  - 新增 `tests/test_devops.py`，覆盖镜像名清洗、dry-run 部署、Orchestrator 集成。
+
+### Changed
+
+- `Orchestrator.__init__` 新增 `devops_runner` 注入参数，便于测试与扩展。
+
+### Fixed
+
+- 无。
+
+### Model Changes
+
+- 无。
+
 ## [0.8.0] - 2026-08-11
 
 ### Added

@@ -48,6 +48,13 @@ pytest -q
 
 # 运行评估 benchmark（默认使用 tests/eval_dataset.json）
 python -m dev_agent_system.eval --max-iter 3 --output-dir eval_results
+
+# 运行完整工作流并启用 DevOps 闭环（dry-run，不实际部署）
+python -m dev_agent_system.main "开发一个加法模块" --max-iter 1 --devops
+
+# 真实 DevOps 闭环（需本地安装 Docker 并设置 DEVOPS_DRY_RUN=false）
+# $env:DEVOPS_DRY_RUN="false"
+# python -m dev_agent_system.main "开发一个加法模块" --max-iter 1 --devops
 ```
 
 ## 配置真实 LLM
