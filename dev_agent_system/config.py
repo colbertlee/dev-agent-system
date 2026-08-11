@@ -108,6 +108,14 @@ class Settings:
         return os.getenv("CHECKPOINT_ENABLED", "true").lower() in ("1", "true", "yes", "on")
 
     @staticmethod
+    def eval_output_dir() -> Path:
+        return Path(os.getenv("EVAL_OUTPUT_DIR", str(ROOT / "eval_results"))).resolve()
+
+    @staticmethod
+    def eval_max_workers() -> int:
+        return int(os.getenv("EVAL_MAX_WORKERS", "1"))
+
+    @staticmethod
     def sanitize(text: str) -> str:
         """PII 脱敏。"""
         text = re.sub(r"sk-[a-zA-Z0-9]{20,}", "[API_KEY_REDACTED]", text)

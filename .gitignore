@@ -18,6 +18,7 @@ ENV/
 # Runtime data
 workspace/
 memory_store/
+eval_results/
 backups/
 chroma_data/
 *.db

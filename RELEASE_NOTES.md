@@ -4,7 +4,35 @@
 
 ---
 
-## v0.7.0 — 状态持久化与断点续跑（最新）
+## v0.8.0 — 评估与指标体系（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 让系统从“能跑通单个需求”升级为“可量化评估的 benchmark 平台”。
+- 通过 `tests/eval_dataset.json` 中的 10 条真实需求，自动运行并产出 Review 通过率、文件召回率、测试覆盖率、迭代次数与耗时等多维指标。
+- 为后续 A/B 测试模型、Prompt 调优、Agent 能力迭代提供数据依据。
+
+### 关键变更
+
+- 新增 `dev_agent_system/eval.py`：`EvaluationRunner`、`MetricCalculator`、`EvalSample`、`EvalReport`。
+- 新增 CLI：`python -m dev_agent_system.eval --dataset tests/eval_dataset.json --max-iter 3 --output-dir eval_results`。
+- 新增 `tests/test_eval.py`，用 `FakeOrchestrator` 验证指标计算与异常容错。
+- `config.py` 新增 `eval_output_dir()` / `eval_max_workers()`，`.env.example` 同步补充。
+
+### 升级注意
+
+- 无破坏性变更。旧版本工作流命令与 API 保持不变。
+- 评估默认顺序执行（`EVAL_MAX_WORKERS=1`），避免 SQLite checkpoint 并发锁；如需提速，可改用独立 checkpoint DB 后再提高并发。
+
+### 已知问题
+
+- 无。
+
+---
+
+## v0.7.0 — 状态持久化与断点续跑
 
 **发布日期**：2026-08-11
 

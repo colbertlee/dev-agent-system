@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-08-11
+
+### Added
+
+- 评估与指标体系：
+  - 新增 `dev_agent_system/eval.py`：`EvaluationRunner` + `MetricCalculator`，跑通 `tests/eval_dataset.json` benchmark。
+  - 支持指标：Reviewer 通过率、期望文件召回率、测试覆盖率（含 `min_test_coverage` 达标判定）、平均迭代次数、平均耗时。
+  - 输出 JSON 评估报告与 Markdown 摘要到 `EVAL_OUTPUT_DIR`（默认 `./eval_results`）。
+  - CLI 入口：`python -m dev_agent_system.eval --dataset tests/eval_dataset.json --max-iter 3`。
+  - 新增 `tests/test_eval.py` 覆盖 MetricCalculator 与 EvaluationRunner 的指标计算、异常处理。
+- `config.py` 新增 `eval_output_dir()` 与 `eval_max_workers()`；`.env.example` 补充 `EVAL_OUTPUT_DIR` / `EVAL_MAX_WORKERS`。
+
+### Changed
+
+- 无破坏性变更。
+
+### Fixed
+
+- 无。
+
+### Model Changes
+
+- 无。
+
 ## [0.7.0] - 2026-08-11
 
 ### Added

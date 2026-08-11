@@ -45,6 +45,9 @@ python -m dev_agent_system.a2a_node --agent architect --port 8081
 
 # 运行测试
 pytest -q
+
+# 运行评估 benchmark（默认使用 tests/eval_dataset.json）
+python -m dev_agent_system.eval --max-iter 3 --output-dir eval_results
 ```
 
 ## 配置真实 LLM
