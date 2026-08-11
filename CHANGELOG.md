@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-08-11
+
+### Added
+
+- 真实 LLM 联调（路线图第 2 条）：
+  - 新增 `dev_agent_system/llm_providers.py`：OpenAI/DeepSeek、Ollama 本地模型、Mock 的统一 Provider 抽象。
+  - `LLMClient` 支持通过 `LLM_PROVIDER` 环境变量或模型名前缀 `ollama/<model>` 自动选择 Provider。
+  - `OpenAIProvider` 兼容 OpenAI 风格 API，支持同步/异步流式输出。
+  - `OllamaProvider` 通过 `/api/chat` 调用本地 Ollama，支持 stream 与非 stream 模式。
+  - `MockProvider` 支持自定义返回与流式 token 拆分。
+  - 新增 `LLM_TIMEOUT`、`LLM_MAX_RETRIES`、`OLLAMA_URL` 配置项。
+  - 新增 `tests/test_llm.py`：覆盖 Provider 选择、Mock 流式、Ollama 请求体构建与 Chat 调用。
+
+### Changed
+
+- `dev_agent_system/llm.py` 重写为基于 Provider 的调度器，保留 `chat`/`stream`/`astream` 接口与 `MockLLM` 兼容类。
+- `dev_agent_system/config.py` 增加 `llm_model()`、`llm_provider()`、`ollama_url()` 配置读取。
+- `.env.example` 增加 `LLM_PROVIDER` 与 `OLLAMA_URL` 示例。
+- `dev_agent_system/agents.py` 中 `CoderAgent` 的 MOCK 降级判断改为 `self.llm.is_mock()`。
+
+### Model Changes
+
+- 无。
+
 ## [0.12.0] - 2026-08-11
 
 ### Added

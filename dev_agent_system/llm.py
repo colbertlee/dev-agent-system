@@ -1,38 +1,71 @@
-"""LLM 客户端：兼容 OpenAI 风格 API，未配置时降级为 MOCK，支持流式输出。"""
+"""LLM 客户端：自动选择 OpenAI / DeepSeek / Ollama / Mock Provider，支持流式输出。"""
 from __future__ import annotations
 
 import os
 import re
-from typing import Any, Dict, Iterator, Optional
+from typing import Any, AsyncIterator, Iterator, Optional, Union
+
+from dev_agent_system.config import Settings
+from dev_agent_system.llm_providers import LLMProvider, MockProvider, OllamaProvider, OpenAIProvider
+
+
+def _openai_available() -> bool:
+    try:
+        import openai  # noqa: F401
+        return True
+    except ImportError:
+        return False
 
 
 class LLMClient:
-    """轻量级 OpenAI 兼容 LLM 客户端，支持 timeout、重试、流式输出与参数覆盖。"""
+    """轻量级 LLM 客户端，根据环境变量自动选择 Provider。"""
 
-    def __init__(self, model: Optional[str] = None):
-        self.model = model or os.getenv("LLM_MODEL", "deepseek-chat")
-        self._client = None
-        self._init_client()
+    def __init__(
+        self,
+        model: Optional[str] = None,
+        provider: Optional[Union[str, LLMProvider]] = None,
+    ):
+        self.model = model or Settings.llm_model()
+        self.provider = self._resolve_provider(provider)
 
-    def _init_client(self) -> None:
-        try:
-            from openai import OpenAI
-        except ImportError:
-            return
-        api_key = os.getenv("LLM_API_KEY")
-        base_url = os.getenv("LLM_BASE_URL")
-        if api_key:
-            timeout = int(os.getenv("LLM_TIMEOUT", "30"))
-            max_retries = int(os.getenv("LLM_MAX_RETRIES", "2"))
-            self._client = OpenAI(
-                api_key=api_key,
-                base_url=base_url,
-                timeout=timeout,
-                max_retries=max_retries,
-            )
+    def _resolve_provider(self, provider: Optional[Union[str, LLMProvider]]) -> LLMProvider:
+        if isinstance(provider, LLMProvider):
+            return provider
+
+        provider_name = (provider or Settings.llm_provider() or "").lower()
+        if provider_name == "openai" or provider_name == "deepseek":
+            return self._openai_provider()
+        if provider_name == "ollama":
+            return self._ollama_provider()
+        if provider_name == "mock":
+            return MockProvider(model=self.model)
+
+        # 自动推断：未配置真实 LLM 时降级为 MOCK
+        if self.model and self.model.startswith("ollama/"):
+            return self._ollama_provider(model=self.model.split("/", 1)[1])
+        if Settings.llm_api_key() and _openai_available():
+            return self._openai_provider()
+
+        return MockProvider(model=self.model)
+
+    def _openai_provider(self, model: Optional[str] = None) -> OpenAIProvider:
+        return OpenAIProvider(
+            model=model or self.model,
+            api_key=Settings.llm_api_key(),
+            base_url=Settings.llm_base_url() or None,
+            timeout=Settings.llm_timeout(),
+            max_retries=Settings.llm_max_retries(),
+        )
+
+    def _ollama_provider(self, model: Optional[str] = None) -> OllamaProvider:
+        return OllamaProvider(
+            model=model or self.model,
+            base_url=Settings.ollama_url(),
+            timeout=Settings.llm_timeout(),
+        )
 
     def is_mock(self) -> bool:
-        return self._client is None
+        return isinstance(self.provider, MockProvider)
 
     @staticmethod
     def _mask(text: str) -> str:
@@ -53,67 +86,16 @@ class LLMClient:
     ) -> str:
         system = self._mask(system)
         user = self._mask(user)
-        if self._client is None:
-            return (
-                f"[MOCK {model or self.model}] 未配置 LLM_API_KEY 或 openai 包未安装，\n"
-                f"系统摘要：{system[:80]}...\n"
-                f"输入摘要：{user[:160]}..."
-            )
-
         try:
-            kwargs: Dict[str, Any] = {
-                "model": model or self.model,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-            }
-            if temperature is not None:
-                kwargs["temperature"] = temperature
-            if max_tokens is not None:
-                kwargs["max_tokens"] = max_tokens
-            resp = self._client.chat.completions.create(**kwargs)
-            return resp.choices[0].message.content or ""
+            return self.provider.chat(
+                system,
+                user,
+                model=model or self.model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
         except Exception as e:  # noqa: BLE001
             return f"[LLM ERROR] {e}"
-
-    async def astream(
-        self,
-        system: str,
-        user: str,
-        *,
-        model: Optional[str] = None,
-        temperature: Optional[float] = None,
-        max_tokens: Optional[int] = None,
-    ):
-        """异步流式生成器，对外 yield token 字符串。"""
-        system = self._mask(system)
-        user = self._mask(user)
-        if self._client is None:
-            yield f"[MOCK {model or self.model}] 未配置 LLM_API_KEY"
-            return
-
-        try:
-            kwargs: Dict[str, Any] = {
-                "model": model or self.model,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-                "stream": True,
-            }
-            if temperature is not None:
-                kwargs["temperature"] = temperature
-            if max_tokens is not None:
-                kwargs["max_tokens"] = max_tokens
-
-            stream = self._client.chat.completions.create(**kwargs)
-            for chunk in stream:
-                delta = (chunk.choices[0].delta.content or "") if chunk.choices else ""
-                if delta:
-                    yield delta
-        except Exception as e:  # noqa: BLE001
-            yield f"[LLM ERROR] {e}"
 
     def stream(
         self,
@@ -124,49 +106,57 @@ class LLMClient:
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
     ) -> Iterator[str]:
-        """同步流式生成器。"""
         system = self._mask(system)
         user = self._mask(user)
-        if self._client is None:
-            yield f"[MOCK {model or self.model}] 未配置 LLM_API_KEY"
-            return
-
         try:
-            kwargs: Dict[str, Any] = {
-                "model": model or self.model,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": user},
-                ],
-                "stream": True,
-            }
-            if temperature is not None:
-                kwargs["temperature"] = temperature
-            if max_tokens is not None:
-                kwargs["max_tokens"] = max_tokens
+            yield from self.provider.stream(
+                system,
+                user,
+                model=model or self.model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        except Exception as e:  # noqa: BLE001
+            yield f"[LLM ERROR] {e}"
 
-            stream = self._client.chat.completions.create(**kwargs)
-            for chunk in stream:
-                delta = (chunk.choices[0].delta.content or "") if chunk.choices else ""
-                if delta:
-                    yield delta
+    async def astream(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -> AsyncIterator[str]:
+        system = self._mask(system)
+        user = self._mask(user)
+        try:
+            async for token in self.provider.astream(
+                system,
+                user,
+                model=model or self.model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            ):
+                if token:
+                    yield token
         except Exception as e:  # noqa: BLE001
             yield f"[LLM ERROR] {e}"
 
 
 class MockLLM:
-    """固定返回，用于测试与降级演示。"""
+    """固定返回，用于测试与降级演示（兼容旧接口）。"""
 
     def __init__(self, response: str = "[MOCK] 收到请求"):
         self.response = response
+        self._provider = MockProvider(response=response)
 
     def chat(self, system: str, user: str) -> str:
-        return self.response
+        return self._provider.chat(system, user)
 
     async def astream(self, system: str, user: str):
-        for token in self.response:
+        async for token in self._provider.astream(system, user):
             yield token
 
     def stream(self, system: str, user: str):
-        for token in self.response:
-            yield token
+        yield from self._provider.stream(system, user)

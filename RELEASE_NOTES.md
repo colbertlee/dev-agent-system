@@ -4,7 +4,37 @@
 
 ---
 
-## v0.12.0 — 监控与可观测性（最新）
+## v0.13.0 — 真实 LLM 联调（最新）
+
+**发布日期**：2026-08-11
+
+### 核心价值
+
+- 让 `LLMClient` 同时支持 OpenAI/DeepSeek 云端 API 与 Ollama 本地模型，自动按环境变量选择 Provider，未配置时仍降级为 Mock。
+- 为接入真实模型扫清障碍，同步提供同步/异步流式输出接口与单元测试。
+
+### 关键变更
+
+- 新增 `dev_agent_system/llm_providers.py`：`LLMProvider` 抽象 + `OpenAIProvider` + `OllamaProvider` + `MockProvider`。
+- `dev_agent_system/llm.py` 重写为 Provider 调度器，保留原有 `chat`/`stream`/`astream` 与 `MockLLM`。
+- `dev_agent_system/config.py` 增加 `llm_model()`、`llm_provider()`、`ollama_url()`。
+- `.env.example` 增加 `LLM_PROVIDER`（openai/deepseek/ollama/mock）与 `OLLAMA_URL`。
+- `dev_agent_system/agents.py` 更新 MOCK 降级判断为 `is_mock()`。
+- 新增 `tests/test_llm.py`，63 个测试通过，1 个因未安装 `openai` 被跳过。
+
+### 升级注意
+
+- 无破坏性接口变更。
+- 如已配置 `LLM_API_KEY` + `LLM_BASE_URL`，会自动走 `OpenAIProvider`，与旧版本行为一致。
+- 想使用本地 Ollama：设置 `LLM_PROVIDER=ollama` 与 `OLLAMA_URL=http://localhost:11434`，模型名使用 `llama3` 或 `ollama/llama3`。
+
+### 已知问题
+
+- `OpenAIProvider` 依赖 `openai` Python 包；若未安装则跳过相关单元测试。
+
+---
+
+## v0.12.0 — 监控与可观测性
 
 **发布日期**：2026-08-11
 

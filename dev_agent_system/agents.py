@@ -229,7 +229,7 @@ class CoderAgent(BaseAgent):
         report = self._extract_json(output) or {}
 
         # MOCK 降级：没有真实 LLM 时写一段占位代码，方便 CLI/测试继续跑
-        if not files and self.llm._client is None:
+        if not files and self.llm.is_mock():
             stub = self._fallback_code(state.get("input", ""))
             res = await self._write_file("main.py", stub, workspace)
             if res.get("success"):

@@ -62,14 +62,28 @@ python -m dev_agent_system.main "开发一个加法模块" --max-iter 1 --devops
 
 ## 配置真实 LLM
 
+## OpenAI / DeepSeek
+
 ```bash
+export LLM_PROVIDER="openai"
 export LLM_API_KEY="your-key"
 export LLM_BASE_URL="https://api.deepseek.com"
 export LLM_MODEL="deepseek-chat"
 ```
 
+## Ollama 本地模型
+
+```bash
+export LLM_PROVIDER="ollama"
+export OLLAMA_URL="http://localhost:11434"
+export LLM_MODEL="llama3"
+```
+
+> 也可以直接在 `LLM_MODEL` 中使用前缀：`LLM_MODEL="ollama/llama3"`。
+
 Windows:
 ```powershell
+$env:LLM_PROVIDER="openai"
 $env:LLM_API_KEY="your-key"
 $env:LLM_BASE_URL="https://api.deepseek.com"
 $env:LLM_MODEL="deepseek-chat"
@@ -124,7 +138,8 @@ docker-compose logs -f
 │   ├── main.py          # CLI 入口
 │   ├── config.py        # 统一配置加载（.env + YAML）
 │   ├── schemas.py        # Pydantic 模型与 GraphState TypedDict
-│   ├── llm.py           # LLM 客户端（含流式输出）
+│   ├── llm.py           # LLM 客户端（Provider 调度，含流式输出）
+│   ├── llm_providers.py # OpenAI/DeepSeek、Ollama、Mock Provider 实现
 │   ├── router.py        # 模型路由
 │   ├── mcp.py           # MCP 工具沙箱
 │   ├── memory.py        # 三层记忆

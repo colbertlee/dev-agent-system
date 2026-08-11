@@ -64,6 +64,14 @@ class Settings:
         return Settings.mcp_config().get("mcp_servers", {})
 
     @staticmethod
+    def llm_model() -> str:
+        return os.getenv("LLM_MODEL", "deepseek-chat")
+
+    @staticmethod
+    def llm_provider() -> str:
+        return os.getenv("LLM_PROVIDER", "")
+
+    @staticmethod
     def llm_api_key() -> str:
         return os.getenv("LLM_API_KEY", "")
 
@@ -78,6 +86,10 @@ class Settings:
     @staticmethod
     def llm_max_retries() -> int:
         return int(os.getenv("LLM_MAX_RETRIES", "2"))
+
+    @staticmethod
+    def ollama_url() -> str:
+        return os.getenv("OLLAMA_URL", "http://localhost:11434")
 
     @staticmethod
     def workspace_dir() -> Path:
