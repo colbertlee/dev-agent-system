@@ -5,6 +5,7 @@ import asyncio
 import json
 import re
 import subprocess
+import os
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -64,13 +65,14 @@ class ToolSandbox:
                 return {"success": False, "error": str(e)}
 
     @classmethod
-    def run_command(cls, command: str, timeout: int = 5) -> Dict[str, Any]:
+    def run_command(cls, command: str, timeout: int = 5, base_dir: Optional[str] = None) -> Dict[str, Any]:
         if not command:
             return {"success": False, "error": "空命令"}
         if cls.BLACKLIST.search(command):
             return {"success": False, "error": "命令命中黑名单"}
         if not any(command.strip().startswith(prefix) for prefix in cls.ALLOWED_PREFIXES):
             return {"success": False, "error": f"仅允许以 {cls.ALLOWED_PREFIXES} 开头的命令"}
+        work = Path(base_dir).resolve() if base_dir else cls.WORK_DIR
         try:
             result = subprocess.run(
                 command,
@@ -78,7 +80,7 @@ class ToolSandbox:
                 capture_output=True,
                 text=True,
                 timeout=timeout,
-                cwd=cls.WORK_DIR,
+                cwd=work,
             )
             return {
                 "success": result.returncode == 0,
@@ -90,6 +92,12 @@ class ToolSandbox:
             return {"success": False, "error": f"命令执行超过 {timeout} 秒"}
         except Exception as e:  # noqa: BLE001
             return {"success": False, "error": str(e)}
+
+
+from dev_agent_system.config import Settings
+
+
+ToolSandbox.WORK_DIR = Settings.workspace_dir()
 
 
 class MCPToolRegistry:
@@ -111,7 +119,23 @@ class MCPToolRegistry:
         fn = self._tools[name]
         try:
             if asyncio.iscoroutinefunction(fn):
-                return asyncio.run(fn(**kwargs))
+                # 已在事件循环外时可直接 run；否则应使用 ainvoke
+                try:
+                    return asyncio.run(fn(**kwargs))
+                except RuntimeError:
+                    return {"success": False, "error": f"工具 {name} 是异步的，请在异步上下文中调用 ainvoke"}
+            return fn(**kwargs)
+        except Exception as e:  # noqa: BLE001
+            return {"success": False, "error": str(e)}
+
+    async def ainvoke(self, name: str, **kwargs) -> Any:
+        """异步调用工具，供 async run 使用。"""
+        if name not in self._tools:
+            return {"success": False, "error": f"未知工具: {name}"}
+        fn = self._tools[name]
+        try:
+            if asyncio.iscoroutinefunction(fn):
+                return await fn(**kwargs)
             return fn(**kwargs)
         except Exception as e:  # noqa: BLE001
             return {"success": False, "error": str(e)}

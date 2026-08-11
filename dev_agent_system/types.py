@@ -85,6 +85,7 @@ class GraphState(typing.TypedDict, total=False):
 
     request_id: str
     input: str
+    workspace: str
     iteration: int
     max_iterations: int
     status: str

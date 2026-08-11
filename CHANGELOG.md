@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-08-11
+
+### Added
+
+- Agent 产物落地：
+  - `CoderAgent` 解析 LLM 输出的代码块并写入 `workspace/<request_id>/`。
+  - `TesterAgent` 读取代码文件、生成 `test_*.py`、调用 `pytest -q` 并解析测试报告。
+  - `DocsAgent` 生成 `docs/README.md` 与 `docs/API.md`。
+  - `ReviewerAgent` 解析 JSON 审查报告并写入 `review_report.json`。
+  - `ArchitectAgent` 解析 JSON 架构设计并写入 `design.json`。
+- `BaseAgent` 增加 `postprocess` 生命周期钩子，支持异步 MCP 工具调用。
+- `MCPToolRegistry.ainvoke` 异步工具调用接口。
+- `ToolSandbox.run_command` 支持 `base_dir` 参数，允许在不同 workspace 中运行命令。
+- `GraphState` 增加 `workspace` 字段，Orchestrator 为每个请求分配独立工作目录。
+- `test_flow.py` 集成测试现在会验证 `main.py`、`test_main.py`、`review_report.json` 是否真实写入。
+
+### Changed
+
+- LangGraph DAG 调整为：`Architect → Coder → {Tester, Docs} 并行 → Reviewer`。
+- `BaseAgent.run` 改为 `async def`，统一支持异步 postprocess。
+- `a2a_node.py` 与 `server.py` 的 Agent 任务端点统一 `await agent.run(...)`。
+- `orchestrator._should_continue` 与 `_reviewer_node` 优先读取 Reviewer 的 `passed` 布尔字段。
+
+### Fixed
+
+- 修复并行节点中 Tester 无法读取 Coder 产物的问题（先执行 Coder，再并行 Tester/Docs）。
+
+### Security
+
+- 文件写入仍受 `ToolSandbox` 白名单/黑名单/路径限制约束，无法越界。
+
+### Model Changes
+
+- 无
+
 ## [0.2.0] - 2026-08-09
 
 首个可运行、可部署、可验证的多 Agent 软件开发系统版本。
@@ -12,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - 完整多 Agent 软件开发系统骨架（Architect / Coder / Tester / Reviewer / Docs / DevOps）。
-- LangGraph `StateGraph` 编排器 `dev_agent_system/orchestrator.py`：支持 `Architect → {Coder, Tester, Docs} → Reviewer` 并行流程与条件迭代。
+- LangGraph `StateGraph` 编排器 `dev_agent_system/orchestrator.py`：支持 `Architect → Coder → {Tester, Docs} → Reviewer` 流程与条件迭代。
 - `AGENTS.md` 多 Agent 开发过程指导文档，含角色职责、DAG、Agent 扩展、版本管理、Git 分支 SOP、测试与安全规则。
 - `GraphState` TypedDict 状态类型 `dev_agent_system/types.py`。
 - `langgraph==0.2.0` 与 `langchain-core==0.2.27` 依赖锁定。

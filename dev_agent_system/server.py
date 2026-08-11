@@ -49,7 +49,7 @@ for _name, _agent in AGENTS.items():
         @app.post(f"/{name}/tasks")
         async def _task(task: Task):
             state = {"input": task.description, "request_id": task.request_id or f"task-{name}"}
-            result = agent.run(state) if not asyncio.iscoroutinefunction(agent.run) else await agent.run(state)
+            result = await agent.run(state)
             return TaskResponse(status="completed", task_id=task.request_id or f"{name}-001", result=result)
 
         @app.get(f"/{name}/tasks/{{task_id}}")

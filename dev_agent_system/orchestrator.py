@@ -18,7 +18,19 @@ from dev_agent_system.agents import (
     TesterAgent,
 )
 from dev_agent_system.memory import MemoryAgent
+from dev_agent_system.config import Settings
 from dev_agent_system.types import GraphState
+
+
+def _review_passed(review: Dict[str, Any]) -> bool:
+    """从 Reviewer 结构化输出中判断是否通过。"""
+    passed = review.get("passed")
+    if isinstance(passed, bool):
+        return passed
+    if isinstance(passed, str):
+        return passed.lower() == "true"
+    output = str(review.get("output", "")).lower()
+    return '"passed": true' in output
 
 
 class IdempotencyGuard:
@@ -60,9 +72,11 @@ class Orchestrator:
         if self.guard.is_duplicate(request_id):
             return {"request_id": request_id, "status": "skipped", "reason": "duplicate"}
 
+        workspace = str(Settings.workspace_dir() / request_id)
         state: GraphState = {
             "request_id": request_id,
             "input": requirement,
+            "workspace": workspace,
             "iteration": 0,
             "max_iterations": self.max_iterations,
             "status": "submitted",
@@ -73,14 +87,17 @@ class Orchestrator:
         state["memory"] = self.agents["memory"].run(state)
 
         # 构建 LangGraph StateGraph
+        # 流程：Architect -> Coder -> {Tester, Docs} 并行 -> Reviewer -> 条件迭代
         workflow = StateGraph(GraphState)
         workflow.add_node("architect_node", self._architect_node)
-        workflow.add_node("parallel_node", self._parallel_node)
+        workflow.add_node("coder_node", self._coder_node)
+        workflow.add_node("tester_docs_node", self._tester_docs_node)
         workflow.add_node("reviewer_node", self._reviewer_node)
 
         workflow.set_entry_point("architect_node")
-        workflow.add_edge("architect_node", "parallel_node")
-        workflow.add_edge("parallel_node", "reviewer_node")
+        workflow.add_edge("architect_node", "coder_node")
+        workflow.add_edge("coder_node", "tester_docs_node")
+        workflow.add_edge("tester_docs_node", "reviewer_node")
 
         if self.enable_devops:
             workflow.add_node("devops_node", self._devops_node)
@@ -110,13 +127,15 @@ class Orchestrator:
         state["architect"] = await self._run_agent("architect", state)
         return state
 
-    async def _parallel_node(self, state: GraphState) -> GraphState:
-        coder, tester, docs = await asyncio.gather(
-            self._run_agent("coder", state),
+    async def _coder_node(self, state: GraphState) -> GraphState:
+        state["coder"] = await self._run_agent("coder", state)
+        return state
+
+    async def _tester_docs_node(self, state: GraphState) -> GraphState:
+        tester, docs = await asyncio.gather(
             self._run_agent("tester", state),
             self._run_agent("docs", state),
         )
-        state["coder"] = coder
         state["tester"] = tester
         state["docs"] = docs
         return state
@@ -132,9 +151,10 @@ class Orchestrator:
             "reviewer": state.get("reviewer"),
         }
         state["history"] = (state.get("history", []) + [record])[-5:]
-        review_output = (state.get("reviewer") or {}).get("output", "")
+        review = state.get("reviewer") or {}
+        passed = _review_passed(review)
         # 在节点内设置状态（条件边函数不应修改状态）
-        if '"passed": true' in review_output.lower():
+        if passed:
             state["status"] = "completed"
         elif state.get("iteration", 0) >= self.max_iterations:
             state["status"] = "failed"
@@ -142,15 +162,15 @@ class Orchestrator:
             state["status"] = "working"
         self.memory.remember(
             f"review_iter_{state.get('iteration', 0)}",
-            review_output,
+            review.get("output", ""),
             session_id=state.get("request_id", "default"),
             layer="working",
         )
         return state
 
     def _should_continue(self, state: GraphState) -> str:
-        review_output = (state.get("reviewer") or {}).get("output", "").lower()
-        if '"passed": true' in review_output:
+        review = state.get("reviewer") or {}
+        if _review_passed(review):
             return "end"
         if state.get("iteration", 0) >= self.max_iterations:
             return "end"
@@ -169,8 +189,14 @@ class Orchestrator:
     @staticmethod
     def _collect_artifacts(state: GraphState) -> Dict[str, Any]:
         return {
+            "workspace": state.get("workspace", ""),
             "design": (state.get("architect") or {}).get("output", ""),
-            "code": (state.get("coder") or {}).get("output", ""),
+            "design_file": (state.get("architect") or {}).get("design_file"),
+            "code_files": (state.get("coder") or {}).get("files", []),
+            "test_files": (state.get("tester") or {}).get("files", []),
+            "doc_files": (state.get("docs") or {}).get("files", []),
+            "review_report": (state.get("reviewer") or {}).get("report_file"),
+            "review_passed": _review_passed(state.get("reviewer") or {}),
             "tests": (state.get("tester") or {}).get("output", ""),
             "docs": (state.get("docs") or {}).get("output", ""),
             "review": (state.get("reviewer") or {}).get("output", ""),

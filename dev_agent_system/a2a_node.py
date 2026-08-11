@@ -41,10 +41,10 @@ def create_app(agent_name: str, agent: Any, port: int) -> FastAPI:
         return agent.agent_card(url=f"http://localhost:{port}").model_dump()
 
     @app.post("/tasks")
-    def receive_task(task: Task):
+    async def receive_task(task: Task):
         request_id = task.request_id or str(uuid.uuid4())
         state = {"input": task.description, "request_id": request_id, "payload": task.payload or {}}
-        result = agent.run(state)
+        result = await agent.run(state)
         return TaskResponse(status="completed", task_id=request_id, result=result)
 
     @app.get("/tasks/{task_id}")

@@ -24,6 +24,8 @@ chroma_data/
 *.log
 result.json
 result*.json
+*.zip
+*.tar.gz
 
 # Environment
 .env

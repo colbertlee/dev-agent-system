@@ -36,7 +36,10 @@ start
 architect_node
  │
  ▼
-parallel_node (Coder / Tester / Docs 并行)
+coder_node
+ │
+ ▼
+tester_docs_node (Tester / Docs 并行)
  │
  ▼
 reviewer_node
@@ -51,8 +54,10 @@ should_continue? （条件边）
 设计原则：
 
 - 无回流边：Reviewer 不直接修改 Coder 输出；未通过时由 Scheduler 发起新一轮。
-- 并行节点：Coder、Tester、Docs 在 Architect 完成后 `asyncio.gather` 执行。
+- 顺序依赖：Coder 必须在 Tester 之前（Tester 需要读取代码文件生成测试）。
+- 并行节点：Tester 与 Docs 在 Coder 完成后 `asyncio.gather` 并行执行。
 - 状态集中：所有节点共享 `GraphState`，节点返回更新后的部分字段。
+- 产物落地：每个 Agent 通过 `ToolSandbox` 把产物写入以 `request_id` 隔离的 `workspace/`，最终由 Reviewer 写入 `review_report.json`。
 
 ## 4. 如何新增一个 Agent
 

@@ -164,6 +164,7 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **最大迭代**：默认 10 轮，超过后强制结束。
 - **幂等**：所有请求携带 `request_id`，A2A 服务端去重。
 - **安全**：LLM 生成代码不直接在宿主机执行，沙箱白名单+超时。
+- **产物落地**：Coder 写入 `main.py`、Tester 写入 `test_*.py` 并执行 `pytest`、Docs 写入 `README.md/API.md`、Reviewer 写入 `review_report.json`，全部落在 `workspace/<request_id>/` 下。
 
 ## 预发布检查
 
