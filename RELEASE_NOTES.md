@@ -4,7 +4,39 @@
 
 ---
 
-## v0.20.0 — Agent 架构四要素与 Prompting 规范文档（最新）
+## v0.20.1 — Agent 生成器规范（最新）
+
+**发布日期**：2026-08-12
+
+### 核心价值
+
+- 提供一份“Devin / 开发者可直接据此复现当前多 Agent 系统”的生成器规范。
+- 覆盖 9 个业务 Agent 的 4-Block Framework 映射、Prompting Specification Template、输入输出格式、工具使用、异常处理与产物约定。
+- 附录中给出 `prompts.yaml`、`agent_cards.json`、核心模块源码与配置文件，便于从零生成等价系统。
+
+### 关键变更
+
+- 新增 `docs/agent_generator_spec.md`：
+  - 9 个 Agent 的 `4-Block` 映射与 `Prompting Specification Template`。
+  - 全局基础设施规范：LLM、MCP、Memory、Security、Telemetry/Metrics、Orchestrator、A2A/Server。
+  - 完整附录：`prompts.yaml`、`agent_cards.json`、`schemas.py`、`templates.py`、`mcp.py`、`security.py`、`memory.py`、`llm.py`、`llm_providers.py`、`config/model.yaml`、`config/mcp.yaml`、模块清单。
+- 新增 `docs/agent_generator_spec.html`：
+  - 响应式布局、侧边目录、锚点导航、代码块与表格样式、暗色模式支持。
+- `README.md` 与 `AGENTS.md` 增加生成器规范导航链接。
+- `dev_agent_system/__init__.py` 版本号更新为 `0.20.1`。
+
+### 升级注意
+
+- 无破坏性接口变更。
+- 仅新增文档资产与导航链接，不修改核心代码与 Prompt。
+
+### 已知问题
+
+- 无。
+
+---
+
+## v0.20.0 — Agent 架构四要素与 Prompting 规范文档
 
 **发布日期**：2026-08-11
 

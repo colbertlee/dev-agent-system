@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.20.1] - 2026-08-12
+
+### Added
+
+- 新增可复现当前多 Agent 系统的生成器规范：
+  - `docs/agent_generator_spec.md`：逐 Agent 的 4-Block Framework 映射、Prompting Specification Template（Role/Goal / Inputs / SOP / Constraints / Exception）、I/O Schema、异常处理与产物约定。
+  - `docs/agent_generator_spec.html`：响应式布局、侧边目录、锚点导航、代码块与表格样式、暗色模式支持。
+  - 附录包含完整 `prompts.yaml`、`agent_cards.json`、`schemas.py`、`templates.py`、`mcp.py`、`security.py`、`memory.py`、`llm.py`、`llm_providers.py`、配置 YAML 与模块清单。
+- 在 `README.md` 与 `AGENTS.md` 中增加 `agent_generator_spec` 导航链接。
+
+### Changed
+
+- `dev_agent_system/__init__.py` 版本号更新为 `0.20.1`。
+
+### Model Changes
+
+- 无。
+
 ## [0.20.0] - 2026-08-11
 
 ### Added

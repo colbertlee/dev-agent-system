@@ -22,6 +22,7 @@
 | [docs/usage_operations.md](docs/usage_operations.md) | 安装、部署、监控、备份、故障排查 |
 | [docs/tools_spec.md](docs/tools_spec.md) | MCP 工具 JSON Schema、白名单、错误码 |
 | [docs/prompt_templates.md](docs/prompt_templates.md) | System Prompt 版本管理、输出格式约定 |
+| [docs/agent_generator_spec.md](docs/agent_generator_spec.md) / [docs/agent_generator_spec.html](docs/agent_generator_spec.html) | 可复现当前系统的生成器规范（4-Block + Prompting + 源码附录） |
 | [RELEASE_NOTES.md](RELEASE_NOTES.md) | 版本价值、影响矩阵、升级建议 |
 | [CHANGELOG.md](CHANGELOG.md) | 扁平化变更清单 |
 

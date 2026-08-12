@@ -1,0 +1,3731 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dev_agent_system - Agent 生成器规范</title>
+<style>
+:root {
+  --bg: #f6f8fa;
+  --fg: #1f2328;
+  --muted: #656d76;
+  --card: #ffffff;
+  --border: #d1d9e0;
+  --accent: #0969da;
+  --accent-light: #ddf4ff;
+  --code-bg: #f3f4f6;
+  --shadow: 0 2px 8px rgba(31, 35, 40, 0.04);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --fg: #c9d1d9;
+    --muted: #8b949e;
+    --card: #161b22;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-light: #112538;
+    --code-bg: #21262d;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.7;
+}
+header {
+  background: linear-gradient(135deg, var(--accent), #0550ae);
+  color: #fff;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+header h1 { margin: 0 0 .5rem; font-size: 1.9rem; }
+header p { margin: 0; opacity: .9; font-size: 1rem; }
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+}
+aside.toc {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+aside.toc h2 { margin: 0 0 .8rem; font-size: 1rem; color: var(--fg); }
+aside.toc ul { list-style: none; padding: 0; margin: 0; }
+aside.toc li { margin: .35rem 0; }
+aside.toc a { text-decoration: none; color: var(--muted); font-size: .88rem; display: block; padding: .15rem 0; }
+aside.toc a:hover { color: var(--accent); }
+aside.toc ul ul { padding-left: .8rem; }
+main {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 2.4rem;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+main h1 { font-size: 1.75rem; margin-top: 0; border-bottom: 2px solid var(--accent); padding-bottom: .5rem; }
+main h2 { font-size: 1.4rem; margin-top: 2.2rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+main h3 { font-size: 1.15rem; margin-top: 1.6rem; color: var(--accent); }
+main h4 { font-size: 1.05rem; margin-top: 1.3rem; }
+main p { margin: .9rem 0; }
+main a { color: var(--accent); text-decoration: none; }
+main a:hover { text-decoration: underline; }
+main ul, main ol { margin: .8rem 0; padding-left: 1.5rem; }
+main li { margin: .35rem 0; }
+main blockquote {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-light);
+  padding: .75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .92rem;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: .65rem .85rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--bg); font-weight: 600; }
+tr:nth-child(even) { background: rgba(0,0,0,.015); }
+@media (prefers-color-scheme: dark) { tr:nth-child(even) { background: rgba(255,255,255,.025); } }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: .88rem;
+}
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: var(--code-bg);
+  padding: .15rem .35rem;
+  border-radius: 4px;
+  font-size: .9em;
+}
+pre code { background: transparent; padding: 0; font-size: .88rem; }
+.anchor {
+  margin-left: .4rem;
+  color: var(--muted);
+  font-size: .8em;
+  text-decoration: none;
+  visibility: hidden;
+}
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor { visibility: visible; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  aside.toc { position: static; max-height: none; margin-bottom: 1rem; }
+  main { padding: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>dev_agent_system</h1>
+  <p>Agent 生成器规范（可复现当前多 Agent 系统）</p>
+</header>
+<div class="layout">
+<aside class="toc">
+  <h2>目录</h2>
+<ul><li><a href="#dev_agent_system-agent-生成器规范">dev_agent_system Agent 生成器规范</a><ul><li><a href="#一-生成目标与交付物">一、生成目标与交付物</a><ul><li><a href="#1-1-目标">1.1 目标</a></li><li><a href="#1-2-交付物">1.2 交付物</a></li></ul></li><li><a href="#二-系统级-4-block-映射-全局基础设施">二、系统级 4-Block 映射（全局基础设施）</a><ul><li><a href="#2-1-角色与安全边界-global-role-amp-guardrails">2.1 角色与安全边界（Global Role &amp;amp; Guardrails）</a></li><li><a href="#2-2-上下文与输入输出规范-global-io-format">2.2 上下文与输入输出规范（Global IO Format）</a></li><li><a href="#2-3-工具链与能力边界-global-tools-amp-capabilities">2.3 工具链与能力边界（Global Tools &amp;amp; Capabilities）</a></li><li><a href="#2-4-工作流与异常处理-global-workflow-amp-exception-handling">2.4 工作流与异常处理（Global Workflow &amp;amp; Exception Handling）</a></li></ul></li><li><a href="#三-逐-agent-生成规范">三、逐 Agent 生成规范</a><ul><li><a href="#3-1-productmanageragent">3.1 ProductManagerAgent</a><ul><li><a href="#3-1-1-4-block-映射">3.1.1 4-Block 映射</a></li><li><a href="#3-1-2-prompting-specification-template">3.1.2 Prompting Specification Template</a></li><li><a href="#3-1-3-实现要点">3.1.3 实现要点</a></li></ul></li><li><a href="#3-2-architectagent">3.2 ArchitectAgent</a><ul><li><a href="#3-2-1-4-block-映射">3.2.1 4-Block 映射</a></li><li><a href="#3-2-2-prompting-specification-template">3.2.2 Prompting Specification Template</a></li><li><a href="#3-2-3-实现要点">3.2.3 实现要点</a></li></ul></li><li><a href="#3-3-dbaagent">3.3 DBAAgent</a><ul><li><a href="#3-3-1-4-block-映射">3.3.1 4-Block 映射</a></li><li><a href="#3-3-2-prompting-specification-template">3.3.2 Prompting Specification Template</a></li><li><a href="#3-3-3-实现要点">3.3.3 实现要点</a></li></ul></li><li><a href="#3-4-coderagent">3.4 CoderAgent</a><ul><li><a href="#3-4-1-4-block-映射">3.4.1 4-Block 映射</a></li><li><a href="#3-4-2-prompting-specification-template">3.4.2 Prompting Specification Template</a></li><li><a href="#3-4-3-实现要点">3.4.3 实现要点</a></li></ul></li><li><a href="#3-5-testeragent">3.5 TesterAgent</a><ul><li><a href="#3-5-1-4-block-映射">3.5.1 4-Block 映射</a></li><li><a href="#3-5-2-prompting-specification-template">3.5.2 Prompting Specification Template</a></li><li><a href="#3-5-3-实现要点">3.5.3 实现要点</a></li></ul></li><li><a href="#3-6-revieweragent">3.6 ReviewerAgent</a><ul><li><a href="#3-6-1-4-block-映射">3.6.1 4-Block 映射</a></li><li><a href="#3-6-2-prompting-specification-template">3.6.2 Prompting Specification Template</a></li><li><a href="#3-6-3-实现要点">3.6.3 实现要点</a></li></ul></li><li><a href="#3-7-securityagent">3.7 SecurityAgent</a><ul><li><a href="#3-7-1-4-block-映射">3.7.1 4-Block 映射</a></li><li><a href="#3-7-2-prompting-specification-template">3.7.2 Prompting Specification Template</a></li><li><a href="#3-7-3-实现要点">3.7.3 实现要点</a></li></ul></li><li><a href="#3-8-docsagent">3.8 DocsAgent</a><ul><li><a href="#3-8-1-4-block-映射">3.8.1 4-Block 映射</a></li><li><a href="#3-8-2-prompting-specification-template">3.8.2 Prompting Specification Template</a></li><li><a href="#3-8-3-实现要点">3.8.3 实现要点</a></li></ul></li><li><a href="#3-9-devopsagent">3.9 DevOpsAgent</a><ul><li><a href="#3-9-1-4-block-映射">3.9.1 4-Block 映射</a></li><li><a href="#3-9-2-prompting-specification-template">3.9.2 Prompting Specification Template</a></li><li><a href="#3-9-3-实现要点">3.9.3 实现要点</a></li></ul></li></ul></li><li><a href="#四-支撑组件生成规范">四、支撑组件生成规范</a><ul><li><a href="#4-1-baseagent-抽象">4.1 BaseAgent 抽象</a></li><li><a href="#4-2-orchestrator-编排">4.2 Orchestrator 编排</a></li><li><a href="#4-3-工具链">4.3 工具链</a></li><li><a href="#4-4-配置与模型路由">4.4 配置与模型路由</a></li><li><a href="#4-5-a2a-与-api">4.5 A2A 与 API</a></li></ul></li><li><a href="#五-验证策略">五、验证策略</a></li></ul></li><li><a href="#附录">附录</a><ul><li><a href="#附录-a-完整-prompts-yaml">附录 A：完整 prompts.yaml</a></li><li><a href="#附录-b-完整-agent_cards-json">附录 B：完整 agent_cards.json</a></li><li><a href="#附录-c-a2a-与内部状态数据模型-schemas-py-全文">附录 C：A2A 与内部状态数据模型（schemas.py 全文）</a></li><li><a href="#附录-d-多语言项目模板-templates-py-全文">附录 D：多语言项目模板（templates.py 全文）</a></li><li><a href="#附录-e-mcp-工具沙箱与注册中心-mcp-py-全文">附录 E：MCP 工具沙箱与注册中心（mcp.py 全文）</a></li><li><a href="#附录-f-安全扫描与脱敏-security-py-全文">附录 F：安全扫描与脱敏（security.py 全文）</a></li><li><a href="#附录-g-三层记忆实现-memory-py-全文">附录 G：三层记忆实现（memory.py 全文）</a></li><li><a href="#附录-h-llm-抽象与-provider-llm-py-全文">附录 H：LLM 抽象与 Provider（llm.py 全文）</a><ul><li><a href="#h-1-llm-provider-实现-llm_providers-py">H.1 LLM Provider 实现（llm_providers.py）</a></li></ul></li><li><a href="#附录-i-baseagent-生命周期-agents-py-节选">附录 I：BaseAgent 生命周期（agents.py 节选）</a></li><li><a href="#附录-j-langgraph-编排器-orchestrator-py-全文">附录 J：LangGraph 编排器（orchestrator.py 全文）</a></li><li><a href="#附录-k-模型与-mcp-配置">附录 K：模型与 MCP 配置</a><ul><li><a href="#k-1-config-model-yaml">K.1 config/model.yaml</a></li><li><a href="#k-2-config-mcp-yaml">K.2 config/mcp.yaml</a></li></ul></li><li><a href="#附录-l-模块文件清单">附录 L：模块文件清单</a></li></ul></li></ul>
+</aside>
+<main>
+<h1 id="dev_agent_system-agent-生成器规范"><a class="anchor" href="#dev_agent_system-agent-生成器规范" aria-hidden="true">#</a>dev_agent_system Agent 生成器规范</h1>
+<blockquote>
+<p>本文档是可复现当前多 Agent 协作系统的生成规范。它从 <code>dev_agent_system</code> v0.20.0 代码库逐模块、逐 Agent 反推，覆盖每个 Agent 的 4-Block Framework 映射、Prompting 模板、输入输出格式、工具使用、异常处理，以及支撑组件（MCP、记忆、LLM、编排、A2A、可观测性、安全）的完整接口与行为约定。</p>
+</blockquote>
+<blockquote>
+<p>基于 <code>dev_agent_system</code> v0.20.0 代码库逐模块、逐 Agent 反推，目标是将 <code>docs/agent_generator_spec.md</code>（及配套 HTML）写成一份“Devin 可直接据此复现系统”的生成规范。所有内容均来自现有代码、测试与文档，不引入未实现功能。</p>
+</blockquote>
+<hr />
+<h2 id="一-生成目标与交付物"><a class="anchor" href="#一-生成目标与交付物" aria-hidden="true">#</a>一、生成目标与交付物</h2>
+<h3 id="1-1-目标"><a class="anchor" href="#1-1-目标" aria-hidden="true">#</a>1.1 目标</h3>
+<p>让任何阅读该规范的 Devin / 开发者能够从头生成与当前仓库等价的 <code>dev_agent_system</code>：</p>
+<ul>
+<li>模块划分与文件路径一致；</li>
+<li>每个 Agent 的 system prompt、build_prompt、postprocess、I/O Schema、异常处理与代码中保持一致；</li>
+<li>Orchestrator 的 LangGraph DAG、状态字段、条件边、异常重试与代码一致；</li>
+<li>工具链（MCP / Skill / Memory / LLM / Telemetry / Metrics / Security）接口与行为一致；</li>
+<li>A2A 协议、CLI、TUI、Dashboard、Server 端点行为一致；</li>
+<li>测试集结构与覆盖范围一致。</li>
+</ul>
+<h3 id="1-2-交付物"><a class="anchor" href="#1-2-交付物" aria-hidden="true">#</a>1.2 交付物</h3>
+<ol>
+<li><code>docs/agent_generator_spec.md</code> —— 完整 Markdown 生成规范（保留当前 <code>agent_framework_retrospective.md</code> 不变）。</li>
+<li><code>docs/agent_generator_spec.html</code> —— 响应式、带目录、可离线阅读的 HTML 版本。</li>
+<li>可选：在 <code>AGENTS.md</code> 或 <code>README.md</code> 增加指向 <code>agent_generator_spec.md</code> 的导航链接（不改动核心代码）。</li>
+</ol>
+<hr />
+<h2 id="二-系统级-4-block-映射-全局基础设施"><a class="anchor" href="#二-系统级-4-block-映射-全局基础设施" aria-hidden="true">#</a>二、系统级 4-Block 映射（全局基础设施）</h2>
+<h3 id="2-1-角色与安全边界-global-role-amp-guardrails"><a class="anchor" href="#2-1-角色与安全边界-global-role-amp-guardrails" aria-hidden="true">#</a>2.1 角色与安全边界（Global Role &amp; Guardrails）</h3>
+<p>| 组件 | 角色 | 禁止做的事 | 关键文件 |
+|---|---|---|---|
+| <code>Config</code> | 统一配置加载器 | 不直接修改 <code>.env</code> / YAML；不在代码中写死密钥 | <code>config.py</code> <code>dev_agent_system/config.py</code> |
+| <code>LLMClient</code> | LLM 调用入口 | 不暴露真实 API Key；无 Key 时必须降级 Mock | <code>llm.py</code>, <code>llm_providers.py</code> |
+| <code>ModelRouter</code> | 按 Agent / 提示长度选模型 | 不写死模型版本；依赖 <code>config/model.yaml</code> | <code>router.py</code> |
+| <code>MemoryAgent</code> | 三层记忆（short/working/long） | 不阻塞主流程；后端不可用时必须降级 SQLite | <code>memory.py</code> |
+| <code>ToolSandbox</code> | 命令/文件沙箱 | 不执行白名单外命令；不允许目录穿越 | <code>mcp.py</code>, <code>security.py</code> |
+| <code>SafetyScanner</code> | 命令与代码安全扫描 | 不直接拦截 Suspicious 代码（仅记录），Dangerous 命令命中即拦截 | <code>security.py</code> |
+| <code>SecurityPipeline</code> | Secret/依赖漏洞/容器沙箱扫描 | 不直接修改文件；仅产出 findings 与 <code>safe</code> 字段 | <code>security_scanner.py</code> |
+| <code>SecretRedactor</code> | 入/出 LLM 的 PII 脱敏 | 不可还原脱敏内容 | <code>security.py</code>, <code>llm.py</code> |
+| <code>Telemetry</code> / <code>Metrics</code> | 可观测性 | 不可因埋点失败中断工作流 | <code>telemetry.py</code>, <code>metrics.py</code> |
+| <code>Orchestrator</code> | DAG 编排器 | 节点不可修改自身状态外的字段；Reviewer 不直接修改 Coder 产物 | <code>orchestrator.py</code> |</p>
+<p>全局安全边界：</p>
+<ul>
+<li><code>ToolSandbox.ALLOWED_PREFIXES</code>：<code>dev_agent_system/mcp.py (lines 16-19)</code></li>
+<li><code>SafetyScanner.DANGEROUS_COMMAND_PATTERNS</code> 命中即拦截：<code>dev_agent_system/security.py (lines 13-29)</code></li>
+<li><code>PathValidator</code> 路径越界检查：<code>dev_agent_system/security.py (lines 91-103)</code></li>
+<li><code>SecretRedactor</code> 脱敏模式：<code>dev_agent_system/security.py (lines 118-133)</code></li>
+</ul>
+<h3 id="2-2-上下文与输入输出规范-global-io-format"><a class="anchor" href="#2-2-上下文与输入输出规范-global-io-format" aria-hidden="true">#</a>2.2 上下文与输入输出规范（Global IO Format）</h3>
+<p><strong>统一状态 <code>GraphState</code></strong> <code>dev_agent_system/schemas.py (lines 85-107)</code></p>
+<pre><code class="language-python">{
+  &quot;request_id&quot;: str,
+  &quot;input&quot;: str,
+  &quot;language&quot;: Optional[str],   # &quot;python&quot; | &quot;java&quot; | &quot;go&quot; | &quot;typescript&quot;
+  &quot;workspace&quot;: str,
+  &quot;iteration&quot;: int,
+  &quot;max_iterations&quot;: int,
+  &quot;status&quot;: str,               # submitted / working / completed / failed
+  &quot;architect&quot;: Optional[Dict[str, Any]],
+  &quot;coder&quot;: Optional[Dict[str, Any]],
+  &quot;tester&quot;: Optional[Dict[str, Any]],
+  &quot;docs&quot;: Optional[Dict[str, Any]],
+  &quot;reviewer&quot;: Optional[Dict[str, Any]],
+  &quot;devops&quot;: Optional[Dict[str, Any]],
+  &quot;product_manager&quot;: Optional[Dict[str, Any]],
+  &quot;security&quot;: Optional[Dict[str, Any]],
+  &quot;dba&quot;: Optional[Dict[str, Any]],
+  &quot;memory&quot;: Optional[Dict[str, Any]],
+  &quot;history&quot;: List[Dict[str, Any]],
+  &quot;artifacts&quot;: Dict[str, Any],
+  &quot;finished_at&quot;: Optional[str],
+}
+</code></pre>
+<p><strong>A2A 协议</strong> <code>dev_agent_system/schemas.py</code></p>
+<ul>
+<li><code>AgentCard</code>: <code>{name, url, skills, capabilities}</code></li>
+<li><code>Task</code>: <code>{description, task_id, request_id, max_iterations, language, payload}</code></li>
+<li><code>TaskResponse</code>: <code>{status, task_id, result}</code>，status ∈ <code>submitted/working/completed/failed/skipped</code></li>
+<li><code>JSONRPCRequest</code> / <code>JSONRPCResponse</code>: <code>{jsonrpc: &quot;2.0&quot;, method, params, id}</code> / <code>{jsonrpc: &quot;2.0&quot;, result, id}</code></li>
+</ul>
+<p><strong>产物文件命名约定</strong></p>
+<ul>
+<li>代码块前必须带 <code># file: &lt;relative_path&gt;</code> 头部；</li>
+<li><code>BaseAgent._extract_code_blocks()</code> 解析头部与 fenced code block；<code>dev_agent_system/agents.py (lines 98-107)</code></li>
+<li>最终产物写入 <code>workspace/&lt;request_id&gt;/</code>。</li>
+</ul>
+<h3 id="2-3-工具链与能力边界-global-tools-amp-capabilities"><a class="anchor" href="#2-3-工具链与能力边界-global-tools-amp-capabilities" aria-hidden="true">#</a>2.3 工具链与能力边界（Global Tools &amp; Capabilities）</h3>
+<p><strong>MCP 三件套</strong> <code>dev_agent_system/mcp.py (lines 92-130)</code></p>
+<p>| 工具 | 同步/异步 | 输入 | 输出 |
+|---|---|---|---|
+| <code>read_file</code> | 同步 | <code>path</code>, <code>base_dir</code> | <code>{&quot;success&quot;: bool, &quot;error&quot;: str, &quot;content&quot;: str}</code> |
+| <code>write_file</code> | 异步 | <code>path</code>, <code>content</code>, <code>base_dir</code> | <code>{&quot;success&quot;: bool, &quot;error&quot;: str, &quot;path&quot;: str}</code> |
+| <code>run_command</code> | 同步 | <code>command</code>, <code>base_dir</code>, <code>timeout</code> | <code>{&quot;success&quot;: bool, &quot;returncode&quot;: int, &quot;stdout&quot;: str, &quot;stderr&quot;: str, &quot;error&quot;: str}</code> |</p>
+<p><strong>Skill 系统</strong> <code>dev_agent_system/skills.py (lines 272-286)</code></p>
+<ul>
+<li><code>Skill</code> 包结构：<code>skills/&lt;skill_id&gt;/SKILL.md</code>（YAML frontmatter + prompt）+ <code>skill.py</code>（定义 <code>run(*args, **kwargs)</code>）。</li>
+<li><code>SkillManager</code> 自动将 Skill 注册为 MCP 工具，前缀 <code>skill_</code>。</li>
+<li><code>BaseAgent</code> 初始化时调用 <code>SkillManager().register_to_mcp(self.tools)</code>。</li>
+</ul>
+<p><strong>LLM 能力边界</strong> <code>dev_agent_system/llm.py</code></p>
+<ul>
+<li>支持 <code>openai</code> / <code>deepseek</code> / <code>ollama</code> / <code>mock</code> Provider；</li>
+<li><code>LLMClient.chat(system, user, model=None, temperature=None, max_tokens=None)</code> 返回字符串；</li>
+<li>输入/输出均经 <code>SecretRedactor.redact</code> 脱敏；</li>
+<li>异常返回 <code>[LLM ERROR] {e}</code>，不抛未处理异常。</li>
+</ul>
+<p><strong>记忆能力边界</strong> <code>dev_agent_system/memory.py (lines 235-285)</code></p>
+<ul>
+<li><code>remember(key, value, session_id, layer, ttl)</code>：<code>layer</code> = <code>short</code> | <code>working</code> | <code>long</code>；</li>
+<li><code>recall(query, session_id, layer, top_k)</code>；</li>
+<li><code>compress_context(text, max_chars)</code>：保留头尾，中间省略。</li>
+</ul>
+<h3 id="2-4-工作流与异常处理-global-workflow-amp-exception-handling"><a class="anchor" href="#2-4-工作流与异常处理-global-workflow-amp-exception-handling" aria-hidden="true">#</a>2.4 工作流与异常处理（Global Workflow &amp; Exception Handling）</h3>
+<p><strong>LangGraph DAG 完整 SOP</strong> <code>dev_agent_system/orchestrator.py (lines 118-168)</code></p>
+<pre><code class="language-text">start
+ │
+ ▼
+product_manager_node (可选 enable_product_manager)
+ │
+ ▼
+architect_node
+ │
+ ▼
+dba_node (可选 enable_dba)
+ │
+ ▼
+coder_node
+ │
+ ▼
+tester_docs_node  (Tester / Docs 并行，asyncio.gather)
+ │
+ ▼
+reviewer_node
+ │
+ ▼
+security_node (可选 enable_security)
+ │
+ ▼
+should_continue? (条件边)
+ ├─ passed / max_iter reached → END
+ └─ not passed &amp; iter &lt; max → architect_node (新一轮)
+     │
+     ▼
+ devops_node (可选 enable_devops，仅在通过时)
+</code></pre>
+<p><strong>异常/降级策略</strong></p>
+<ul>
+<li><code>LLMClient</code> 异常返回 <code>[LLM ERROR] ...</code>；</li>
+<li><code>ToolSandbox</code> 命令超时/被拦截返回 <code>{&quot;success&quot;: false, &quot;error&quot;: ...}</code>；</li>
+<li><code>Reviewer</code> / <code>Security</code> 输出无法解析 JSON 时，保守 fallback：<code>{&quot;severity&quot;: &quot;medium&quot;, &quot;passed&quot;: false, &quot;issues&quot;: [&quot;输出无法解析为 JSON&quot;], ...}</code>；</li>
+<li><code>Coder</code> 在 MOCK 且无产物时写 <code>_fallback_code</code>，状态 <code>mock_fallback</code>；</li>
+<li><code>Orchestrator</code> 支持 <code>resume(request_id)</code> 从 SQLite checkpoint 恢复；</li>
+<li><code>IdempotencyGuard</code> 对重复 <code>request_id</code> 直接返回 <code>skipped</code>。</li>
+</ul>
+<hr />
+<h2 id="三-逐-agent-生成规范"><a class="anchor" href="#三-逐-agent-生成规范" aria-hidden="true">#</a>三、逐 Agent 生成规范</h2>
+<blockquote>
+<p>每个 Agent 的规范包含：</p>
+<ol>
+<li><strong>4-Block 映射</strong>：角色/安全、上下文/IO、工具/能力、工作流/异常。</li>
+<li><strong>Prompting Specification Template</strong>：Role/Goal、Inputs &amp; Format、Workflow (SOP)、Constraints &amp; Rules、Exception Handling。</li>
+<li><strong>实现要点</strong>：类签名、build_prompt 公式、postprocess 步骤、输出 Schema、产物文件。</li>
+</ol>
+</blockquote>
+<h3 id="3-1-productmanageragent"><a class="anchor" href="#3-1-productmanageragent" aria-hidden="true">#</a>3.1 ProductManagerAgent</h3>
+<h4 id="3-1-1-4-block-映射"><a class="anchor" href="#3-1-1-4-block-映射" aria-hidden="true">#</a>3.1.1 4-Block 映射</h4>
+<p>| 要素 | 实现 |
+|---|---|
+| 角色 | Product Manager Agent（产品经理），把模糊需求拆成 PRD、用户故事、验收标准。 |
+| 安全边界 | 不写实现代码/架构设计；不操作工具沙箱中的命令。 |
+| 上下文输入 | <code>state[&quot;input&quot;]</code>（自然语言需求）。 |
+| 输出格式 | Markdown 代码块 <code># file: prd.md</code> + JSON <code>{user_stories: [...], acceptance_criteria: [...]}</code>。 |
+| 工具 | <code>write_file</code>（写 <code>prd.md</code>）。 |
+| 工作流 | 1) 接收需求；2) 生成 PRD 正文；3) 提取 JSON；4) 写入 <code>prd.md</code>。 |
+| 异常处理 | 若 JSON 缺失，<code>user_stories</code> / <code>acceptance_criteria</code> 返回空列表；PRD 文件始终写入。 |</p>
+<h4 id="3-1-2-prompting-specification-template"><a class="anchor" href="#3-1-2-prompting-specification-template" aria-hidden="true">#</a>3.1.2 Prompting Specification Template</h4>
+<p><strong># Role/Goal</strong><br />
+你是 <code>ProductManagerAgent</code>（产品经理）。核心任务：把 <code>state[&quot;input&quot;]</code> 中的用户需求拆分为清晰的产品需求文档（PRD）、用户故事列表与验收标准。</p>
+<p><strong># Inputs &amp; Format</strong></p>
+<ul>
+<li>用户需求：<code>state[&quot;input&quot;]</code>，自然语言字符串。</li>
+<li>工作目录：<code>state[&quot;workspace&quot;]</code>，用于落地 <code>prd.md</code>。</li>
+</ul>
+<p><strong># Workflow (SOP)</strong></p>
+<ol>
+<li>分析用户需求，识别歧义并给出合理假设。</li>
+<li>输出 PRD 正文到 Markdown 代码块，头部：<code># file: prd.md</code>。</li>
+<li>输出 JSON：<code>{user_stories: [...], acceptance_criteria: [...]}</code>。</li>
+</ol>
+<p><strong># Constraints &amp; Rules</strong></p>
+<ul>
+<li>不直接写实现代码或架构设计。</li>
+<li>用户故事使用“作为…，我希望…，以便…”格式。</li>
+<li>验收标准必须是可验证的断言。</li>
+</ul>
+<p><strong># Exception Handling</strong></p>
+<ul>
+<li>若未生成 JSON 块，返回 <code>{&quot;user_stories&quot;: [], &quot;acceptance_criteria&quot;: []}</code>。</li>
+<li>若 <code>write_file</code> 失败，在结果 <code>note</code> 中记录错误。</li>
+</ul>
+<h4 id="3-1-3-实现要点"><a class="anchor" href="#3-1-3-实现要点" aria-hidden="true">#</a>3.1.3 实现要点</h4>
+<pre><code class="language-python">class ProductManagerAgent(BaseAgent):
+    def __init__(self, model=None):
+        super().__init__(&quot;ProductManager&quot;, &quot;产品经理&quot;, _load_prompt(&quot;product_manager&quot;), model=model,
+                         skills=[&quot;requirement-analysis&quot;, &quot;prd&quot;, &quot;user-stories&quot;])
+
+    def build_prompt(self, state):
+        return f&quot;用户需求：{state.get('input', '')}\n请把需求拆分为 PRD、用户故事和验收标准。&quot;
+
+    async def postprocess(self, output, state):
+        workspace = self._workspace(state)
+        report = self._extract_json(output) or {}
+        prd_file = &quot;prd.md&quot;
+        await self._write_file(prd_file, output, workspace)
+        return {
+            &quot;prd_file&quot;: prd_file,
+            &quot;user_stories&quot;: report.get(&quot;user_stories&quot;, []),
+            &quot;acceptance_criteria&quot;: report.get(&quot;acceptance_criteria&quot;, []),
+            &quot;parsed&quot;: report,
+        }
+</code></pre>
+<hr />
+<h3 id="3-2-architectagent"><a class="anchor" href="#3-2-architectagent" aria-hidden="true">#</a>3.2 ArchitectAgent</h3>
+<h4 id="3-2-1-4-block-映射"><a class="anchor" href="#3-2-1-4-block-映射" aria-hidden="true">#</a>3.2.1 4-Block 映射</h4>
+<p>| 要素 | 实现 |
+|---|---|
+| 角色 | Architect Agent（系统架构师），产出架构设计，禁止写实现代码。 |
+| 安全边界 | 不写实现代码；不调用 run_command。 |
+| 上下文输入 | <code>state[&quot;input&quot;]</code>、可选 <code>state[&quot;product_manager&quot;][&quot;output&quot;]</code>、语言模板、工作目录。 |
+| 输出格式 | JSON：<code>{modules, api_contract, tech_stack, mermaid, notes}</code>，并写入 <code>design.json</code>。 |
+| 工具 | <code>write_file</code>（写 <code>design.json</code>）。 |
+| 工作流 | 1) 读取 PRD/需求；2) 选择目标技术栈；3) 输出架构 JSON；4) 写入 <code>design.json</code>。 |
+| 异常处理 | 若 JSON 解析失败，<code>design_file</code> 为 <code>None</code>，<code>parsed</code> 为 <code>None</code>。 |</p>
+<h4 id="3-2-2-prompting-specification-template"><a class="anchor" href="#3-2-2-prompting-specification-template" aria-hidden="true">#</a>3.2.2 Prompting Specification Template</h4>
+<p><strong># Role/Goal</strong><br />
+你是 <code>ArchitectAgent</code>（系统架构师）。核心任务：把用户需求/PRD 转化为系统架构设计。</p>
+<p><strong># Inputs &amp; Format</strong></p>
+<ul>
+<li>用户需求：<code>state[&quot;input&quot;]</code>。</li>
+<li>PRD：<code>state[&quot;product_manager&quot;][&quot;output&quot;]</code>（可选）。</li>
+<li>目标语言/技术栈：<code>LangTemplate.display</code>。</li>
+<li>工作目录：<code>state[&quot;workspace&quot;]</code>。</li>
+</ul>
+<p><strong># Workflow (SOP)</strong></p>
+<ol>
+<li>理解需求与 PRD。</li>
+<li>设计关键模块、API 契约、技术选型、Mermaid 架构图。</li>
+<li>输出 JSON：<code>{modules, api_contract, tech_stack, mermaid, notes}</code>。</li>
+</ol>
+<p><strong># Constraints &amp; Rules</strong></p>
+<ul>
+<li>禁止写实现代码。</li>
+<li><code>api_contract</code> 必须明确输入/输出类型。</li>
+<li><code>mermaid</code> 字段可为空，但建议包含架构图。</li>
+</ul>
+<p><strong># Exception Handling</strong></p>
+<ul>
+<li>若输出不是合法 JSON，<code>postprocess</code> 不写入 <code>design.json</code>，<code>parsed</code> 为 <code>None</code>。</li>
+</ul>
+<h4 id="3-2-3-实现要点"><a class="anchor" href="#3-2-3-实现要点" aria-hidden="true">#</a>3.2.3 实现要点</h4>
+<pre><code class="language-python">class ArchitectAgent(BaseAgent):
+    def __init__(self, model=None):
+        super().__init__(&quot;Architect&quot;, &quot;系统架构师&quot;, _load_prompt(&quot;architect&quot;), model=model,
+                         skills=[&quot;system-design&quot;, &quot;api-contract&quot;, &quot;tech-stack&quot;])
+
+    def build_prompt(self, state):
+        prd = (state.get(&quot;product_manager&quot;) or {}).get(&quot;output&quot;, &quot;&quot;)
+        template = get_language(state)
+        return (
+            f&quot;目标语言/技术栈：{template.display}\n&quot;
+            f&quot;用户需求：{state.get('input', '')}\n&quot;
+            f&quot;PRD：{prd[:1500] if prd else '无'}\n&quot;
+            f&quot;工作目录：{state.get('workspace', '')}\n&quot;
+            &quot;请输出 JSON 格式架构设计：{modules, api_contract, tech_stack, mermaid, notes}&quot;
+        )
+
+    async def postprocess(self, output, state):
+        workspace = self._workspace(state)
+        design = self._extract_json(output)
+        if design:
+            await self._write_file(&quot;design.json&quot;, json.dumps(design, ensure_ascii=False, indent=2), workspace)
+        return {&quot;design_file&quot;: &quot;design.json&quot; if design else None, &quot;parsed&quot;: design}
+</code></pre>
+<hr />
+<h3 id="3-3-dbaagent"><a class="anchor" href="#3-3-dbaagent" aria-hidden="true">#</a>3.3 DBAAgent</h3>
+<h4 id="3-3-1-4-block-映射"><a class="anchor" href="#3-3-1-4-block-映射" aria-hidden="true">#</a>3.3.1 4-Block 映射</h4>
+<p>| 要素 | 实现 |
+|---|---|
+| 角色 | DBA Agent（数据库架构师），产出数据库 Schema 与迁移脚本。 |
+| 安全边界 | 不写业务代码；仅输出 <code>.sql</code> 文件。 |
+| 上下文输入 | <code>state[&quot;input&quot;]</code>、<code>state[&quot;architect&quot;][&quot;output&quot;]</code>。 |
+| 输出格式 | SQL 代码块（<code># file: schema.sql</code> / <code># file: migrations/001_initial.sql</code>）+ JSON <code>{tables, notes}</code>。 |
+| 工具 | <code>write_file</code>。 |
+| 工作流 | 1) 读取架构设计；2) 生成 SQL；3) 确保 <code>.sql</code> 扩展名；4) 写入文件；5) 提取 JSON。 |
+| 异常处理 | 若无代码块，将完整 <code>output</code> 写入 <code>schema.sql</code>。 |</p>
+<h4 id="3-3-2-prompting-specification-template"><a class="anchor" href="#3-3-2-prompting-specification-template" aria-hidden="true">#</a>3.3.2 Prompting Specification Template</h4>
+<p><strong># Role/Goal</strong><br />
+你是 <code>DBAAgent</code>（数据库架构师）。核心任务：根据架构设计产出数据库 Schema 与迁移脚本。</p>
+<p><strong># Inputs &amp; Format</strong></p>
+<ul>
+<li>用户需求：<code>state[&quot;input&quot;]</code>。</li>
+<li>架构设计：<code>state[&quot;architect&quot;][&quot;output&quot;]</code>。</li>
+<li>工作目录：<code>state[&quot;workspace&quot;]</code>。</li>
+</ul>
+<p><strong># Workflow (SOP)</strong></p>
+<ol>
+<li>分析架构设计中的数据实体。</li>
+<li>输出 SQL 建表语句、索引、约束。</li>
+<li>输出迁移脚本到 <code>migrations/001_initial.sql</code>。</li>
+<li>输出 JSON <code>{tables: [...], notes: &quot;&quot;}</code>。</li>
+</ol>
+<p><strong># Constraints &amp; Rules</strong></p>
+<ul>
+<li>不修改业务代码。</li>
+<li>所有 SQL 文件以 <code>.sql</code> 结尾。</li>
+<li>表名/字段名必须可执行。</li>
+</ul>
+<p><strong># Exception Handling</strong></p>
+<ul>
+<li>若 LLM 未生成代码块，将完整输出写入 <code>schema.sql</code>。</li>
+<li>若 JSON 缺失，返回空 <code>tables</code> 与 <code>notes</code>。</li>
+</ul>
+<h4 id="3-3-3-实现要点"><a class="anchor" href="#3-3-3-实现要点" aria-hidden="true">#</a>3.3.3 实现要点</h4>
+<pre><code class="language-python">class DBAAgent(BaseAgent):
+    def __init__(self, model=None):
+        super().__init__(&quot;DBA&quot;, &quot;数据库架构&quot;, _load_prompt(&quot;dba&quot;), model=model,
+                         skills=[&quot;database-design&quot;, &quot;schema&quot;, &quot;migration&quot;])
+
+    def build_prompt(self, state):
+        return (
+            f&quot;原始需求：{state.get('input', '')}\n&quot;
+            f&quot;架构设计：{(state.get('architect') or {}).get('output', '')[:2000]}\n&quot;
+            &quot;请输出数据库 Schema 与迁移 SQL。&quot;
+        )
+
+    async def postprocess(self, output, state):
+        workspace = self._workspace(state)
+        blocks = self._extract_code_blocks(output)
+        files = []
+        for block in blocks:
+            path = block[&quot;path&quot;]
+            if not path:
+                continue
+            if not path.endswith(&quot;.sql&quot;):
+                path += &quot;.sql&quot;
+            await self._write_file(path, block[&quot;code&quot;], workspace)
+            files.append(path)
+        if not files:
+            await self._write_file(&quot;schema.sql&quot;, output, workspace)
+            files.append(&quot;schema.sql&quot;)
+        report = self._extract_json(output) or {}
+        return {&quot;files&quot;: files, &quot;tables&quot;: report.get(&quot;tables&quot;, []), &quot;notes&quot;: report.get(&quot;notes&quot;, &quot;&quot;)}
+</code></pre>
+<hr />
+<h3 id="3-4-coderagent"><a class="anchor" href="#3-4-coderagent" aria-hidden="true">#</a>3.4 CoderAgent</h3>
+<h4 id="3-4-1-4-block-映射"><a class="anchor" href="#3-4-1-4-block-映射" aria-hidden="true">#</a>3.4.1 4-Block 映射</h4>
+<p>| 要素 | 实现 |
+|---|---|
+| 角色 | Coder Agent（代码实现引擎），根据架构设计产出可运行代码并自测。 |
+| 安全边界 | 不写架构；不部署生产；不执行白名单外命令；生成代码需经 <code>SafetyScanner.scan_code</code>。 |
+| 上下文输入 | <code>state[&quot;input&quot;]</code>、<code>state[&quot;architect&quot;]</code>、<code>state[&quot;dba&quot;]</code>、<code>LangTemplate</code>、工作目录。 |
+| 输出格式 | 代码块 <code># file: main.&lt;ext&gt;</code> + JSON <code>{status, files_modified, test_result, note}</code>。 |
+| 工具 | <code>read_file</code>、<code>write_file</code>、<code>run_command</code>（<code>template.test_cmd</code>，最多 3 次）。 |
+| 工作流 | 1) 读取现有文件；2) 按模板生成代码；3) 扫描可疑代码；4) 运行测试；5) 输出 JSON 报告。 |
+| 异常处理 | 若 MOCK 且无产物，写 <code>_fallback_code</code>，状态 <code>mock_fallback</code>；测试失败记录 <code>stderr</code>。 |</p>
+<h4 id="3-4-2-prompting-specification-template"><a class="anchor" href="#3-4-2-prompting-specification-template" aria-hidden="true">#</a>3.4.2 Prompting Specification Template</h4>
+<p><strong># Role/Goal</strong><br />
+你是 <code>CoderAgent</code>（代码实现引擎）。核心任务：根据 <code>ArchitectAgent</code> 的架构设计，使用 MCP 工具生成可运行代码，并通过 <code>pytest</code> 自测。</p>
+<p><strong># Inputs &amp; Format</strong></p>
+<ul>
+<li>用户需求：<code>state[&quot;input&quot;]</code>。</li>
+<li>目标语言/技术栈：<code>LangTemplate.display</code>。</li>
+<li>构建命令：<code>LangTemplate.build_cmd</code>；测试命令：<code>LangTemplate.test_cmd</code>。</li>
+<li>文件扩展名：<code>LangTemplate.file_ext</code>；测试文件扩展名：<code>LangTemplate.test_ext</code>。</li>
+<li>架构设计：<code>state[&quot;architect&quot;][&quot;output&quot;]</code>。</li>
+<li>数据库设计：<code>state[&quot;dba&quot;][&quot;output&quot;]</code>（可选）。</li>
+<li>工作目录：<code>state[&quot;workspace&quot;]</code>。</li>
+</ul>
+<p><strong># Workflow (SOP)</strong></p>
+<ol>
+<li><code>read_file</code> 了解工作目录现有结构。</li>
+<li>按 <code>LangTemplate</code> 生成代码，每个代码块前 <code># file: &lt;path&gt;.&lt;ext&gt;</code>。</li>
+<li>调用 <code>run_command(template.test_cmd)</code> 自测，最多重试 3 次。</li>
+<li>输出 JSON：<code>{status, files_modified, test_result, note}</code>。</li>
+</ol>
+<p><strong># Constraints &amp; Rules</strong></p>
+<ul>
+<li>不得生成架构未提及的功能。</li>
+<li>若架构提到 API，必须生成 FastAPI 路由。</li>
+<li>仅允许 <code>ToolSandbox.ALLOWED_PREFIXES</code> 内命令。</li>
+<li>每个产物前必须 <code># file: path</code>。</li>
+</ul>
+<p><strong># Exception Handling</strong></p>
+<ul>
+<li>若上游架构缺失，降级生成，状态 <code>needs_help</code>。</li>
+<li>若 MOCK 模式且未生成文件，调用 <code>_fallback_code</code> 写占位代码，状态 <code>mock_fallback</code>。</li>
+<li>若 <code>run_command</code> 失败，把 <code>stderr</code> 写入 <code>note</code>，<code>test_result</code> 为 <code>failed</code>。</li>
+</ul>
+<h4 id="3-4-3-实现要点"><a class="anchor" href="#3-4-3-实现要点" aria-hidden="true">#</a>3.4.3 实现要点</h4>
+<pre><code class="language-python">class CoderAgent(BaseAgent):
+    def __init__(self, model=None):
+        super().__init__(&quot;Coder&quot;, &quot;代码实现引擎&quot;, _load_prompt(&quot;coder&quot;), model=model,
+                         skills=[&quot;code-implementation&quot;, &quot;refactor&quot;, &quot;python&quot;])
+
+    def build_prompt(self, state):
+        dba_output = (state.get(&quot;dba&quot;) or {}).get(&quot;output&quot;, &quot;&quot;)
+        template = get_language(state)
+        return (
+            f&quot;目标语言/技术栈：{template.display}\n&quot;
+            f&quot;构建命令：{template.build_cmd or '无'}\n&quot;
+            f&quot;测试命令：{template.test_cmd}\n&quot;
+            f&quot;用户生成文件扩展名：.{template.file_ext}，测试文件扩展名：.{template.test_ext}\n&quot;
+            f&quot;用户需求：{state.get('input', '')}\n&quot;
+            f&quot;架构设计：{(state.get('architect') or {}).get('output', '')[:2000]}\n&quot;
+            f&quot;数据库设计：{dba_output[:1500] if dba_output else '无'}\n&quot;
+            f&quot;工作目录：{state.get('workspace', '')}\n&quot;
+            &quot;请生成可运行代码。每个代码块前用注释标明文件路径，例如 '# file: main.&quot;
+            f&quot;{template.file_ext}'。最后输出 JSON 状态报告：&quot;
+            &quot;{status, files_modified, test_result, note}&quot;
+        )
+
+    async def postprocess(self, output, state):
+        workspace = self._workspace(state)
+        template = get_language(state)
+        blocks = self._extract_code_blocks(output)
+        files = []
+        security_issues = []
+        for idx, block in enumerate(blocks, start=1):
+            path = block[&quot;path&quot;]
+            if not path:
+                path = f&quot;module_{idx}.{template.file_ext}&quot;
+            if not path.endswith(f&quot;.{template.file_ext}&quot;):
+                path += f&quot;.{template.file_ext}&quot;
+            security_issues.extend(SafetyScanner.scan_code(block[&quot;code&quot;]))
+            res = await self._write_file(path, block[&quot;code&quot;], workspace)
+            if res.get(&quot;success&quot;):
+                files.append(path)
+        report = self._extract_json(output) or {}
+        if not files and self.llm.is_mock():
+            stub = self._fallback_code(state.get(&quot;input&quot;, &quot;&quot;), template)
+            await self._write_file(template.main_file(), stub, workspace)
+            files.append(template.main_file())
+            report = {&quot;status&quot;: &quot;mock_fallback&quot;, &quot;files_modified&quot;: files, &quot;test_result&quot;: &quot;unknown&quot;, &quot;note&quot;: f&quot;MOCK 模式生成的占位代码 ({template.display})&quot;}
+        return {
+            &quot;files&quot;: files,
+            &quot;status&quot;: report.get(&quot;status&quot;, &quot;completed&quot; if files else &quot;needs_help&quot;),
+            &quot;test_result&quot;: report.get(&quot;test_result&quot;, &quot;unknown&quot;),
+            &quot;note&quot;: report.get(&quot;note&quot;, &quot;&quot;),
+            &quot;security_issues&quot;: security_issues,
+        }
+</code></pre>
+<hr />
+<h3 id="3-5-testeragent"><a class="anchor" href="#3-5-testeragent" aria-hidden="true">#</a>3.5 TesterAgent</h3>
+<h4 id="3-5-1-4-block-映射"><a class="anchor" href="#3-5-1-4-block-映射" aria-hidden="true">#</a>3.5.1 4-Block 映射</h4>
+<p>| 要素 | 实现 |
+|---|---|
+| 角色 | Tester Agent（测试工程师），为 Coder 产物生成并执行测试。 |
+| 安全边界 | 不修改源代码；仅生成测试文件；运行白名单测试命令。 |
+| 上下文输入 | <code>state[&quot;coder&quot;][&quot;files&quot;]</code>、<code>LangTemplate.test_cmd</code>、工作目录。 |
+| 输出格式 | 测试代码块 + JSON <code>{passed, failed, coverage, report}</code>。 |
+| 工具 | <code>read_file</code>、<code>write_file</code>、<code>run_command</code>。 |
+| 工作流 | 1) 读取代码文件；2) 生成测试代码；3) 执行 <code>test_cmd</code>；4) 解析 stdout 中 passed/failed；5) 提取 JSON 报告。 |
+| 异常处理 | 若未生成测试文件，<code>test_command_success</code> 为 <code>false</code>，<code>report</code> 为 <code>no tests generated</code>。 |</p>
+<h4 id="3-5-2-prompting-specification-template"><a class="anchor" href="#3-5-2-prompting-specification-template" aria-hidden="true">#</a>3.5.2 Prompting Specification Template</h4>
+<p><strong># Role/Goal</strong><br />
+你是 <code>TesterAgent</code>（测试工程师）。核心任务：为 <code>CoderAgent</code> 生成的代码自动生成并执行单元/集成测试。</p>
+<p><strong># Inputs &amp; Format</strong></p>
+<ul>
+<li>目标语言：<code>LangTemplate.display</code>。</li>
+<li>测试框架/命令：<code>LangTemplate.test_cmd</code>。</li>
+<li>测试文件命名：<code>*.{LangTemplate.test_ext}</code>。</li>
+<li>代码文件：<code>state[&quot;coder&quot;][&quot;files&quot;]</code>，代码片段由 <code>read_file</code> 读取。</li>
+<li>工作目录：<code>state[&quot;workspace&quot;]</code>。</li>
+</ul>
+<p><strong># Workflow (SOP)</strong></p>
+<ol>
+<li>读取最多 3 个代码文件内容。</li>
+<li>为每个目标生成测试代码块，头部 <code># file: test_&lt;name&gt;.&lt;ext&gt;</code>。</li>
+<li>调用 <code>run_command(f&quot;{test_cmd} -q&quot;)</code>，超时 15 秒。</li>
+<li>输出 JSON：<code>{passed, failed, coverage, report}</code>。</li>
+</ol>
+<p><strong># Constraints &amp; Rules</strong></p>
+<ul>
+<li>覆盖正常路径与异常路径。</li>
+<li>失败的用例必须给出最小复现步骤。</li>
+<li>测试文件扩展名必须符合 <code>LangTemplate.test_ext</code>。</li>
+</ul>
+<p><strong># Exception Handling</strong></p>
+<ul>
+<li>若未生成测试文件，返回 <code>{&quot;passed&quot;: 0, &quot;failed&quot;: 0, &quot;coverage&quot;: 0.0, &quot;report&quot;: &quot;no tests generated&quot;}</code>。</li>
+<li>若 <code>test_cmd</code> 输出无 <code>passed/failed</code> 关键字，从 JSON 报告中读取；否则按正则解析。</li>
+</ul>
+<h4 id="3-5-3-实现要点"><a class="anchor" href="#3-5-3-实现要点" aria-hidden="true">#</a>3.5.3 实现要点</h4>
+<pre><code class="language-python">class TesterAgent(BaseAgent):
+    def __init__(self, model=None):
+        super().__init__(&quot;Tester&quot;, &quot;测试工程师&quot;, _load_prompt(&quot;tester&quot;), model=model,
+                         skills=[&quot;test-generation&quot;, &quot;pytest&quot;, &quot;coverage&quot;])
+
+    def build_prompt(self, state):
+        workspace = state.get(&quot;workspace&quot;, &quot;&quot;)
+        template = get_language(state)
+        code_files = (state.get(&quot;coder&quot;) or {}).get(&quot;files&quot;, [])
+        snippets = []
+        for f in code_files[:3]:
+            res = ToolSandbox.read_file(f, base_dir=workspace)
+            if res.get(&quot;success&quot;):
+                snippets.append(f&quot;--- {f} ---\n{res['content'][:1500]}&quot;)
+        return (
+            f&quot;目标语言：{template.display}\n&quot;
+            f&quot;测试框架/命令：{template.test_cmd}\n&quot;
+            f&quot;测试文件命名：*.{template.test_ext}\n&quot;
+            f&quot;代码文件：{code_files}\n&quot;
+            f&quot;{''.join(snippets)[:2500]}\n&quot;
+            f&quot;工作目录：{workspace}\n&quot;
+            &quot;请生成对应语言的测试用例。每个测试代码块前标明文件路径，如 '# file: test_&quot;
+            f&quot;{template.file_ext}'。最后输出 JSON 测试报告：&quot;
+            &quot;{passed, failed, coverage, report}&quot;
+        )
+
+    async def postprocess(self, output, state):
+        workspace = self._workspace(state)
+        template = get_language(state)
+        blocks = self._extract_code_blocks(output)
+        files = []
+        for idx, block in enumerate(blocks, start=1):
+            path = block[&quot;path&quot;]
+            if not path:
+                path = f&quot;test_module_{idx}.{template.test_ext}&quot;
+            if not path.endswith(f&quot;.{template.test_ext}&quot;):
+                path += f&quot;.{template.test_ext}&quot;
+            res = await self._write_file(path, block[&quot;code&quot;], workspace)
+            if res.get(&quot;success&quot;):
+                files.append(path)
+        if files:
+            test_res = await self._run_command(f&quot;{template.test_cmd} -q&quot;, workspace, timeout=15)
+        else:
+            test_res = {&quot;success&quot;: False, &quot;stdout&quot;: &quot;&quot;, &quot;stderr&quot;: &quot;no tests generated&quot;}
+        report = self._extract_json(output) or {}
+        passed = report.get(&quot;passed&quot;)
+        failed = report.get(&quot;failed&quot;)
+        if passed is None or failed is None:
+            passed, failed = self._parse_test_summary(test_res.get(&quot;stdout&quot;, &quot;&quot;))
+        return {
+            &quot;files&quot;: files,
+            &quot;passed&quot;: passed,
+            &quot;failed&quot;: failed,
+            &quot;coverage&quot;: report.get(&quot;coverage&quot;, 0.0),
+            &quot;report&quot;: (test_res.get(&quot;stdout&quot;, &quot;&quot;) + &quot;\n&quot; + test_res.get(&quot;stderr&quot;, &quot;&quot;)).strip(),
+            &quot;test_command_success&quot;: test_res.get(&quot;success&quot;, False),
+        }
+</code></pre>
+<hr />
+<h3 id="3-6-revieweragent"><a class="anchor" href="#3-6-revieweragent" aria-hidden="true">#</a>3.6 ReviewerAgent</h3>
+<h4 id="3-6-1-4-block-映射"><a class="anchor" href="#3-6-1-4-block-映射" aria-hidden="true">#</a>3.6.1 4-Block 映射</h4>
+<p>| 要素 | 实现 |
+|---|---|
+| 角色 | Reviewer Agent（代码审查），从需求出发独立审查代码/测试/文档。 |
+| 安全边界 | 不写代码；只输出审查 JSON。 |
+| 上下文输入 | <code>state[&quot;input&quot;]</code>、代码文件、测试报告、文档文件。 |
+| 输出格式 | JSON <code>{severity, passed, issues, suggestions}</code>，并写入 <code>review_report.json</code>。 |
+| 工具 | <code>write_file</code>。 |
+| 工作流 | 1) 读取上游产物；2) 独立审查；3) 输出 JSON；4) 写入 <code>review_report.json</code>。 |
+| 异常处理 | 若 JSON 解析失败，保守 fallback <code>passed=False</code>、<code>severity=&quot;medium&quot;</code>。 |</p>
+<h4 id="3-6-2-prompting-specification-template"><a class="anchor" href="#3-6-2-prompting-specification-template" aria-hidden="true">#</a>3.6.2 Prompting Specification Template</h4>
+<p><strong># Role/Goal</strong><br />
+你是 <code>ReviewerAgent</code>（代码审查）。核心任务：从需求出发独立审查代码、测试、文档，指出 High/Medium/Low 级别问题。</p>
+<p><strong># Inputs &amp; Format</strong></p>
+<ul>
+<li>原始需求：<code>state[&quot;input&quot;]</code>。</li>
+<li>代码文件：<code>state[&quot;coder&quot;][&quot;files&quot;]</code>。</li>
+<li>测试报告：<code>state[&quot;tester&quot;][&quot;report&quot;]</code>。</li>
+<li>文档文件：<code>state[&quot;docs&quot;][&quot;files&quot;]</code>。</li>
+</ul>
+<p><strong># Workflow (SOP)</strong></p>
+<ol>
+<li>独立思考，不信任上游输出。</li>
+<li>检查设计模式、代码复杂度、安全漏洞、API 契约一致性。</li>
+<li>输出 JSON：<code>{severity, passed, issues, suggestions}</code>。</li>
+</ol>
+<p><strong># Constraints &amp; Rules</strong></p>
+<ul>
+<li><code>severity</code> ∈ <code>low / medium / high</code>。</li>
+<li><code>issues</code> 必须是具体、可定位的问题。</li>
+<li><code>suggestions</code> 必须是可执行的改进建议。</li>
+</ul>
+<p><strong># Exception Handling</strong></p>
+<ul>
+<li>若输出无法解析为 JSON，<code>postprocess</code> 返回 <code>{&quot;severity&quot;: &quot;medium&quot;, &quot;passed&quot;: false, &quot;issues&quot;: [&quot;Reviewer 输出无法解析为 JSON&quot;], &quot;suggestions&quot;: [&quot;请检查 LLM 输出格式&quot;]}</code>。</li>
+</ul>
+<h4 id="3-6-3-实现要点"><a class="anchor" href="#3-6-3-实现要点" aria-hidden="true">#</a>3.6.3 实现要点</h4>
+<pre><code class="language-python">class ReviewerAgent(BaseAgent):
+    def __init__(self, model=None):
+        super().__init__(&quot;Reviewer&quot;, &quot;代码审查&quot;, _load_prompt(&quot;reviewer&quot;), model=model,
+                         skills=[&quot;code-review&quot;, &quot;security&quot;, &quot;performance&quot;])
+
+    def build_prompt(self, state):
+        return (
+            f&quot;原始需求：{state.get('input', '')}\n&quot;
+            f&quot;代码文件：{(state.get('coder') or {}).get('files', [])}\n&quot;
+            f&quot;测试报告：{(state.get('tester') or {}).get('report', '')[:1200]}\n&quot;
+            f&quot;文档文件：{(state.get('docs') or {}).get('files', [])}\n&quot;
+            &quot;请独立思考，从需求出发审查。输出 JSON：{severity, passed, issues, suggestions}&quot;
+        )
+
+    async def postprocess(self, output, state):
+        workspace = self._workspace(state)
+        report = self._extract_json(output)
+        if not report:
+            report = {&quot;severity&quot;: &quot;medium&quot;, &quot;passed&quot;: False, &quot;issues&quot;: [&quot;Reviewer 输出无法解析为 JSON&quot;], &quot;suggestions&quot;: [&quot;请检查 LLM 输出格式&quot;]}
+        await self._write_file(&quot;review_report.json&quot;, json.dumps(report, ensure_ascii=False, indent=2), workspace)
+        report[&quot;report_file&quot;] = &quot;review_report.json&quot;
+        return report
+</code></pre>
+<hr />
+<h3 id="3-7-securityagent"><a class="anchor" href="#3-7-securityagent" aria-hidden="true">#</a>3.7 SecurityAgent</h3>
+<h4 id="3-7-1-4-block-映射"><a class="anchor" href="#3-7-1-4-block-映射" aria-hidden="true">#</a>3.7.1 4-Block 映射</h4>
+<p>| 要素 | 实现 |
+|---|---|
+| 角色 | Security Agent（安全审查专家），独立审查安全漏洞与合规风险。 |
+| 安全边界 | 不写代码；仅输出安全审查 JSON。 |
+| 上下文输入 | 需求、代码文件、测试文件、架构设计。 |
+| 输出格式 | JSON <code>{severity, passed, issues, suggestions}</code>，写入 <code>security_report.json</code>。 |
+| 工具 | <code>write_file</code>。 |
+| 工作流 | 同 ReviewerAgent，但聚焦注入、越权、敏感信息泄露、依赖漏洞、不安全的反序列化。 |
+| 异常处理 | 同 ReviewerAgent 保守 fallback。 |</p>
+<h4 id="3-7-2-prompting-specification-template"><a class="anchor" href="#3-7-2-prompting-specification-template" aria-hidden="true">#</a>3.7.2 Prompting Specification Template</h4>
+<p><strong># Role/Goal</strong><br />
+你是 <code>SecurityAgent</code>（安全审查专家）。核心任务：独立审查代码、测试、文档中的安全漏洞与合规风险。</p>
+<p><strong># Inputs &amp; Format</strong></p>
+<ul>
+<li>原始需求：<code>state[&quot;input&quot;]</code>。</li>
+<li>代码文件：<code>state[&quot;coder&quot;][&quot;files&quot;]</code>。</li>
+<li>测试文件：<code>state[&quot;tester&quot;][&quot;files&quot;]</code>。</li>
+<li>架构设计：<code>state[&quot;architect&quot;][&quot;output&quot;]</code>。</li>
+</ul>
+<p><strong># Workflow (SOP)</strong></p>
+<ol>
+<li>独立审查注入、越权、敏感信息泄露、依赖漏洞、不安全反序列化。</li>
+<li>输出 JSON：<code>{severity, passed, issues, suggestions}</code>。</li>
+</ol>
+<p><strong># Constraints &amp; Rules</strong></p>
+<ul>
+<li>不信任上游输出。</li>
+<li>必须指出 High/Medium/Low 级别问题。</li>
+</ul>
+<p><strong># Exception Handling</strong></p>
+<ul>
+<li>输出非 JSON 时 fallback：<code>{&quot;severity&quot;: &quot;medium&quot;, &quot;passed&quot;: false, &quot;issues&quot;: [&quot;Security Agent 输出无法解析为 JSON&quot;], &quot;suggestions&quot;: [...]}</code>。</li>
+</ul>
+<h4 id="3-7-3-实现要点"><a class="anchor" href="#3-7-3-实现要点" aria-hidden="true">#</a>3.7.3 实现要点</h4>
+<pre><code class="language-python">class SecurityAgent(BaseAgent):
+    def __init__(self, model=None):
+        super().__init__(&quot;Security&quot;, &quot;安全审查&quot;, _load_prompt(&quot;security&quot;), model=model,
+                         skills=[&quot;security-review&quot;, &quot;vulnerability&quot;, &quot;compliance&quot;])
+
+    def build_prompt(self, state):
+        return (
+            f&quot;原始需求：{state.get('input', '')}\n&quot;
+            f&quot;代码文件：{(state.get('coder') or {}).get('files', [])}\n&quot;
+            f&quot;测试文件：{(state.get('tester') or {}).get('files', [])}\n&quot;
+            f&quot;架构设计：{(state.get('architect') or {}).get('output', '')[:1500]}\n&quot;
+            &quot;请独立进行安全审查，输出 JSON {severity, passed, issues, suggestions}。&quot;
+        )
+
+    async def postprocess(self, output, state):
+        workspace = self._workspace(state)
+        report = self._extract_json(output)
+        if not report:
+            report = {&quot;severity&quot;: &quot;medium&quot;, &quot;passed&quot;: False, &quot;issues&quot;: [&quot;Security Agent 输出无法解析为 JSON&quot;], &quot;suggestions&quot;: [&quot;请检查 LLM 输出格式&quot;]}
+        await self._write_file(&quot;security_report.json&quot;, json.dumps(report, ensure_ascii=False, indent=2), workspace)
+        report[&quot;report_file&quot;] = &quot;security_report.json&quot;
+        return report
+</code></pre>
+<hr />
+<h3 id="3-8-docsagent"><a class="anchor" href="#3-8-docsagent" aria-hidden="true">#</a>3.8 DocsAgent</h3>
+<h4 id="3-8-1-4-block-映射"><a class="anchor" href="#3-8-1-4-block-映射" aria-hidden="true">#</a>3.8.1 4-Block 映射</h4>
+<p>| 要素 | 实现 |
+|---|---|
+| 角色 | Docs Agent（文档工程师），根据架构与代码生成/更新文档。 |
+| 安全边界 | 不写源代码；仅输出 <code>.md</code> 文件。 |
+| 上下文输入 | <code>state[&quot;architect&quot;][&quot;output&quot;]</code>、<code>state[&quot;coder&quot;][&quot;files&quot;]</code>、工作目录。 |
+| 输出格式 | Markdown 代码块 <code># file: README.md</code> / <code># file: API.md</code>，写入 <code>docs/</code>。 |
+| 工具 | <code>write_file</code>。 |
+| 工作流 | 1) 读取架构与代码文件列表；2) 生成 README/API 文档；3) 确保 <code>.md</code> 扩展名；4) 写入 <code>docs/</code>。 |
+| 异常处理 | 若无代码块，将完整输出写入 <code>docs/README.md</code>。 |</p>
+<h4 id="3-8-2-prompting-specification-template"><a class="anchor" href="#3-8-2-prompting-specification-template" aria-hidden="true">#</a>3.8.2 Prompting Specification Template</h4>
+<p><strong># Role/Goal</strong><br />
+你是 <code>DocsAgent</code>（文档工程师）。核心任务：根据架构与代码自动生成/更新文档。</p>
+<p><strong># Inputs &amp; Format</strong></p>
+<ul>
+<li>架构：<code>state[&quot;architect&quot;][&quot;output&quot;]</code>。</li>
+<li>代码文件：<code>state[&quot;coder&quot;][&quot;files&quot;]</code>。</li>
+<li>工作目录：<code>state[&quot;workspace&quot;]</code>。</li>
+</ul>
+<p><strong># Workflow (SOP)</strong></p>
+<ol>
+<li>总结关键模块与 API。</li>
+<li>生成 <code>README.md</code> 与 <code>API.md</code>。</li>
+<li>所有产物放入 <code>docs/</code> 目录。</li>
+</ol>
+<p><strong># Constraints &amp; Rules</strong></p>
+<ul>
+<li>不修改源代码。</li>
+<li>文档路径以 <code>.md</code> 结尾。</li>
+<li>保持中英文一致。</li>
+</ul>
+<p><strong># Exception Handling</strong></p>
+<ul>
+<li>若 LLM 未生成代码块，将 <code>output</code> 写入 <code>docs/README.md</code>。</li>
+</ul>
+<h4 id="3-8-3-实现要点"><a class="anchor" href="#3-8-3-实现要点" aria-hidden="true">#</a>3.8.3 实现要点</h4>
+<pre><code class="language-python">class DocsAgent(BaseAgent):
+    def __init__(self, model=None):
+        super().__init__(&quot;Docs&quot;, &quot;文档工程师&quot;, _load_prompt(&quot;docs&quot;), model=model,
+                         skills=[&quot;documentation&quot;, &quot;readme&quot;, &quot;api-doc&quot;])
+
+    def build_prompt(self, state):
+        return (
+            f&quot;架构：{str((state.get('architect') or {}).get('output', ''))[:800]}\n&quot;
+            f&quot;代码文件：{(state.get('coder') or {}).get('files', [])}\n&quot;
+            f&quot;工作目录：{state.get('workspace', '')}\n&quot;
+            &quot;请生成 README.md 与 API.md。用代码块标明文件路径，如 '# file: README.md'。&quot;
+        )
+
+    async def postprocess(self, output, state):
+        workspace = self._workspace(state)
+        blocks = self._extract_code_blocks(output)
+        files = []
+        for block in blocks:
+            path = block[&quot;path&quot;] or &quot;README.md&quot;
+            if not path.endswith(&quot;.md&quot;):
+                path += &quot;.md&quot;
+            res = await self._write_file(f&quot;docs/{path}&quot;, block[&quot;code&quot;], workspace)
+            if res.get(&quot;success&quot;):
+                files.append(f&quot;docs/{path}&quot;)
+        if not files:
+            await self._write_file(&quot;docs/README.md&quot;, output, workspace)
+            files.append(&quot;docs/README.md&quot;)
+        return {&quot;files&quot;: files}
+</code></pre>
+<hr />
+<h3 id="3-9-devopsagent"><a class="anchor" href="#3-9-devopsagent" aria-hidden="true">#</a>3.9 DevOpsAgent</h3>
+<h4 id="3-9-1-4-block-映射"><a class="anchor" href="#3-9-1-4-block-映射" aria-hidden="true">#</a>3.9.1 4-Block 映射</h4>
+<p>| 要素 | 实现 |
+|---|---|
+| 角色 | DevOps Agent（部署运维），生成 Docker/CI/CD/部署脚本。 |
+| 安全边界 | 不直接部署；<code>postprocess</code> 返回 <code>needs_approval=True</code>；<code>DevOpsRunner</code> 默认 <code>dry_run=True</code>。 |
+| 上下文输入 | <code>state[&quot;coder&quot;][&quot;files&quot;]</code>。 |
+| 输出格式 | Dockerfile / docker-compose.yml / GitHub Actions 代码块 + 部署摘要，返回 <code>{&quot;files&quot;: [...], &quot;needs_approval&quot;: True}</code>。 |
+| 工具 | <code>write_file</code>。 |
+| 工作流 | 1) 读取代码文件；2) 生成部署配置；3) 写入产物；4) 标记需人工确认。 |
+| 异常处理 | 若无代码块，写入 <code>deploy_summary.md</code>。 |</p>
+<h4 id="3-9-2-prompting-specification-template"><a class="anchor" href="#3-9-2-prompting-specification-template" aria-hidden="true">#</a>3.9.2 Prompting Specification Template</h4>
+<p><strong># Role/Goal</strong><br />
+你是 <code>DevOpsAgent</code>（部署运维）。核心任务：为代码生成 Dockerfile、docker-compose.yml、CI/CD 配置，并说明部署前需人工确认。</p>
+<p><strong># Inputs &amp; Format</strong></p>
+<ul>
+<li>代码文件：<code>state[&quot;coder&quot;][&quot;files&quot;]</code>。</li>
+<li>工作目录：<code>state[&quot;workspace&quot;]</code>。</li>
+</ul>
+<p><strong># Workflow (SOP)</strong></p>
+<ol>
+<li>根据代码文件生成部署配置。</li>
+<li>输出 Dockerfile、docker-compose.yml、GitHub Actions 工作流代码块。</li>
+<li>说明部署前需人工确认。</li>
+</ol>
+<p><strong># Constraints &amp; Rules</strong></p>
+<ul>
+<li>不直接部署到生产。</li>
+<li>必须提供 health check 与日志收集建议。</li>
+<li>涉及生产部署前必须要求人工确认。</li>
+</ul>
+<p><strong># Exception Handling</strong></p>
+<ul>
+<li>若未生成代码块，写入 <code>deploy_summary.md</code>。</li>
+<li><code>postprocess</code> 返回 <code>needs_approval: True</code>。</li>
+</ul>
+<h4 id="3-9-3-实现要点"><a class="anchor" href="#3-9-3-实现要点" aria-hidden="true">#</a>3.9.3 实现要点</h4>
+<pre><code class="language-python">class DevOpsAgent(BaseAgent):
+    def __init__(self, model=None):
+        super().__init__(&quot;DevOps&quot;, &quot;部署运维&quot;, _load_prompt(&quot;devops&quot;), model=model,
+                         skills=[&quot;docker&quot;, &quot;ci-cd&quot;, &quot;deployment&quot;])
+
+    def build_prompt(self, state):
+        return (
+            f&quot;代码文件：{(state.get('coder') or {}).get('files', [])}\n&quot;
+            &quot;请生成 Dockerfile、docker-compose.yml 与 CI/CD 配置摘要，并说明部署前需人工确认。&quot;
+        )
+
+    async def postprocess(self, output, state):
+        workspace = self._workspace(state)
+        blocks = self._extract_code_blocks(output)
+        files = []
+        for block in blocks:
+            path = block[&quot;path&quot;]
+            if not path:
+                continue
+            res = await self._write_file(path, block[&quot;code&quot;], workspace)
+            if res.get(&quot;success&quot;):
+                files.append(path)
+        if not files:
+            await self._write_file(&quot;deploy_summary.md&quot;, output, workspace)
+            files.append(&quot;deploy_summary.md&quot;)
+        return {&quot;files&quot;: files, &quot;needs_approval&quot;: True}
+</code></pre>
+<hr />
+<h2 id="四-支撑组件生成规范"><a class="anchor" href="#四-支撑组件生成规范" aria-hidden="true">#</a>四、支撑组件生成规范</h2>
+<h3 id="4-1-baseagent-抽象"><a class="anchor" href="#4-1-baseagent-抽象" aria-hidden="true">#</a>4.1 BaseAgent 抽象</h3>
+<p>所有业务 Agent 必须继承 <code>BaseAgent</code>。生命周期：<code>dev_agent_system/agents.py (lines 29-166)</code></p>
+<ol>
+<li><code>__init__</code>：加载 system prompt、初始化 <code>LLMClient</code>、<code>MemoryAgent</code>、<code>MCPToolRegistry</code>、telemetry；调用 <code>_register_skills()</code>。</li>
+<li><code>build_prompt(state)</code>：子类重写，构造 user prompt。</li>
+<li><code>run(state)</code>：<ul>
+<li>创建工作目录 <code>workspace/&lt;request_id&gt;</code>。</li>
+<li><code>memory.recall</code> 拉取工作记忆。</li>
+<li>上下文压缩（若超过阈值）。</li>
+<li><code>SecretRedactor.redact</code> 输入/输出。</li>
+<li><code>ModelRouter.resolve</code> 选择模型参数。</li>
+<li><code>llm.chat(system, full_prompt, ...)</code>。</li>
+<li>记录 telemetry 指标。</li>
+<li><code>postprocess(output, state)</code>。</li>
+</ul>
+</li>
+<li><code>postprocess</code>：子类重写，解析输出、调用工具、写产物、返回结构化 dict。</li>
+<li><code>_extract_json</code> / <code>_extract_code_blocks</code>：统一解析工具。</li>
+</ol>
+<h3 id="4-2-orchestrator-编排"><a class="anchor" href="#4-2-orchestrator-编排" aria-hidden="true">#</a>4.2 Orchestrator 编排</h3>
+<p>实现要点：<code>dev_agent_system/orchestrator.py (lines 61-168)</code>、<code>dev_agent_system/orchestrator.py (lines 332-347)</code></p>
+<ul>
+<li><code>_build_state</code> 初始化 <code>GraphState</code>。</li>
+<li><code>_build_graph</code> 按 <code>enable_product_manager / enable_dba / enable_security / enable_devops</code> 动态建图。</li>
+<li><code>_should_continue</code>：<ul>
+<li>若 Reviewer 未通过且未达 <code>max_iterations</code> → <code>continue</code>（回到 <code>architect_node</code>）。</li>
+<li>若启用 Security，Security 未通过也 <code>continue</code>。</li>
+<li>通过则 <code>end</code>；启用 DevOps 则先到 <code>devops_node</code> 再 <code>END</code>。</li>
+</ul>
+</li>
+<li><code>run_stream</code>：SSE 流式输出 <code>on_node_start / on_node_end</code> 事件，异常时降级为普通 <code>ainvoke</code>。</li>
+</ul>
+<h3 id="4-3-工具链"><a class="anchor" href="#4-3-工具链" aria-hidden="true">#</a>4.3 工具链</h3>
+<p>详见 <code>docs/tools_spec.md</code>。</p>
+<h3 id="4-4-配置与模型路由"><a class="anchor" href="#4-4-配置与模型路由" aria-hidden="true">#</a>4.4 配置与模型路由</h3>
+<ul>
+<li><code>config.py</code> 统一 <code>.env</code> + <code>config/model.yaml</code> + <code>config/mcp.yaml</code>。<code>dev_agent_system/config.py</code></li>
+<li><code>router.py</code> 根据 <code>config/model.yaml</code> 选择模型与生成参数。<code>dev_agent_system/router.py</code></li>
+</ul>
+<h3 id="4-5-a2a-与-api"><a class="anchor" href="#4-5-a2a-与-api" aria-hidden="true">#</a>4.5 A2A 与 API</h3>
+<ul>
+<li><code>server.py</code>：统一 FastAPI 网关，含 <code>/orchestrate</code>, <code>/orchestrate/stream</code>, <code>/skills</code>, <code>/metrics</code>, <code>/dashboard</code>, <code>/api/status</code>, <code>/tasks/{id}/resume</code>, <code>/rpc</code>。<code>dev_agent_system/server.py</code></li>
+<li><code>a2a_node.py</code>：独立启动单个 Agent 服务。<code>dev_agent_system/a2a_node.py</code></li>
+<li><code>a2a_client.py</code>：A2A 客户端。<code>dev_agent_system/a2a_client.py</code></li>
+</ul>
+<hr />
+<h2 id="五-验证策略"><a class="anchor" href="#五-验证策略" aria-hidden="true">#</a>五、验证策略</h2>
+<p>| 测试类型 | 范围 | 关键用例 |
+|---|---|---|
+| 单元测试 | Agent postprocess、安全扫描、路径校验、Skill 管理 | <code>tests/test_security.py</code>、<code>tests/test_skills.py</code>、<code>tests/test_multilang.py</code> |
+| 集成测试 | 完整 Orchestrator DAG（MOCK） | <code>tests/test_flow.py::test_orchestrator_end_to_end</code> |
+| 新 Agent 测试 | ProductManager / Security / DBA | <code>tests/test_new_agents.py</code> |
+| A2A/Server 测试 | 端点与 Skill 市场 | <code>tests/test_server.py</code>、<code>tests/test_server_skills.py</code> |
+| 安全流水线 | Secret / 依赖漏洞 / 容器沙箱 | <code>tests/test_security_scanner.py</code>、调用 <code>SecurityPipeline.run()</code> |
+| 回归测试 | <code>tests/eval_dataset.json</code> 18 条用例 | <code>python -m dev_agent_system.eval --max-iter 3</code> / <code>RegressionChecker</code> 对比 baseline |</p>
+<hr />
+<hr />
+<h1 id="附录"><a class="anchor" href="#附录" aria-hidden="true">#</a>附录</h1>
+<h2 id="附录-a-完整-prompts-yaml"><a class="anchor" href="#附录-a-完整-prompts-yaml" aria-hidden="true">#</a>附录 A：完整 <code>prompts.yaml</code></h2>
+<pre><code class="language-yaml">architect: |
+  你是 Architect Agent（系统架构师）。
+  职责：把用户需求转化为系统架构设计。
+  禁止直接生成实现代码，那是 Coder Agent 的工作。
+  输出要求：
+    1) 关键模块与边界
+    2) API 契约（REST/JSON 或 Protobuf）
+    3) 技术选型及利弊分析
+    4) Mermaid 架构图
+    5) JSON 格式决策记录 {modules, api_contract, tech_stack, mermaid, notes}
+
+coder: |
+  你是 Coder Agent（代码实现引擎）。
+  职责：根据 Architect 的架构设计产出高质量、可运行的代码。
+  规则：
+    - 先 read_file 了解现有结构，再写代码
+    - 若架构中提到 API 接口，必须生成 FastAPI 路由
+    - 写完代码后 run_command(&quot;pytest&quot;) 验证，最多重试 3 次
+    - 不能修改架构文档，不能部署到生产
+  输出格式：
+    代码块 + JSON 状态报告 {status, files_modified, test_result, note}
+
+tester: |
+  你是 Tester Agent（测试工程师）。
+  职责：为 Coder 生成的代码自动生成并执行单元/集成/E2E 测试。
+  规则：
+    - 优先使用 pytest
+    - 覆盖正常路径与异常路径
+    - 失败的用例必须给出最小复现步骤
+  输出格式：JSON {passed, failed, coverage, report}
+
+reviewer: |
+  你是 Reviewer Agent（代码审查）。
+  职责：从需求出发独立审查代码、测试、文档。
+  关键指令：
+    - 独立思考，不信任上游输出
+    - 检查设计模式、代码复杂度、安全漏洞、API 契约一致性
+    - 必须指出 High/Medium/Low 级别问题
+  输出格式：JSON {severity, passed, issues, suggestions}
+
+docs: |
+  你是 Docs Agent（文档工程师）。
+  职责：根据架构与代码自动生成/更新文档。
+  规则：
+    - 生成 README、API 文档与 CHANGELOG 摘要
+    - 禁止修改源代码
+    - 保持中英文一致
+
+devops: |
+  你是 DevOps Agent（部署运维）。
+  职责：构建 Docker 镜像、CI/CD 流水线与部署脚本。
+  规则：
+    - 生成 Dockerfile、docker-compose.yml、GitHub Actions 工作流
+    - 涉及部署到生产前必须要求人工确认
+    - 提供 health check 与日志收集建议
+
+product_manager: |
+  你是 Product Manager Agent（产品经理）。
+  职责：把模糊的用户需求拆分为清晰的产品需求文档（PRD）、用户故事与验收标准。
+  规则：
+    - 不直接写实现代码或架构设计
+    - 识别需求中的歧义并给出假设
+    - 输出 PRD 文档、用户故事列表、验收标准
+  输出格式：
+    代码块 '# file: prd.md' 包含 PRD 正文
+    JSON {user_stories: [...], acceptance_criteria: [...]}
+
+security: |
+  你是 Security Agent（安全审查专家）。
+  职责：独立审查代码、测试、文档中的安全漏洞与合规风险。
+  关键指令：
+    - 独立思考，不信任上游输出
+    - 检查注入、越权、敏感信息泄露、依赖漏洞、不安全的反序列化
+    - 必须指出 High/Medium/Low 级别问题
+  输出格式：JSON {severity, passed, issues, suggestions}
+
+dba: |
+  你是 DBA Agent（数据库架构师）。
+  职责：根据架构设计产出数据库 Schema 与迁移脚本。
+  规则：
+    - 输出 SQL 建表语句、索引、约束
+    - 提供 migrations/001_initial.sql 等可执行迁移脚本
+    - 不修改业务代码
+  输出格式：
+    代码块标明文件路径（如 '# file: schema.sql'、'# file: migrations/001_initial.sql'）
+    JSON {tables, notes}
+</code></pre>
+<h2 id="附录-b-完整-agent_cards-json"><a class="anchor" href="#附录-b-完整-agent_cards-json" aria-hidden="true">#</a>附录 B：完整 <code>agent_cards.json</code></h2>
+<pre><code class="language-json">{
+  &quot;architect&quot;: {
+    &quot;name&quot;: &quot;Architect Agent&quot;,
+    &quot;url&quot;: &quot;http://localhost:8000/architect&quot;,
+    &quot;skills&quot;: [
+      {&quot;name&quot;: &quot;system-design&quot;},
+      {&quot;name&quot;: &quot;api-contract&quot;},
+      {&quot;name&quot;: &quot;tech-stack&quot;}
+    ],
+    &quot;capabilities&quot;: {&quot;streaming&quot;: false, &quot;autonomy&quot;: &quot;L2&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;code&quot;]}
+  },
+  &quot;coder&quot;: {
+    &quot;name&quot;: &quot;Coder Agent&quot;,
+    &quot;url&quot;: &quot;http://localhost:8000/coder&quot;,
+    &quot;skills&quot;: [
+      {&quot;name&quot;: &quot;code-implementation&quot;},
+      {&quot;name&quot;: &quot;refactor&quot;},
+      {&quot;name&quot;: &quot;python&quot;}
+    ],
+    &quot;capabilities&quot;: {&quot;streaming&quot;: false, &quot;autonomy&quot;: &quot;L2&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;code&quot;]}
+  },
+  &quot;tester&quot;: {
+    &quot;name&quot;: &quot;Tester Agent&quot;,
+    &quot;url&quot;: &quot;http://localhost:8000/tester&quot;,
+    &quot;skills&quot;: [
+      {&quot;name&quot;: &quot;test-generation&quot;},
+      {&quot;name&quot;: &quot;pytest&quot;},
+      {&quot;name&quot;: &quot;coverage&quot;}
+    ],
+    &quot;capabilities&quot;: {&quot;streaming&quot;: false, &quot;autonomy&quot;: &quot;L3&quot;, &quot;modalities&quot;: [&quot;text&quot;]}
+  },
+  &quot;reviewer&quot;: {
+    &quot;name&quot;: &quot;Reviewer Agent&quot;,
+    &quot;url&quot;: &quot;http://localhost:8000/reviewer&quot;,
+    &quot;skills&quot;: [
+      {&quot;name&quot;: &quot;code-review&quot;},
+      {&quot;name&quot;: &quot;security&quot;},
+      {&quot;name&quot;: &quot;performance&quot;}
+    ],
+    &quot;capabilities&quot;: {&quot;streaming&quot;: false, &quot;autonomy&quot;: &quot;L2&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;code&quot;]}
+  },
+  &quot;docs&quot;: {
+    &quot;name&quot;: &quot;Docs Agent&quot;,
+    &quot;url&quot;: &quot;http://localhost:8000/docs&quot;,
+    &quot;skills&quot;: [
+      {&quot;name&quot;: &quot;documentation&quot;},
+      {&quot;name&quot;: &quot;readme&quot;},
+      {&quot;name&quot;: &quot;api-doc&quot;}
+    ],
+    &quot;capabilities&quot;: {&quot;streaming&quot;: false, &quot;autonomy&quot;: &quot;L3&quot;, &quot;modalities&quot;: [&quot;text&quot;]}
+  },
+  &quot;devops&quot;: {
+    &quot;name&quot;: &quot;DevOps Agent&quot;,
+    &quot;url&quot;: &quot;http://localhost:8000/devops&quot;,
+    &quot;skills&quot;: [
+      {&quot;name&quot;: &quot;docker&quot;},
+      {&quot;name&quot;: &quot;ci-cd&quot;},
+      {&quot;name&quot;: &quot;deployment&quot;}
+    ],
+    &quot;capabilities&quot;: {&quot;streaming&quot;: false, &quot;autonomy&quot;: &quot;L2&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;code&quot;]}
+  },
+  &quot;product_manager&quot;: {
+    &quot;name&quot;: &quot;Product Manager Agent&quot;,
+    &quot;url&quot;: &quot;http://localhost:8000/product_manager&quot;,
+    &quot;skills&quot;: [
+      {&quot;name&quot;: &quot;requirement-analysis&quot;},
+      {&quot;name&quot;: &quot;prd&quot;},
+      {&quot;name&quot;: &quot;user-stories&quot;}
+    ],
+    &quot;capabilities&quot;: {&quot;streaming&quot;: false, &quot;autonomy&quot;: &quot;L2&quot;, &quot;modalities&quot;: [&quot;text&quot;]}
+  },
+  &quot;security&quot;: {
+    &quot;name&quot;: &quot;Security Agent&quot;,
+    &quot;url&quot;: &quot;http://localhost:8000/security&quot;,
+    &quot;skills&quot;: [
+      {&quot;name&quot;: &quot;security-review&quot;},
+      {&quot;name&quot;: &quot;vulnerability&quot;},
+      {&quot;name&quot;: &quot;compliance&quot;}
+    ],
+    &quot;capabilities&quot;: {&quot;streaming&quot;: false, &quot;autonomy&quot;: &quot;L2&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;code&quot;]}
+  },
+  &quot;dba&quot;: {
+    &quot;name&quot;: &quot;DBA Agent&quot;,
+    &quot;url&quot;: &quot;http://localhost:8000/dba&quot;,
+    &quot;skills&quot;: [
+      {&quot;name&quot;: &quot;database-design&quot;},
+      {&quot;name&quot;: &quot;schema&quot;},
+      {&quot;name&quot;: &quot;migration&quot;}
+    ],
+    &quot;capabilities&quot;: {&quot;streaming&quot;: false, &quot;autonomy&quot;: &quot;L2&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;code&quot;]}
+  }
+}
+</code></pre>
+<h2 id="附录-c-a2a-与内部状态数据模型-schemas-py-全文"><a class="anchor" href="#附录-c-a2a-与内部状态数据模型-schemas-py-全文" aria-hidden="true">#</a>附录 C：A2A 与内部状态数据模型（<code>schemas.py</code> 全文）</h2>
+<pre><code class="language-python">&quot;&quot;&quot;A2A 协议与内部状态数据模型。&quot;&quot;&quot;
+from __future__ import annotations
+
+import typing
+from typing import Any, Dict, List, Literal, Optional
+from pydantic import BaseModel, Field
+
+
+class AgentSkill(BaseModel):
+    name: str
+
+
+class AgentCard(BaseModel):
+    name: str
+    url: str
+    skills: List[AgentSkill]
+    capabilities: Dict[str, Any] = Field(default_factory=dict)
+
+
+class Task(BaseModel):
+    description: str
+    task_id: Optional[str] = None
+    request_id: Optional[str] = None
+    max_iterations: Optional[int] = None
+    language: Optional[str] = &quot;python&quot;
+    payload: Optional[Dict[str, Any]] = Field(default_factory=dict)
+
+
+class TaskResponse(BaseModel):
+    status: Literal[&quot;submitted&quot;, &quot;working&quot;, &quot;completed&quot;, &quot;failed&quot;, &quot;skipped&quot;] = &quot;submitted&quot;
+    task_id: str
+    result: Optional[Any] = None
+
+
+class JSONRPCRequest(BaseModel):
+    jsonrpc: Literal[&quot;2.0&quot;] = &quot;2.0&quot;
+    method: str
+    params: Any
+    id: str
+
+
+class JSONRPCResponse(BaseModel):
+    jsonrpc: Literal[&quot;2.0&quot;] = &quot;2.0&quot;
+    result: Any
+    id: str
+
+
+class CoderReport(BaseModel):
+    status: Literal[&quot;completed&quot;, &quot;needs_help&quot;] = &quot;completed&quot;
+    files_modified: List[str] = Field(default_factory=list)
+    test_result: Literal[&quot;passed&quot;, &quot;failed&quot;] = &quot;failed&quot;
+    note: Optional[str] = None
+
+
+class ReviewReport(BaseModel):
+    severity: Literal[&quot;low&quot;, &quot;medium&quot;, &quot;high&quot;] = &quot;low&quot;
+    passed: bool = False
+    issues: List[Dict[str, Any]] = Field(default_factory=list)
+    suggestions: List[str] = Field(default_factory=list)
+
+
+class TestReport(BaseModel):
+    passed: int = 0
+    failed: int = 0
+    coverage: float = 0.0
+    report: str = &quot;&quot;
+
+
+class WorkflowState(BaseModel):
+    request_id: str
+    input: str
+    language: Optional[str] = &quot;python&quot;
+    iteration: int = 0
+    max_iterations: int = 10
+    status: Literal[&quot;submitted&quot;, &quot;working&quot;, &quot;completed&quot;, &quot;failed&quot;] = &quot;submitted&quot;
+    architect: Optional[Dict[str, Any]] = None
+    coder: Optional[Dict[str, Any]] = None
+    tester: Optional[Dict[str, Any]] = None
+    docs: Optional[Dict[str, Any]] = None
+    reviewer: Optional[Dict[str, Any]] = None
+    devops: Optional[Dict[str, Any]] = None
+    artifacts: Dict[str, Any] = Field(default_factory=dict)
+
+
+class GraphState(typing.TypedDict, total=False):
+    &quot;&quot;&quot;LangGraph 状态图使用的状态类型（TypedDict，便于字段部分更新）。&quot;&quot;&quot;
+
+    request_id: str
+    input: str
+    language: Optional[str]
+    workspace: str
+    iteration: int
+    max_iterations: int
+    status: str
+    architect: Optional[Dict[str, Any]]
+    coder: Optional[Dict[str, Any]]
+    tester: Optional[Dict[str, Any]]
+    docs: Optional[Dict[str, Any]]
+    reviewer: Optional[Dict[str, Any]]
+    devops: Optional[Dict[str, Any]]
+    product_manager: Optional[Dict[str, Any]]
+    security: Optional[Dict[str, Any]]
+    dba: Optional[Dict[str, Any]]
+    memory: Optional[Dict[str, Any]]
+    history: List[Dict[str, Any]]
+    artifacts: Dict[str, Any]
+    finished_at: Optional[str]
+</code></pre>
+<h2 id="附录-d-多语言项目模板-templates-py-全文"><a class="anchor" href="#附录-d-多语言项目模板-templates-py-全文" aria-hidden="true">#</a>附录 D：多语言项目模板（<code>templates.py</code> 全文）</h2>
+<pre><code class="language-python">&quot;&quot;&quot;多语言项目模板与工具链定义。&quot;&quot;&quot;
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional
+
+
+@dataclass
+class LangTemplate:
+    &quot;&quot;&quot;描述一种编程语言的文件约定、默认产物与常用命令。&quot;&quot;&quot;
+
+    name: str
+    display: str
+    file_ext: str
+    test_ext: str
+    build_cmd: str
+    test_cmd: str
+    package_file: Optional[str] = None
+    default_files: Dict[str, str] = field(default_factory=dict)
+    allowed_commands: List[str] = field(default_factory=list)
+
+    def main_file(self, name: str = &quot;main&quot;) -&gt; str:
+        if self.name == &quot;java&quot;:
+            return f&quot;{name.capitalize()}.{self.file_ext}&quot;
+        return f&quot;{name}.{self.file_ext}&quot;
+
+    def test_file(self, name: str = &quot;main&quot;) -&gt; str:
+        if self.name == &quot;python&quot;:
+            return f&quot;test_{name}.{self.file_ext}&quot;
+        if self.name == &quot;go&quot;:
+            return f&quot;{name}_test.{self.file_ext}&quot;
+        if self.name == &quot;java&quot;:
+            return f&quot;{name.capitalize()}Test.{self.file_ext}&quot;
+        if self.name == &quot;typescript&quot;:
+            return f&quot;{name}.test.ts&quot;
+        return f&quot;{name}_test.{self.test_ext}&quot;
+
+
+TEMPLATES: Dict[str, LangTemplate] = {
+    &quot;python&quot;: LangTemplate(
+        name=&quot;python&quot;,
+        display=&quot;Python&quot;,
+        file_ext=&quot;py&quot;,
+        test_ext=&quot;py&quot;,
+        build_cmd=&quot;&quot;,
+        test_cmd=&quot;pytest&quot;,
+        package_file=&quot;requirements.txt&quot;,
+        default_files={
+            &quot;requirements.txt&quot;: &quot;# Auto-generated dependencies\n&quot;,
+        },
+        allowed_commands=[&quot;python&quot;, &quot;pytest&quot;],
+    ),
+    &quot;java&quot;: LangTemplate(
+        name=&quot;java&quot;,
+        display=&quot;Java&quot;,
+        file_ext=&quot;java&quot;,
+        test_ext=&quot;java&quot;,
+        build_cmd=&quot;mvn compile&quot;,
+        test_cmd=&quot;mvn test&quot;,
+        package_file=&quot;pom.xml&quot;,
+        default_files={
+            &quot;pom.xml&quot;: &quot;&quot;&quot;&lt;project xmlns=&quot;http://maven.apache.org/POM/4.0.0&quot;&gt;
+  &lt;modelVersion&gt;4.0.0&lt;/modelVersion&gt;
+  &lt;groupId&gt;com.devagent&lt;/groupId&gt;
+  &lt;artifactId&gt;generated&lt;/artifactId&gt;
+  &lt;version&gt;1.0-SNAPSHOT&lt;/version&gt;
+  &lt;properties&gt;
+    &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
+    &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
+    &lt;project.build.sourceEncoding&gt;UTF-8&lt;/project.build.sourceEncoding&gt;
+  &lt;/properties&gt;
+  &lt;dependencies&gt;
+    &lt;dependency&gt;
+      &lt;groupId&gt;org.junit.jupiter&lt;/groupId&gt;
+      &lt;artifactId&gt;junit-jupiter&lt;/artifactId&gt;
+      &lt;version&gt;5.10.0&lt;/version&gt;
+      &lt;scope&gt;test&lt;/scope&gt;
+    &lt;/dependency&gt;
+  &lt;/dependencies&gt;
+&lt;/project&gt;
+&quot;&quot;&quot;,
+        },
+        allowed_commands=[&quot;mvn&quot;, &quot;javac&quot;, &quot;java&quot;],
+    ),
+    &quot;go&quot;: LangTemplate(
+        name=&quot;go&quot;,
+        display=&quot;Go&quot;,
+        file_ext=&quot;go&quot;,
+        test_ext=&quot;go&quot;,
+        build_cmd=&quot;go build ./...&quot;,
+        test_cmd=&quot;go test ./...&quot;,
+        package_file=&quot;go.mod&quot;,
+        default_files={
+            &quot;go.mod&quot;: &quot;module generated\n\ngo 1.21\n&quot;,
+        },
+        allowed_commands=[&quot;go&quot;],
+    ),
+    &quot;typescript&quot;: LangTemplate(
+        name=&quot;typescript&quot;,
+        display=&quot;TypeScript&quot;,
+        file_ext=&quot;ts&quot;,
+        test_ext=&quot;test.ts&quot;,
+        build_cmd=&quot;npx tsc&quot;,
+        test_cmd=&quot;npm test&quot;,
+        package_file=&quot;package.json&quot;,
+        default_files={
+            &quot;package.json&quot;: &quot;&quot;&quot;{
+  &quot;name&quot;: &quot;generated&quot;,
+  &quot;version&quot;: &quot;1.0.0&quot;,
+  &quot;scripts&quot;: {
+    &quot;test&quot;: &quot;jest&quot;,
+    &quot;build&quot;: &quot;tsc&quot;
+  },
+  &quot;devDependencies&quot;: {
+    &quot;@types/node&quot;: &quot;^20.0.0&quot;,
+    &quot;jest&quot;: &quot;^29.0.0&quot;,
+    &quot;typescript&quot;: &quot;^5.3.0&quot;
+  }
+}
+&quot;&quot;&quot;,
+        },
+        allowed_commands=[&quot;npm&quot;, &quot;npx&quot;, &quot;node&quot;],
+    ),
+}
+
+
+def get_language(state_or_language) -&gt; LangTemplate:
+    &quot;&quot;&quot;从 state 或字符串解析目标语言模板，默认 Python。&quot;&quot;&quot;
+    if isinstance(state_or_language, str):
+        lang = state_or_language.lower().strip()
+    elif isinstance(state_or_language, dict):
+        lang = (state_or_language.get(&quot;language&quot;) or &quot;python&quot;).lower().strip()
+    else:
+        lang = &quot;python&quot;
+    return TEMPLATES.get(lang, TEMPLATES[&quot;python&quot;])
+
+
+def list_languages() -&gt; List[str]:
+    return list(TEMPLATES.keys())
+</code></pre>
+<h2 id="附录-e-mcp-工具沙箱与注册中心-mcp-py-全文"><a class="anchor" href="#附录-e-mcp-工具沙箱与注册中心-mcp-py-全文" aria-hidden="true">#</a>附录 E：MCP 工具沙箱与注册中心（<code>mcp.py</code> 全文）</h2>
+<pre><code class="language-python">&quot;&quot;&quot;MCP 风格工具注册与沙箱。&quot;&quot;&quot;
+from __future__ import annotations
+
+import asyncio
+import json
+import subprocess
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional
+
+from dev_agent_system.security import PathValidator, SafetyScanner
+
+
+class ToolSandbox:
+    &quot;&quot;&quot;MCP 工具沙箱：白名单 + 安全扫描 + 路径限制 + 超时。&quot;&quot;&quot;
+
+    ALLOWED_PREFIXES = (
+        &quot;python&quot;, &quot;pytest&quot;, &quot;git&quot;, &quot;ls&quot;, &quot;cat&quot;, &quot;echo&quot;, &quot;docker build&quot;,
+        &quot;mvn&quot;, &quot;gradle&quot;, &quot;javac&quot;, &quot;java&quot;, &quot;go&quot;, &quot;npm&quot;, &quot;npx&quot;, &quot;node&quot;,
+    )
+    WORK_DIR = Path(&quot;workspace&quot;).resolve()
+
+    _write_lock = asyncio.Lock()
+
+    @classmethod
+    def read_file(cls, path: str, base_dir: Optional[str] = None) -&gt; Dict[str, Any]:
+        work = Path(base_dir).resolve() if base_dir else cls.WORK_DIR
+        try:
+            target = PathValidator.resolve(work, path)
+        except ValueError as exc:
+            return {&quot;success&quot;: False, &quot;error&quot;: str(exc)}
+        if not target.exists():
+            return {&quot;success&quot;: False, &quot;error&quot;: &quot;文件不存在&quot;}
+        try:
+            return {&quot;success&quot;: True, &quot;content&quot;: target.read_text(encoding=&quot;utf-8&quot;)}
+        except Exception as e:  # noqa: BLE001
+            return {&quot;success&quot;: False, &quot;error&quot;: str(e)}
+
+    @classmethod
+    async def write_file(
+        cls, path: str, content: str, base_dir: Optional[str] = None
+    ) -&gt; Dict[str, Any]:
+        async with cls._write_lock:
+            work = Path(base_dir).resolve() if base_dir else cls.WORK_DIR
+            try:
+                target = PathValidator.resolve(work, path)
+            except ValueError as exc:
+                return {&quot;success&quot;: False, &quot;error&quot;: str(exc)}
+            try:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(content, encoding=&quot;utf-8&quot;)
+                return {&quot;success&quot;: True, &quot;path&quot;: str(target)}
+            except Exception as e:  # noqa: BLE001
+                return {&quot;success&quot;: False, &quot;error&quot;: str(e)}
+
+    @classmethod
+    def run_command(cls, command: str, timeout: int = 5, base_dir: Optional[str] = None) -&gt; Dict[str, Any]:
+        if not command:
+            return {&quot;success&quot;: False, &quot;error&quot;: &quot;空命令&quot;}
+        safe, issues = SafetyScanner.scan_command(command)
+        if not safe:
+            return {&quot;success&quot;: False, &quot;error&quot;: f&quot;命令命中安全规则：{', '.join(issues)}&quot;}
+        if not any(command.strip().startswith(prefix) for prefix in cls.ALLOWED_PREFIXES):
+            return {&quot;success&quot;: False, &quot;error&quot;: f&quot;仅允许以 {cls.ALLOWED_PREFIXES} 开头的命令&quot;}
+        work = Path(base_dir).resolve() if base_dir else cls.WORK_DIR
+        try:
+            result = subprocess.run(
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+                cwd=work,
+            )
+            return {
+                &quot;success&quot;: result.returncode == 0,
+                &quot;returncode&quot;: result.returncode,
+                &quot;stdout&quot;: result.stdout,
+                &quot;stderr&quot;: result.stderr,
+            }
+        except subprocess.TimeoutExpired:
+            return {&quot;success&quot;: False, &quot;error&quot;: f&quot;命令执行超过 {timeout} 秒&quot;}
+        except Exception as e:  # noqa: BLE001
+            return {&quot;success&quot;: False, &quot;error&quot;: str(e)}
+
+
+from dev_agent_system.config import Settings
+
+
+ToolSandbox.WORK_DIR = Settings.workspace_dir()
+
+
+class MCPToolRegistry:
+    &quot;&quot;&quot;MCP 工具注册中心。&quot;&quot;&quot;
+
+    def __init__(self):
+        self._tools: Dict[str, Callable[..., Any]] = {
+            &quot;read_file&quot;: ToolSandbox.read_file,
+            &quot;write_file&quot;: ToolSandbox.write_file,
+            &quot;run_command&quot;: ToolSandbox.run_command,
+        }
+
+    def register(self, name: str, fn: Callable[..., Any]) -&gt; None:
+        self._tools[name] = fn
+
+    def call(self, name: str, **kwargs) -&gt; Any:
+        if name not in self._tools:
+            return {&quot;success&quot;: False, &quot;error&quot;: f&quot;未知工具: {name}&quot;}
+        fn = self._tools[name]
+        try:
+            if asyncio.iscoroutinefunction(fn):
+                # 已在事件循环外时可直接 run；否则应使用 ainvoke
+                try:
+                    return asyncio.run(fn(**kwargs))
+                except RuntimeError:
+                    return {&quot;success&quot;: False, &quot;error&quot;: f&quot;工具 {name} 是异步的，请在异步上下文中调用 ainvoke&quot;}
+            return fn(**kwargs)
+        except Exception as e:  # noqa: BLE001
+            return {&quot;success&quot;: False, &quot;error&quot;: str(e)}
+
+    async def ainvoke(self, name: str, **kwargs) -&gt; Any:
+        &quot;&quot;&quot;异步调用工具，供 async run 使用。&quot;&quot;&quot;
+        if name not in self._tools:
+            return {&quot;success&quot;: False, &quot;error&quot;: f&quot;未知工具: {name}&quot;}
+        fn = self._tools[name]
+        try:
+            if asyncio.iscoroutinefunction(fn):
+                return await fn(**kwargs)
+            return fn(**kwargs)
+        except Exception as e:  # noqa: BLE001
+            return {&quot;success&quot;: False, &quot;error&quot;: str(e)}
+
+    def list_tools(self) -&gt; List[Dict[str, Any]]:
+        return [
+            {&quot;name&quot;: n, &quot;doc&quot;: (fn.__doc__ or &quot;&quot;)[:120]}
+            for n, fn in self._tools.items()
+        ]
+</code></pre>
+<h2 id="附录-f-安全扫描与脱敏-security-py-全文"><a class="anchor" href="#附录-f-安全扫描与脱敏-security-py-全文" aria-hidden="true">#</a>附录 F：安全扫描与脱敏（<code>security.py</code> 全文）</h2>
+<pre><code class="language-python">&quot;&quot;&quot;安全与沙箱加固：命令、路径、敏感信息校验与脱敏。&quot;&quot;&quot;
+from __future__ import annotations
+
+import re
+from pathlib import Path
+from typing import Any, Dict, List, Tuple
+
+
+class SafetyScanner:
+    &quot;&quot;&quot;命令与代码安全扫描器。&quot;&quot;&quot;
+
+    # 命中即拦截的危险命令模式
+    DANGEROUS_COMMAND_PATTERNS: List[Tuple[str, str]] = [
+        (r&quot;\brm\s+-rf\b&quot;, &quot;递归强制删除&quot;),
+        (r&quot;\bsudo\b&quot;, &quot;提升权限执行&quot;),
+        (r&quot;\bcurl\b.+\|\s*(sh|bash|zsh)\b&quot;, &quot;管道执行远程脚本&quot;),
+        (r&quot;\bwget\b.*-O-\b&quot;, &quot;wget 输出到管道&quot;),
+        (r&quot;\beval\s*\(&quot;, &quot;eval 执行&quot;),
+        (r&quot;\bexec\s*\(&quot;, &quot;exec 执行&quot;),
+        (r&quot;&gt;\s*/dev/null\s*;\s*&quot;, &quot;重定向掩盖命令&quot;),
+        (r&quot;&amp;&amp;\s*rm\b&quot;, &quot;组合删除&quot;),
+        (r&quot;\|\s*sh\b&quot;, &quot;管道到 sh&quot;),
+        (r&quot;\bshutdown\b&quot;, &quot;关机命令&quot;),
+        (r&quot;\bmkfs\b&quot;, &quot;格式化文件系统&quot;),
+        (r&quot;\bdd\s+if=&quot;, &quot;dd 裸写设备&quot;),
+        (r&quot;\bchmod\s+.*777\b&quot;, &quot;过度授权&quot;),
+        (r&quot;\bwget\s+.*-O\s*-\b&quot;, &quot;wget 输出到标准输出&quot;),
+        (r&quot;;\s*rm\b&quot;, &quot;分号后删除&quot;),
+    ]
+
+    # 代码中需要告警的可疑模式（不直接拦截，仅返回风险列表）
+    SUSPICIOUS_CODE_PATTERNS: List[Tuple[str, str, str]] = [
+        (r&quot;\beval\s*\(&quot;, &quot;eval 执行&quot;, &quot;high&quot;),
+        (r&quot;\bexec\s*\(&quot;, &quot;exec 执行&quot;, &quot;high&quot;),
+        (r&quot;\bcompile\s*\(&quot;, &quot;动态编译&quot;, &quot;high&quot;),
+        (r&quot;__import__\s*\(&quot;, &quot;动态导入&quot;, &quot;high&quot;),
+        (r&quot;\bimportlib\b&quot;, &quot;importlib 动态加载&quot;, &quot;medium&quot;),
+        (r&quot;\bos\.system\b&quot;, &quot;os.system 调用&quot;, &quot;high&quot;),
+        (r&quot;\bsubprocess\.&quot;, &quot;subprocess 调用&quot;, &quot;medium&quot;),
+        (r&quot;\bsocket\.&quot;, &quot;socket 网络操作&quot;, &quot;medium&quot;),
+        (r&quot;\burllib\.request\b&quot;, &quot;urllib 网络请求&quot;, &quot;medium&quot;),
+        (r&quot;\brequests\.&quot;, &quot;requests 网络请求&quot;, &quot;low&quot;),
+        (r&quot;\bpty\.&quot;, &quot;pty 伪终端&quot;, &quot;high&quot;),
+        (r&quot;open\s*\(\s*[\&quot;/]etc/&quot;, &quot;读取系统配置文件&quot;, &quot;high&quot;),
+        (r&quot;open\s*\(\s*[\&quot;/]proc/&quot;, &quot;读取 proc 文件系统&quot;, &quot;high&quot;),
+    ]
+
+    @classmethod
+    def scan_command(cls, command: str) -&gt; Tuple[bool, List[str]]:
+        &quot;&quot;&quot;扫描命令字符串，返回 (是否安全, 命中的风险描述列表)。&quot;&quot;&quot;
+        issues: List[str] = []
+        if not command:
+            return True, issues
+        lower = command.lower()
+        for pattern, reason in cls.DANGEROUS_COMMAND_PATTERNS:
+            if re.search(pattern, lower, re.I):
+                issues.append(reason)
+        return not issues, list(set(issues))
+
+    @classmethod
+    def is_safe_command(cls, command: str) -&gt; bool:
+        safe, _ = cls.scan_command(command)
+        return safe
+
+    @classmethod
+    def scan_code(cls, code: str) -&gt; List[Dict[str, Any]]:
+        &quot;&quot;&quot;扫描代码片段中的可疑模式，返回风险项列表（不直接拦截）。&quot;&quot;&quot;
+        issues: List[Dict[str, Any]] = []
+        seen: set = set()
+        for pattern, reason, severity in cls.SUSPICIOUS_CODE_PATTERNS:
+            for m in re.finditer(pattern, code, re.I):
+                key = (m.group(0), reason)
+                if key in seen:
+                    continue
+                seen.add(key)
+                issues.append(
+                    {
+                        &quot;line&quot;: code[: m.start()].count(&quot;\n&quot;) + 1,
+                        &quot;match&quot;: m.group(0),
+                        &quot;reason&quot;: reason,
+                        &quot;severity&quot;: severity,
+                    }
+                )
+        return issues
+
+
+class PathValidator:
+    &quot;&quot;&quot;工作目录内路径校验，防止目录穿越与越界访问。&quot;&quot;&quot;
+
+    @staticmethod
+    def resolve(base_dir: Path, relative_path: str) -&gt; Path:
+        &quot;&quot;&quot;将 relative_path 解析为 base_dir 下的安全绝对路径。&quot;&quot;&quot;
+        base = Path(base_dir).resolve()
+        # 阻止空路径与纯 .. 路径
+        if not relative_path or relative_path.strip() in (&quot;&quot;, &quot;.&quot;, &quot;..&quot;):
+            raise ValueError(&quot;无效路径&quot;)
+        target = (base / relative_path).resolve()
+        # 再次检查 resolve 后的结果仍在 base 下
+        try:
+            target.relative_to(base)
+        except ValueError as exc:
+            raise ValueError(&quot;路径越界：禁止访问工作目录之外&quot;) from exc
+        return target
+
+    @staticmethod
+    def is_within(base_dir: Path, target: Path) -&gt; bool:
+        &quot;&quot;&quot;判断 target 是否位于 base_dir 下。&quot;&quot;&quot;
+        try:
+            Path(target).resolve().relative_to(Path(base_dir).resolve())
+            return True
+        except ValueError:
+            return False
+
+
+class SecretRedactor:
+    &quot;&quot;&quot;敏感信息脱敏器。&quot;&quot;&quot;
+
+    PATTERNS: List[Tuple[str, str]] = [
+        (r&quot;sk-[a-zA-Z0-9]{20,}&quot;, &quot;[API_KEY_REDACTED]&quot;),
+        (r&quot;\b(?:api[_-]?key|apikey|token|secret|access[_-]?key)\s*[:=]\s*[A-Za-z0-9_\-]{8,}&quot;, &quot;[SECRET_REDACTED]&quot;),
+        (r&quot;1[3-9]\d{9}&quot;, &quot;[PHONE_REDACTED]&quot;),
+        (r&quot;[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}&quot;, &quot;[EMAIL_REDACTED]&quot;),
+        (r&quot;password\s*[:=]\s*\S+&quot;, &quot;password=[REDACTED]&quot;),
+    ]
+
+    @classmethod
+    def redact(cls, text: str) -&gt; str:
+        if not text:
+            return text
+        result = text
+        for pattern, replacement in cls.PATTERNS:
+            result = re.sub(pattern, replacement, result, flags=re.I)
+        return result
+</code></pre>
+<h2 id="附录-g-三层记忆实现-memory-py-全文"><a class="anchor" href="#附录-g-三层记忆实现-memory-py-全文" aria-hidden="true">#</a>附录 G：三层记忆实现（<code>memory.py</code> 全文）</h2>
+<pre><code class="language-python">&quot;&quot;&quot;Memory Agent：三层记忆（短期/工作/长期）与上下文压缩。
+
+支持多种后端：
+- short：内存字典
+- working/long：Redis（可选） &gt; ChromaDB（可选） &gt; SQLite 降级
+&quot;&quot;&quot;
+from __future__ import annotations
+
+import json
+import os
+import sqlite3
+import time
+import uuid
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Protocol
+
+
+class ContextCompressor:
+    &quot;&quot;&quot;基于字符数的简单上下文压缩：保留头部与尾部，中间省略。&quot;&quot;&quot;
+
+    def __init__(self, max_chars: int = 8000, reserve_head: int = 2000):
+        self.max_chars = max_chars
+        self.reserve_head = reserve_head
+
+    def compress(self, text: str) -&gt; str:
+        if len(text) &lt;= self.max_chars:
+            return text
+        head = text[: self.reserve_head]
+        tail = text[-(self.max_chars - self.reserve_head) :]
+        return (
+            head
+            + &quot;\n\n... [上下文压缩：中间内容已省略] ...\n\n&quot;
+            + tail
+        )
+
+    def compress_messages(self, messages: List[Dict[str, Any]], max_messages: int = 10) -&gt; List[Dict[str, Any]]:
+        &quot;&quot;&quot;保留最近 max_messages 条记忆。&quot;&quot;&quot;
+        return messages[-max_messages:]
+
+
+class MemoryBackend(Protocol):
+    &quot;&quot;&quot;记忆后端协议。&quot;&quot;&quot;
+
+    def remember(
+        self,
+        key: str,
+        value: Any,
+        session_id: str,
+        layer: str,
+        ttl: Optional[int] = None,
+    ) -&gt; None:
+        ...
+
+    def recall(
+        self,
+        query: str,
+        session_id: str,
+        layer: str,
+        top_k: int = 3,
+    ) -&gt; List[Dict[str, Any]]:
+        ...
+
+
+class SQLiteMemoryBackend:
+    &quot;&quot;&quot;SQLite 降级实现。&quot;&quot;&quot;
+
+    def __init__(self, base_dir: Path):
+        self.base_dir = base_dir
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+        self._db = sqlite3.connect(str(self.base_dir / &quot;memory.db&quot;), check_same_thread=False)
+        self._init_tables()
+
+    def _init_tables(self) -&gt; None:
+        self._db.execute(
+            &quot;CREATE TABLE IF NOT EXISTS memory (&quot;
+            &quot;id TEXT PRIMARY KEY, session_id TEXT, layer TEXT, key TEXT, &quot;
+            &quot;value TEXT, created_at REAL, expires_at REAL)&quot;
+        )
+        self._db.execute(
+            &quot;CREATE INDEX IF NOT EXISTS idx_layer_session ON memory(layer, session_id)&quot;
+        )
+        self._db.commit()
+
+    def remember(
+        self,
+        key: str,
+        value: Any,
+        session_id: str,
+        layer: str,
+        ttl: Optional[int] = None,
+    ) -&gt; None:
+        now = time.time()
+        expires = now + ttl if ttl else 0
+        self._db.execute(
+            &quot;REPLACE INTO memory (id, session_id, layer, key, value, created_at, expires_at) &quot;
+            &quot;VALUES (?, ?, ?, ?, ?, ?, ?)&quot;,
+            (str(uuid.uuid4()), session_id, layer, key, json.dumps(value, ensure_ascii=False), now, expires),
+        )
+        self._db.commit()
+
+    def recall(
+        self,
+        query: str,
+        session_id: str,
+        layer: str,
+        top_k: int = 3,
+    ) -&gt; List[Dict[str, Any]]:
+        now = time.time()
+        cursor = self._db.execute(
+            &quot;SELECT key, value FROM memory WHERE session_id=? AND layer=? &quot;
+            &quot;AND (expires_at=0 OR expires_at&gt;?) ORDER BY created_at DESC LIMIT ?&quot;,
+            (session_id, layer, now, top_k),
+        )
+        rows = []
+        for key, value in cursor.fetchall():
+            try:
+                rows.append({&quot;key&quot;: key, &quot;value&quot;: json.loads(value), &quot;score&quot;: 1.0})
+            except json.JSONDecodeError:
+                rows.append({&quot;key&quot;: key, &quot;value&quot;: value, &quot;score&quot;: 1.0})
+        return rows
+
+    def close(self) -&gt; None:
+        self._db.close()
+
+
+class RedisMemoryBackend:
+    &quot;&quot;&quot;Redis 后端（可选，未安装时降级）。&quot;&quot;&quot;
+
+    def __init__(self, url: Optional[str] = None):
+        import redis
+        self._client = redis.from_url(url or os.getenv(&quot;REDIS_URL&quot;, &quot;redis://localhost:6379/0&quot;))
+
+    def _key(self, session_id: str, layer: str, key: str) -&gt; str:
+        return f&quot;dev_agent:{layer}:{session_id}:{key}&quot;
+
+    def remember(
+        self,
+        key: str,
+        value: Any,
+        session_id: str,
+        layer: str,
+        ttl: Optional[int] = None,
+    ) -&gt; None:
+        full_key = self._key(session_id, layer, key)
+        self._client.set(full_key, json.dumps(value, ensure_ascii=False), ex=ttl)
+
+    def recall(
+        self,
+        query: str,
+        session_id: str,
+        layer: str,
+        top_k: int = 3,
+    ) -&gt; List[Dict[str, Any]]:
+        pattern = f&quot;dev_agent:{layer}:{session_id}:*&quot;
+        keys = self._client.scan_iter(match=pattern, count=top_k * 10)
+        rows = []
+        for key in keys:
+            value = self._client.get(key)
+            if value is None:
+                continue
+            decoded = value.decode(&quot;utf-8&quot;) if isinstance(value, bytes) else value
+            try:
+                rows.append({&quot;key&quot;: key.decode(&quot;utf-8&quot;) if isinstance(key, bytes) else key, &quot;value&quot;: json.loads(decoded), &quot;score&quot;: 1.0})
+            except json.JSONDecodeError:
+                rows.append({&quot;key&quot;: key.decode(&quot;utf-8&quot;) if isinstance(key, bytes) else key, &quot;value&quot;: decoded, &quot;score&quot;: 1.0})
+            if len(rows) &gt;= top_k:
+                break
+        return rows
+
+
+class ChromaMemoryBackend:
+    &quot;&quot;&quot;ChromaDB 后端（可选，未安装时降级），用于语义检索长期记忆。&quot;&quot;&quot;
+
+    def __init__(self, base_dir: Path):
+        import chromadb
+        client = chromadb.PersistentClient(path=str(base_dir / &quot;chroma_data&quot;))
+        self._collection = client.get_or_create_collection(&quot;memory&quot;)
+
+    def remember(
+        self,
+        key: str,
+        value: Any,
+        session_id: str,
+        layer: str,
+        ttl: Optional[int] = None,
+    ) -&gt; None:
+        doc_id = f&quot;{layer}:{session_id}:{key}&quot;
+        self._collection.upsert(
+            ids=[doc_id],
+            documents=[json.dumps(value, ensure_ascii=False)],
+            metadatas=[{&quot;session_id&quot;: session_id, &quot;layer&quot;: layer, &quot;key&quot;: key, &quot;expires_at&quot;: time.time() + ttl if ttl else 0}],
+        )
+
+    def recall(
+        self,
+        query: str,
+        session_id: str,
+        layer: str,
+        top_k: int = 3,
+    ) -&gt; List[Dict[str, Any]]:
+        results = self._collection.query(
+            query_texts=[query],
+            n_results=top_k,
+            where={&quot;session_id&quot;: session_id, &quot;layer&quot;: layer},
+        )
+        rows = []
+        for doc_id, doc, meta, dist in zip(
+            results[&quot;ids&quot;][0], results[&quot;documents&quot;][0], results[&quot;metadatas&quot;][0], results[&quot;distances&quot;][0]
+        ):
+            try:
+                value = json.loads(doc)
+            except json.JSONDecodeError:
+                value = doc
+            rows.append({&quot;key&quot;: meta.get(&quot;key&quot;, doc_id), &quot;value&quot;: value, &quot;score&quot;: 1.0 - dist})
+        return rows
+
+
+def _create_backend(base_dir: Path) -&gt; MemoryBackend:
+    backend = os.getenv(&quot;MEMORY_BACKEND&quot;, &quot;sqlite&quot;).lower()
+    if backend == &quot;redis&quot;:
+        try:
+            return RedisMemoryBackend()
+        except Exception as exc:  # noqa: BLE001
+            print(f&quot;[Memory] Redis 不可用，降级到 SQLite: {exc}&quot;)
+            return SQLiteMemoryBackend(base_dir)
+    if backend == &quot;chroma&quot;:
+        try:
+            return ChromaMemoryBackend(base_dir)
+        except Exception as exc:  # noqa: BLE001
+            print(f&quot;[Memory] ChromaDB 不可用，降级到 SQLite: {exc}&quot;)
+            return SQLiteMemoryBackend(base_dir)
+    return SQLiteMemoryBackend(base_dir)
+
+
+class MemoryAgent:
+    &quot;&quot;&quot;统一记忆入口：短期记忆存内存，工作/长期记忆存后端。&quot;&quot;&quot;
+
+    def __init__(self, base_dir: str = &quot;memory_store&quot;):
+        self.base_dir = Path(base_dir)
+        self.base_dir.mkdir(parents=True, exist_ok=True)
+        self._short: Dict[str, Dict[str, Any]] = {}
+        self._backend = _create_backend(self.base_dir)
+
+    def remember(
+        self,
+        key: str,
+        value: Any,
+        session_id: str = &quot;default&quot;,
+        layer: str = &quot;short&quot;,
+        ttl: Optional[int] = None,
+    ) -&gt; None:
+        if layer == &quot;short&quot;:
+            self._short.setdefault(session_id, {})[key] = {
+                &quot;value&quot;: value,
+                &quot;expires_at&quot;: time.time() + ttl if ttl else None,
+            }
+            return
+        self._backend.remember(key, value, session_id, layer, ttl)
+
+    def recall(
+        self,
+        query: str,
+        session_id: str = &quot;default&quot;,
+        layer: str = &quot;working&quot;,
+        top_k: int = 3,
+    ) -&gt; List[Dict[str, Any]]:
+        now = time.time()
+        if layer == &quot;short&quot;:
+            session = self._short.get(session_id, {})
+            return [
+                {&quot;key&quot;: k, &quot;value&quot;: v[&quot;value&quot;], &quot;score&quot;: 1.0}
+                for k, v in session.items()
+                if v.get(&quot;expires_at&quot;) is None or v[&quot;expires_at&quot;] &gt; now
+            ][:top_k]
+        return self._backend.recall(query, session_id, layer, top_k)
+
+    def summarize(self, history: List[Dict[str, Any]]) -&gt; str:
+        if not history:
+            return &quot;&quot;
+        parts = [f&quot;- {h.get('agent','?')}: {str(h.get('output',''))[:120]}...&quot; for h in history[-5:]]
+        return &quot;\n&quot;.join(parts)
+
+    def compress_context(self, text: str, max_chars: int = 8000) -&gt; str:
+        return ContextCompressor(max_chars=max_chars).compress(text)
+
+    def close(self) -&gt; None:
+        if hasattr(self._backend, &quot;close&quot;):
+            self._backend.close()
+
+
+# 保持旧接口兼容
+MemoryAgentFacade = MemoryAgent
+</code></pre>
+<h2 id="附录-h-llm-抽象与-provider-llm-py-全文"><a class="anchor" href="#附录-h-llm-抽象与-provider-llm-py-全文" aria-hidden="true">#</a>附录 H：LLM 抽象与 Provider（<code>llm.py</code> 全文）</h2>
+<pre><code class="language-python">&quot;&quot;&quot;LLM 客户端：自动选择 OpenAI / DeepSeek / Ollama / Mock Provider，支持流式输出。&quot;&quot;&quot;
+from __future__ import annotations
+
+import os
+import re
+from typing import Any, AsyncIterator, Iterator, Optional, Union
+
+from dev_agent_system.config import Settings
+from dev_agent_system.llm_providers import LLMProvider, MockProvider, OllamaProvider, OpenAIProvider
+
+
+def _openai_available() -&gt; bool:
+    try:
+        import openai  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
+class LLMClient:
+    &quot;&quot;&quot;轻量级 LLM 客户端，根据环境变量自动选择 Provider。&quot;&quot;&quot;
+
+    def __init__(
+        self,
+        model: Optional[str] = None,
+        provider: Optional[Union[str, LLMProvider]] = None,
+    ):
+        self.model = model or Settings.llm_model()
+        self.provider = self._resolve_provider(provider)
+
+    def _resolve_provider(self, provider: Optional[Union[str, LLMProvider]]) -&gt; LLMProvider:
+        if isinstance(provider, LLMProvider):
+            return provider
+
+        provider_name = (provider or Settings.llm_provider() or &quot;&quot;).lower()
+        if provider_name == &quot;openai&quot; or provider_name == &quot;deepseek&quot;:
+            return self._openai_provider()
+        if provider_name == &quot;ollama&quot;:
+            return self._ollama_provider()
+        if provider_name == &quot;mock&quot;:
+            return MockProvider(model=self.model)
+
+        # 自动推断：未配置真实 LLM 时降级为 MOCK
+        if self.model and self.model.startswith(&quot;ollama/&quot;):
+            return self._ollama_provider(model=self.model.split(&quot;/&quot;, 1)[1])
+        if Settings.llm_api_key() and _openai_available():
+            return self._openai_provider()
+
+        return MockProvider(model=self.model)
+
+    def _openai_provider(self, model: Optional[str] = None) -&gt; OpenAIProvider:
+        return OpenAIProvider(
+            model=model or self.model,
+            api_key=Settings.llm_api_key(),
+            base_url=Settings.llm_base_url() or None,
+            timeout=Settings.llm_timeout(),
+            max_retries=Settings.llm_max_retries(),
+        )
+
+    def _ollama_provider(self, model: Optional[str] = None) -&gt; OllamaProvider:
+        return OllamaProvider(
+            model=model or self.model,
+            base_url=Settings.ollama_url(),
+            timeout=Settings.llm_timeout(),
+        )
+
+    def is_mock(self) -&gt; bool:
+        return isinstance(self.provider, MockProvider)
+
+    @staticmethod
+    def _mask(text: str) -&gt; str:
+        &quot;&quot;&quot;PII 脱敏：API Key、手机号、密码。&quot;&quot;&quot;
+        text = re.sub(r&quot;sk-[a-zA-Z0-9]{20,}&quot;, &quot;[API_KEY_REDACTED]&quot;, text)
+        text = re.sub(r&quot;1[3-9]\d{9}&quot;, &quot;[PHONE_REDACTED]&quot;, text)
+        text = re.sub(r&quot;password[:=]\s*\S+&quot;, &quot;password=[REDACTED]&quot;, text, flags=re.I)
+        return text
+
+    def chat(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; str:
+        system = self._mask(system)
+        user = self._mask(user)
+        try:
+            return self.provider.chat(
+                system,
+                user,
+                model=model or self.model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        except Exception as e:  # noqa: BLE001
+            return f&quot;[LLM ERROR] {e}&quot;
+
+    def stream(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; Iterator[str]:
+        system = self._mask(system)
+        user = self._mask(user)
+        try:
+            yield from self.provider.stream(
+                system,
+                user,
+                model=model or self.model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+        except Exception as e:  # noqa: BLE001
+            yield f&quot;[LLM ERROR] {e}&quot;
+
+    async def astream(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; AsyncIterator[str]:
+        system = self._mask(system)
+        user = self._mask(user)
+        try:
+            async for token in self.provider.astream(
+                system,
+                user,
+                model=model or self.model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            ):
+                if token:
+                    yield token
+        except Exception as e:  # noqa: BLE001
+            yield f&quot;[LLM ERROR] {e}&quot;
+
+
+class MockLLM:
+    &quot;&quot;&quot;固定返回，用于测试与降级演示（兼容旧接口）。&quot;&quot;&quot;
+
+    def __init__(self, response: str = &quot;[MOCK] 收到请求&quot;):
+        self.response = response
+        self._provider = MockProvider(response=response)
+
+    def chat(self, system: str, user: str) -&gt; str:
+        return self._provider.chat(system, user)
+
+    async def astream(self, system: str, user: str):
+        async for token in self._provider.astream(system, user):
+            yield token
+
+    def stream(self, system: str, user: str):
+        yield from self._provider.stream(system, user)
+</code></pre>
+<h3 id="h-1-llm-provider-实现-llm_providers-py"><a class="anchor" href="#h-1-llm-provider-实现-llm_providers-py" aria-hidden="true">#</a>H.1 LLM Provider 实现（<code>llm_providers.py</code>）</h3>
+<pre><code class="language-python">&quot;&quot;&quot;LLM Provider 抽象与实现：OpenAI、DeepSeek、Ollama（本地模型）、Mock。&quot;&quot;&quot;
+from __future__ import annotations
+
+import abc
+import json
+import re
+from typing import Any, AsyncIterator, Callable, Dict, Iterator, Optional, Union
+
+import httpx
+
+try:
+    import openai as _openai
+except ImportError:  # pragma: no cover
+    _openai = None
+
+
+class LLMProvider(abc.ABC):
+    &quot;&quot;&quot;LLM 调用抽象层，支持同步/异步流式与非流式。&quot;&quot;&quot;
+
+    def __init__(self, model: str) -&gt; None:
+        self.model = model
+
+    @abc.abstractmethod
+    def chat(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; str:
+        &quot;&quot;&quot;同步非流式对话，返回完整回复字符串。&quot;&quot;&quot;
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    def stream(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; Iterator[str]:
+        &quot;&quot;&quot;同步流式生成器，逐 token 输出。&quot;&quot;&quot;
+        raise NotImplementedError
+
+    @abc.abstractmethod
+    async def astream(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; AsyncIterator[str]:
+        &quot;&quot;&quot;异步流式生成器，逐 token 输出。&quot;&quot;&quot;
+        raise NotImplementedError
+
+    @staticmethod
+    def _messages(system: str, user: str) -&gt; List[Dict[str, str]]:
+        return [
+            {&quot;role&quot;: &quot;system&quot;, &quot;content&quot;: system},
+            {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: user},
+        ]
+
+
+class OpenAIProvider(LLMProvider):
+    &quot;&quot;&quot;OpenAI 兼容 API Provider，支持 DeepSeek 等 OpenAI 格式服务。&quot;&quot;&quot;
+
+    def __init__(
+        self,
+        model: str,
+        api_key: str,
+        base_url: Optional[str] = None,
+        timeout: float = 30.0,
+        max_retries: int = 2,
+        client: Any = None,
+        async_client: Any = None,
+    ) -&gt; None:
+        if _openai is None:
+            raise ImportError(&quot;openai package is required for OpenAIProvider&quot;)
+        super().__init__(model)
+        self.api_key = api_key
+        self.base_url = base_url
+        self.timeout = timeout
+        self.max_retries = max_retries
+        self._client = client or _openai.OpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+        self._async_client = async_client or _openai.AsyncOpenAI(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            max_retries=max_retries,
+        )
+
+    def _build_kwargs(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        stream: bool = False,
+    ) -&gt; Dict[str, Any]:
+        kwargs: Dict[str, Any] = {
+            &quot;model&quot;: model or self.model,
+            &quot;messages&quot;: self._messages(system, user),
+            &quot;stream&quot;: stream,
+        }
+        if temperature is not None:
+            kwargs[&quot;temperature&quot;] = temperature
+        if max_tokens is not None:
+            kwargs[&quot;max_tokens&quot;] = max_tokens
+        return kwargs
+
+    def chat(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; str:
+        kwargs = self._build_kwargs(system, user, model=model, temperature=temperature, max_tokens=max_tokens)
+        resp = self._client.chat.completions.create(**kwargs)
+        return resp.choices[0].message.content or &quot;&quot;
+
+    def stream(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; Iterator[str]:
+        kwargs = self._build_kwargs(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True)
+        for chunk in self._client.chat.completions.create(**kwargs):
+            delta = (chunk.choices[0].delta.content or &quot;&quot;) if chunk.choices else &quot;&quot;
+            if delta:
+                yield delta
+
+    async def astream(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; AsyncIterator[str]:
+        kwargs = self._build_kwargs(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True)
+        response = await self._async_client.chat.completions.create(**kwargs)
+        async for chunk in response:
+            delta = (chunk.choices[0].delta.content or &quot;&quot;) if chunk.choices else &quot;&quot;
+            if delta:
+                yield delta
+
+
+class OllamaProvider(LLMProvider):
+    &quot;&quot;&quot;Ollama 本地模型 Provider，通过 /api/chat 调用。&quot;&quot;&quot;
+
+    def __init__(
+        self,
+        model: str,
+        base_url: str = &quot;http://localhost:11434&quot;,
+        timeout: float = 30.0,
+        client: Optional[httpx.Client] = None,
+        async_client: Optional[httpx.AsyncClient] = None,
+    ) -&gt; None:
+        super().__init__(model)
+        self.base_url = base_url.rstrip(&quot;/&quot;)
+        self.timeout = timeout
+        self._client = client
+        self._async_client = async_client
+
+    def _build_body(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        stream: bool = False,
+    ) -&gt; Dict[str, Any]:
+        body: Dict[str, Any] = {
+            &quot;model&quot;: model or self.model,
+            &quot;messages&quot;: self._messages(system, user),
+            &quot;stream&quot;: stream,
+        }
+        options: Dict[str, Any] = {}
+        if temperature is not None:
+            options[&quot;temperature&quot;] = temperature
+        if max_tokens is not None:
+            options[&quot;num_predict&quot;] = max_tokens
+        if options:
+            body[&quot;options&quot;] = options
+        return body
+
+    def chat(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; str:
+        body = self._build_body(system, user, model=model, temperature=temperature, max_tokens=max_tokens)
+        url = f&quot;{self.base_url}/api/chat&quot;
+        client = self._client or httpx.Client()
+        try:
+            resp = client.post(url, json=body, timeout=self.timeout)
+            resp.raise_for_status()
+            data = resp.json()
+            return data.get(&quot;message&quot;, {}).get(&quot;content&quot;, &quot;&quot;)
+        finally:
+            if self._client is None:
+                client.close()
+
+    def _iter_lines(self, response: httpx.Response) -&gt; Iterator[str]:
+        for line in response.iter_lines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                data = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if data.get(&quot;done&quot;):
+                break
+            content = (data.get(&quot;message&quot;) or {}).get(&quot;content&quot;, &quot;&quot;)
+            if content:
+                yield content
+
+    def stream(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; Iterator[str]:
+        body = self._build_body(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True)
+        url = f&quot;{self.base_url}/api/chat&quot;
+        client = self._client or httpx.Client()
+        try:
+            with client.stream(&quot;POST&quot;, url, json=body, timeout=self.timeout) as resp:
+                resp.raise_for_status()
+                yield from self._iter_lines(resp)
+        finally:
+            if self._client is None:
+                client.close()
+
+    async def astream(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; AsyncIterator[str]:
+        body = self._build_body(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True)
+        url = f&quot;{self.base_url}/api/chat&quot;
+        client = self._async_client or httpx.AsyncClient()
+        try:
+            async with client.stream(&quot;POST&quot;, url, json=body, timeout=self.timeout) as resp:
+                async for line in resp.aiter_lines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                    except json.JSONDecodeError:
+                        continue
+                    if data.get(&quot;done&quot;):
+                        break
+                    content = (data.get(&quot;message&quot;) or {}).get(&quot;content&quot;, &quot;&quot;)
+                    if content:
+                        yield content
+        finally:
+            if self._async_client is None:
+                await client.aclose()
+
+
+class MockProvider(LLMProvider):
+    &quot;&quot;&quot;Mock Provider，用于测试与未配置真实密钥时的降级。&quot;&quot;&quot;
+
+    def __init__(
+        self,
+        model: str = &quot;mock&quot;,
+        response: Optional[Union[str, Callable[[str, str, str], str]]] = None,
+    ) -&gt; None:
+        super().__init__(model)
+        self.response = response
+
+    def _render(self, system: str, user: str, model: str) -&gt; str:
+        if callable(self.response):
+            return self.response(system, user, model)
+        if isinstance(self.response, str):
+            return self.response
+        return (
+            f&quot;[MOCK {model}] 未配置 LLM_API_KEY 或未安装 openai 包，\n&quot;
+            f&quot;系统摘要：{system[:80]}...\n&quot;
+            f&quot;输入摘要：{user[:160]}...&quot;
+        )
+
+    def _split(self, text: str) -&gt; Iterator[str]:
+        # 保留空格，按单词/标点拆分，模拟 token 级流式
+        parts = re.split(r&quot;(\s+)&quot;, text)
+        for part in parts:
+            if part:
+                yield part
+
+    def chat(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; str:
+        return self._render(system, user, model or self.model)
+
+    def stream(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; Iterator[str]:
+        text = self._render(system, user, model or self.model)
+        yield from self._split(text)
+
+    async def astream(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -&gt; AsyncIterator[str]:
+        text = self._render(system, user, model or self.model)
+        for token in self._split(text):
+            yield token
+</code></pre>
+<h2 id="附录-i-baseagent-生命周期-agents-py-节选"><a class="anchor" href="#附录-i-baseagent-生命周期-agents-py-节选" aria-hidden="true">#</a>附录 I：<code>BaseAgent</code> 生命周期（<code>agents.py</code> 节选）</h2>
+<pre><code class="language-python">&quot;&quot;&quot;6 个业务 Agent + Memory Agent 的实现。
+
+每个 Agent 现在都会把产物写入以 request_id 隔离的 workspace，并返回结构化结果。
+&quot;&quot;&quot;
+from __future__ import annotations
+
+import asyncio
+import json
+import os
+import re
+import uuid
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import yaml
+
+from dev_agent_system.config import Settings
+from dev_agent_system.llm import LLMClient
+from dev_agent_system.memory import MemoryAgent
+from dev_agent_system.mcp import MCPToolRegistry, ToolSandbox
+from dev_agent_system.router import ModelRouter
+from dev_agent_system.security import SafetyScanner, SecretRedactor
+from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY, Telemetry
+from dev_agent_system.templates import get_language, TEMPLATES
+from dev_agent_system.skills import SkillManager
+from dev_agent_system.schemas import AgentCard, AgentSkill
+
+
+class BaseAgent:
+    &quot;&quot;&quot;所有业务 Agent 的基类。&quot;&quot;&quot;
+
+    def __init__(
+        self,
+        name: str,
+        role: str,
+        system_prompt: str,
+        model: Optional[str] = None,
+        skills: Optional[List[str]] = None,
+        telemetry: Optional[Telemetry] = None,
+    ):
+        self.name = name
+        self.role = role
+        self.system_prompt = system_prompt
+        self.model = model or Settings.agent_model(name.lower())
+        self.skills = skills or [role]
+        self.router = ModelRouter()
+        self.llm = LLMClient(model=self.model)
+        self.memory = MemoryAgent()
+        self.tools = MCPToolRegistry()
+        self.telemetry = telemetry or DEFAULT_TELEMETRY
+
+        # 自动发现并注册已安装的 Skill 到 MCP 工具箱
+        self._register_skills()
+
+    def _register_skills(self) -&gt; None:
+        if not Settings.skills_enabled():
+            return
+        try:
+            SkillManager().register_to_mcp(self.tools)
+        except Exception:  # noqa: BLE001
+            pass
+
+    def build_prompt(self, state: Dict[str, Any]) -&gt; str:
+        return str(state.get(&quot;input&quot;, &quot;&quot;))
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        &quot;&quot;&quot;子类重写：解析输出、调用 MCP 工具、写入产物。&quot;&quot;&quot;
+        return {&quot;raw&quot;: output}
+
+    @staticmethod
+    def _workspace(state: Dict[str, Any]) -&gt; Path:
+        &quot;&quot;&quot;当前请求的工作目录。&quot;&quot;&quot;
+        if state.get(&quot;workspace&quot;):
+            return Path(state[&quot;workspace&quot;])
+        request_id = state.get(&quot;request_id&quot;, &quot;default&quot;)
+        return ToolSandbox.WORK_DIR / str(request_id)
+
+    async def _write_file(self, path: str, content: str, workspace: Path) -&gt; Dict[str, Any]:
+        return await self.tools.ainvoke(&quot;write_file&quot;, path=path, content=content, base_dir=str(workspace))
+
+    async def _read_file(self, path: str, workspace: Path) -&gt; Dict[str, Any]:
+        return await self.tools.ainvoke(&quot;read_file&quot;, path=path, base_dir=str(workspace))
+
+    async def _run_command(self, command: str, workspace: Path, timeout: int = 10) -&gt; Dict[str, Any]:
+        return await self.tools.ainvoke(&quot;run_command&quot;, command=command, timeout=timeout, base_dir=str(workspace))
+
+    @staticmethod
+    def _extract_json(text: str) -&gt; Optional[Dict[str, Any]]:
+        &quot;&quot;&quot;从文本中提取第一个 JSON 对象或数组。&quot;&quot;&quot;
+        match = re.search(r&quot;(\{.*\}|\[.*\])&quot;, text, re.DOTALL)
+        if not match:
+            return None
+        try:
+            return json.loads(match.group(1))
+        except json.JSONDecodeError:
+            return None
+
+    @staticmethod
+    def _extract_code_blocks(text: str) -&gt; List[Dict[str, str]]:
+        &quot;&quot;&quot;提取 ``` 代码块，支持前接 '# file: path' 等头部。&quot;&quot;&quot;
+        blocks: List[Dict[str, str]] = []
+        pattern = r&quot;(?:^|\n)(?:[^\n`]*?(?:file|path|filename)[:\s]+([^\n]+))?\n?```(?:\w+)?\n(.*?)```&quot;
+        for m in re.finditer(pattern, text, re.DOTALL | re.I):
+            path = (m.group(1) or &quot;&quot;).strip().strip(&quot;`&quot;).strip()
+            code = m.group(2)
+            blocks.append({&quot;path&quot;: path, &quot;code&quot;: code})
+        return blocks
+
+    async def run(self, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        session = state.get(&quot;request_id&quot;, &quot;default&quot;)
+        workspace = self._workspace(state)
+        workspace.mkdir(parents=True, exist_ok=True)
+        state[&quot;workspace&quot;] = str(workspace)
+
+        memories = self.memory.recall(state.get(&quot;input&quot;, &quot;&quot;), session_id=session, layer=&quot;working&quot;, top_k=3)
+        memory_text = &quot;\n&quot;.join(str(m[&quot;value&quot;]) for m in memories)
+        prompt = self.build_prompt(state)
+        full_prompt = f&quot;相关记忆：\n{memory_text}\n\n{prompt}&quot; if memory_text else prompt
+
+        # 上下文压缩：超过阈值后保留头部和尾部
+        if len(full_prompt) &gt; Settings.context_compress_threshold():
+            full_prompt = self.memory.compress_context(
+                full_prompt, max_chars=Settings.context_window_limit()
+            )
+
+        # 敏感信息脱敏：进入 LLM 前与离开 LLM 后都进行 redaction
+        full_prompt = SecretRedactor.redact(full_prompt)
+        resolved_model, kwargs = self.router.resolve(self.name, full_prompt)
+
+        with self.telemetry.span(
+            f&quot;agent.{self.name}.llm&quot;,
+            {&quot;agent&quot;: self.name, &quot;model&quot;: resolved_model, &quot;request_id&quot;: session},
+        ):
+            output = self.llm.chat(self.system_prompt, full_prompt, model=resolved_model, **kwargs)
+
+        output = SecretRedactor.redact(output)
+        self.memory.remember(&quot;last_output&quot;, output, session_id=session, layer=&quot;short&quot;, ttl=3600)
+
+        # 近似 token 数与延迟统计
+        self.telemetry.collector.counter(
+            &quot;llm_calls_total&quot;,
+            &quot;Total number of LLM calls&quot;,
+            labelnames=[&quot;agent&quot;, &quot;model&quot;],
+        ).inc(agent=self.name, model=resolved_model)
+        self.telemetry.collector.histogram(
+            &quot;llm_prompt_tokens_approx&quot;,
+            &quot;Approximate prompt tokens&quot;,
+            labelnames=[&quot;agent&quot;, &quot;model&quot;],
+        ).observe(len(full_prompt) / 4, agent=self.name, model=resolved_model)
+        self.telemetry.collector.histogram(
+            &quot;llm_output_tokens_approx&quot;,
+            &quot;Approximate output tokens&quot;,
+            labelnames=[&quot;agent&quot;, &quot;model&quot;],
+        ).observe(len(output) / 4, agent=self.name, model=resolved_model)
+
+        result: Dict[str, Any] = {
+            &quot;agent&quot;: self.name,
+            &quot;role&quot;: self.role,
+            &quot;output&quot;: output,
+            &quot;workspace&quot;: str(workspace),
+            &quot;model&quot;: resolved_model,
+            &quot;llm_kwargs&quot;: kwargs,
+        }
+        extra = await self.postprocess(output, state)
+        result.update(extra)
+        return result
+
+    def agent_card(self, url: str) -&gt; AgentCard:
+        return AgentCard(
+            name=f&quot;{self.name} Agent&quot;,
+            url=url,
+            skills=[AgentSkill(name=s) for s in self.skills],
+            capabilities={&quot;streaming&quot;: False, &quot;autonomy&quot;: &quot;L2&quot;, &quot;modalities&quot;: [&quot;text&quot;, &quot;code&quot;]},
+        )
+
+
+class ArchitectAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            &quot;Architect&quot;,
+            &quot;系统架构师&quot;,
+            _load_prompt(&quot;architect&quot;),
+            model=model,
+            skills=[&quot;system-design&quot;, &quot;api-contract&quot;, &quot;tech-stack&quot;],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -&gt; str:
+        prd = (state.get(&quot;product_manager&quot;) or {}).get(&quot;output&quot;, &quot;&quot;)
+        template = get_language(state)
+        return (
+            f&quot;目标语言/技术栈：{template.display}\n&quot;
+            f&quot;用户需求：{state.get('input', '')}\n&quot;
+            f&quot;PRD：{prd[:1500] if prd else '无'}\n&quot;
+            f&quot;工作目录：{state.get('workspace', '')}\n&quot;
+            &quot;请输出 JSON 格式架构设计：{modules, api_contract, tech_stack, mermaid, notes}&quot;
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        workspace = self._workspace(state)
+        design = self._extract_json(output)
+        if design:
+            await self._write_file(&quot;design.json&quot;, json.dumps(design, ensure_ascii=False, indent=2), workspace)
+        return {&quot;design_file&quot;: &quot;design.json&quot; if design else None, &quot;parsed&quot;: design}
+
+
+class CoderAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            &quot;Coder&quot;,
+            &quot;代码实现引擎&quot;,
+            _load_prompt(&quot;coder&quot;),
+            model=model,
+            skills=[&quot;code-implementation&quot;, &quot;refactor&quot;, &quot;python&quot;],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -&gt; str:
+        dba_output = (state.get(&quot;dba&quot;) or {}).get(&quot;output&quot;, &quot;&quot;)
+        template = get_language(state)
+        return (
+            f&quot;目标语言/技术栈：{template.display}\n&quot;
+            f&quot;构建命令：{template.build_cmd or '无'}\n&quot;
+            f&quot;测试命令：{template.test_cmd}\n&quot;
+            f&quot;用户生成文件扩展名：.{template.file_ext}，测试文件扩展名：.{template.test_ext}\n&quot;
+            f&quot;用户需求：{state.get('input', '')}\n&quot;
+            f&quot;架构设计：{(state.get('architect') or {}).get('output', '')[:2000]}\n&quot;
+            f&quot;数据库设计：{dba_output[:1500] if dba_output else '无'}\n&quot;
+            f&quot;工作目录：{state.get('workspace', '')}\n&quot;
+            &quot;请生成可运行代码。每个代码块前用注释标明文件路径，例如 '# file: main.&quot;
+            f&quot;{template.file_ext}'。最后输出 JSON 状态报告：&quot;
+            &quot;{status, files_modified, test_result, note}&quot;
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        workspace = self._workspace(state)
+        template = get_language(state)
+        blocks = self._extract_code_blocks(output)
+        files: List[str] = []
+        security_issues: List[Dict[str, Any]] = []
+        for idx, block in enumerate(blocks, start=1):
+            path = block[&quot;path&quot;]
+            if not path:
+                path = f&quot;module_{idx}.{template.file_ext}&quot;
+            if not path.endswith(f&quot;.{template.file_ext}&quot;):
+                path += f&quot;.{template.file_ext}&quot;
+            issues = SafetyScanner.scan_code(block[&quot;code&quot;])
+            security_issues.extend(issues)
+            res = await self._write_file(path, block[&quot;code&quot;], workspace)
+            if res.get(&quot;success&quot;):
+                files.append(path)
+
+        report = self._extract_json(output) or {}
+
+        # MOCK 降级：没有真实 LLM 时写一段占位代码，方便 CLI/测试继续跑
+        if not files and self.llm.is_mock():
+            stub = self._fallback_code(state.get(&quot;input&quot;, &quot;&quot;), template)
+            res = await self._write_file(template.main_file(), stub, workspace)
+            if res.get(&quot;success&quot;):
+                files.append(template.main_file())
+            report = {
+                &quot;status&quot;: &quot;mock_fallback&quot;,
+                &quot;files_modified&quot;: files,
+                &quot;test_result&quot;: &quot;unknown&quot;,
+                &quot;note&quot;: f&quot;MOCK 模式生成的占位代码 ({template.display})&quot;,
+            }
+
+        return {
+            &quot;files&quot;: files,
+            &quot;status&quot;: report.get(&quot;status&quot;, &quot;completed&quot; if files else &quot;needs_help&quot;),
+            &quot;test_result&quot;: report.get(&quot;test_result&quot;, &quot;unknown&quot;),
+            &quot;note&quot;: report.get(&quot;note&quot;, &quot;&quot;),
+            &quot;security_issues&quot;: security_issues,
+        }
+
+    @staticmethod
+    def _fallback_code(requirement: str, template: Any) -&gt; str:
+        safe = re.sub(r&quot;[^\w\u4e00-\u9fff]+&quot;, &quot;_&quot;, requirement)[:30].strip(&quot;_&quot;) or &quot;agent&quot;
+        if template.name == &quot;java&quot;:
+            class_name = safe.capitalize()
+            return (
+                f&quot;package com.devagent;\n\n&quot;
+                f&quot;public class {class_name} {{\n&quot;
+                f&quot;    public static void main(String[] args) {{\n&quot;
+                f&quot;        System.out.println(\&quot;Hello from {safe}\&quot;);\n&quot;
+                f&quot;    }}\n&quot;
+                f&quot;}}\n&quot;
+            )
+        if template.name == &quot;go&quot;:
+            return (
+                f&quot;package main\n\n&quot;
+                f&quot;import \&quot;fmt\&quot;\n\n&quot;
+                f&quot;func main() {{\n&quot;
+                f&quot;    fmt.Println(\&quot;Hello from {safe}\&quot;)\n&quot;
+                f&quot;}}\n&quot;
+            )
+        if template.name == &quot;typescript&quot;:
+            return (
+                f&quot;console.log(\&quot;Hello from {safe}\&quot;);\n&quot;
+            )
+        return f'&quot;&quot;&quot;Generated from requirement: {requirement}&quot;&quot;&quot;\n\ndef main():\n    print(&quot;Hello from {safe}&quot;)\n\nif __name__ == &quot;__main__&quot;:\n    main()\n'
+
+
+class TesterAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            &quot;Tester&quot;,
+            &quot;测试工程师&quot;,
+            _load_prompt(&quot;tester&quot;),
+            model=model,
+            skills=[&quot;test-generation&quot;, &quot;pytest&quot;, &quot;coverage&quot;],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -&gt; str:
+        workspace = state.get(&quot;workspace&quot;, &quot;&quot;)
+        template = get_language(state)
+        code_files = (state.get(&quot;coder&quot;) or {}).get(&quot;files&quot;, [])
+        code_snippets: List[str] = []
+        for f in code_files[:3]:
+            res = ToolSandbox.read_file(f, base_dir=workspace)  # 同步读取即可
+            if res.get(&quot;success&quot;):
+                code_snippets.append(f&quot;--- {f} ---\n{res['content'][:1500]}&quot;)
+        return (
+            f&quot;目标语言：{template.display}\n&quot;
+            f&quot;测试框架/命令：{template.test_cmd}\n&quot;
+            f&quot;测试文件命名：*.{template.test_ext}\n&quot;
+            f&quot;代码文件：{code_files}\n&quot;
+            f&quot;{''.join(code_snippets)[:2500]}\n&quot;
+            f&quot;工作目录：{workspace}\n&quot;
+            &quot;请生成对应语言的测试用例。每个测试代码块前标明文件路径，如 '# file: test_&quot;
+            f&quot;{template.file_ext}'。最后输出 JSON 测试报告：&quot;
+            &quot;{passed, failed, coverage, report}&quot;
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        workspace = self._workspace(state)
+        template = get_language(state)
+        blocks = self._extract_code_blocks(output)
+        files: List[str] = []
+        for idx, block in enumerate(blocks, start=1):
+            path = block[&quot;path&quot;]
+            if not path:
+                path = f&quot;test_module_{idx}.{template.test_ext}&quot;
+            if not path.endswith(f&quot;.{template.test_ext}&quot;):
+                path += f&quot;.{template.test_ext}&quot;
+            res = await self._write_file(path, block[&quot;code&quot;], workspace)
+            if res.get(&quot;success&quot;):
+                files.append(path)
+
+        if files:
+            test_res = await self._run_command(f&quot;{template.test_cmd} -q&quot;, workspace, timeout=15)
+        else:
+            test_res = {&quot;success&quot;: False, &quot;stdout&quot;: &quot;&quot;, &quot;stderr&quot;: &quot;no tests generated&quot;}
+
+        report = self._extract_json(output) or {}
+        passed = report.get(&quot;passed&quot;)
+        failed = report.get(&quot;failed&quot;)
+        if passed is None or failed is None:
+            passed, failed = self._parse_test_summary(test_res.get(&quot;stdout&quot;, &quot;&quot;))
+
+        return {
+            &quot;files&quot;: files,
+            &quot;passed&quot;: passed,
+            &quot;failed&quot;: failed,
+            &quot;coverage&quot;: report.get(&quot;coverage&quot;, 0.0),
+            &quot;report&quot;: (test_res.get(&quot;stdout&quot;, &quot;&quot;) + &quot;\n&quot; + test_res.get(&quot;stderr&quot;, &quot;&quot;)).strip(),
+            &quot;test_command_success&quot;: test_res.get(&quot;success&quot;, False),
+        }
+
+    @staticmethod
+    def _parse_test_summary(stdout: str):
+        m = re.search(r&quot;(\d+)\s+passed&quot;, stdout)
+        passed = int(m.group(1)) if m else 0
+        m = re.search(r&quot;(\d+)\s+failed&quot;, stdout)
+        failed = int(m.group(1)) if m else 0
+        return passed, failed
+
+
+class ReviewerAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            &quot;Reviewer&quot;,
+            &quot;代码审查&quot;,
+            _load_prompt(&quot;reviewer&quot;),
+            model=model,
+            skills=[&quot;code-review&quot;, &quot;security&quot;, &quot;performance&quot;],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -&gt; str:
+        return (
+            f&quot;原始需求：{state.get('input', '')}\n&quot;
+            f&quot;代码文件：{(state.get('coder') or {}).get('files', [])}\n&quot;
+            f&quot;测试报告：{(state.get('tester') or {}).get('report', '')[:1200]}\n&quot;
+            f&quot;文档文件：{(state.get('docs') or {}).get('files', [])}\n&quot;
+            &quot;请独立思考，从需求出发审查。输出 JSON：{severity, passed, issues, suggestions}&quot;
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        workspace = self._workspace(state)
+        report = self._extract_json(output)
+        if not report:
+            # 无法解析 JSON 时做最保守判断
+            report = {
+                &quot;severity&quot;: &quot;medium&quot;,
+                &quot;passed&quot;: False,
+                &quot;issues&quot;: [&quot;Reviewer 输出无法解析为 JSON&quot;],
+                &quot;suggestions&quot;: [&quot;请检查 LLM 输出格式&quot;],
+            }
+        review_file = &quot;review_report.json&quot;
+        await self._write_file(review_file, json.dumps(report, ensure_ascii=False, indent=2), workspace)
+        report[&quot;report_file&quot;] = review_file
+        return report
+
+
+class DocsAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            &quot;Docs&quot;,
+            &quot;文档工程师&quot;,
+            _load_prompt(&quot;docs&quot;),
+            model=model,
+            skills=[&quot;documentation&quot;, &quot;readme&quot;, &quot;api-doc&quot;],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -&gt; str:
+        return (
+            f&quot;架构：{str((state.get('architect') or {}).get('output', ''))[:800]}\n&quot;
+            f&quot;代码文件：{(state.get('coder') or {}).get('files', [])}\n&quot;
+            f&quot;工作目录：{state.get('workspace', '')}\n&quot;
+            &quot;请生成 README.md 与 API.md。用代码块标明文件路径，如 '# file: README.md'。&quot;
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        workspace = self._workspace(state)
+        blocks = self._extract_code_blocks(output)
+        files: List[str] = []
+        for block in blocks:
+            path = block[&quot;path&quot;] or &quot;README.md&quot;
+            if not path.endswith(&quot;.md&quot;):
+                path += &quot;.md&quot;
+            res = await self._write_file(f&quot;docs/{path}&quot;, block[&quot;code&quot;], workspace)
+            if res.get(&quot;success&quot;):
+                files.append(f&quot;docs/{path}&quot;)
+        if not files:
+            await self._write_file(&quot;docs/README.md&quot;, output, workspace)
+            files.append(&quot;docs/README.md&quot;)
+        return {&quot;files&quot;: files}
+
+
+class DevOpsAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            &quot;DevOps&quot;,
+            &quot;部署运维&quot;,
+            _load_prompt(&quot;devops&quot;),
+            model=model,
+            skills=[&quot;docker&quot;, &quot;ci-cd&quot;, &quot;deployment&quot;],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -&gt; str:
+        return (
+            f&quot;代码文件：{(state.get('coder') or {}).get('files', [])}\n&quot;
+            &quot;请生成 Dockerfile、docker-compose.yml 与 CI/CD 配置摘要，并说明部署前需人工确认。&quot;
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        workspace = self._workspace(state)
+        blocks = self._extract_code_blocks(output)
+        files: List[str] = []
+        for block in blocks:
+            path = block[&quot;path&quot;]
+            if not path:
+                continue
+            res = await self._write_file(path, block[&quot;code&quot;], workspace)
+            if res.get(&quot;success&quot;):
+                files.append(path)
+        if not files:
+            await self._write_file(&quot;deploy_summary.md&quot;, output, workspace)
+            files.append(&quot;deploy_summary.md&quot;)
+        return {&quot;files&quot;: files, &quot;needs_approval&quot;: True}
+
+
+class ProductManagerAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            &quot;ProductManager&quot;,
+            &quot;产品经理&quot;,
+            _load_prompt(&quot;product_manager&quot;),
+            model=model,
+            skills=[&quot;requirement-analysis&quot;, &quot;prd&quot;, &quot;user-stories&quot;],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -&gt; str:
+        return (
+            f&quot;用户需求：{state.get('input', '')}\n&quot;
+            &quot;请把需求拆分为 PRD、用户故事和验收标准。&quot;
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        workspace = self._workspace(state)
+        report = self._extract_json(output) or {}
+        prd_file = &quot;prd.md&quot;
+        await self._write_file(prd_file, output, workspace)
+        return {
+            &quot;prd_file&quot;: prd_file,
+            &quot;user_stories&quot;: report.get(&quot;user_stories&quot;, []),
+            &quot;acceptance_criteria&quot;: report.get(&quot;acceptance_criteria&quot;, []),
+            &quot;parsed&quot;: report,
+        }
+
+
+class SecurityAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            &quot;Security&quot;,
+            &quot;安全审查&quot;,
+            _load_prompt(&quot;security&quot;),
+            model=model,
+            skills=[&quot;security-review&quot;, &quot;vulnerability&quot;, &quot;compliance&quot;],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -&gt; str:
+        return (
+            f&quot;原始需求：{state.get('input', '')}\n&quot;
+            f&quot;代码文件：{(state.get('coder') or {}).get('files', [])}\n&quot;
+            f&quot;测试文件：{(state.get('tester') or {}).get('files', [])}\n&quot;
+            f&quot;架构设计：{(state.get('architect') or {}).get('output', '')[:1500]}\n&quot;
+            &quot;请独立进行安全审查，输出 JSON {severity, passed, issues, suggestions}。&quot;
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        workspace = self._workspace(state)
+        report = self._extract_json(output)
+        if not report:
+            report = {
+                &quot;severity&quot;: &quot;medium&quot;,
+                &quot;passed&quot;: False,
+                &quot;issues&quot;: [&quot;Security Agent 输出无法解析为 JSON&quot;],
+                &quot;suggestions&quot;: [&quot;请检查 LLM 输出格式&quot;],
+            }
+        report_file = &quot;security_report.json&quot;
+        await self._write_file(report_file, json.dumps(report, ensure_ascii=False, indent=2), workspace)
+        report[&quot;report_file&quot;] = report_file
+        return report
+
+
+class DBAAgent(BaseAgent):
+    def __init__(self, model: Optional[str] = None):
+        super().__init__(
+            &quot;DBA&quot;,
+            &quot;数据库架构&quot;,
+            _load_prompt(&quot;dba&quot;),
+            model=model,
+            skills=[&quot;database-design&quot;, &quot;schema&quot;, &quot;migration&quot;],
+        )
+
+    def build_prompt(self, state: Dict[str, Any]) -&gt; str:
+        return (
+            f&quot;原始需求：{state.get('input', '')}\n&quot;
+            f&quot;架构设计：{(state.get('architect') or {}).get('output', '')[:2000]}\n&quot;
+            &quot;请输出数据库 Schema 与迁移 SQL。&quot;
+        )
+
+    async def postprocess(self, output: str, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        workspace = self._workspace(state)
+        blocks = self._extract_code_blocks(output)
+        files: List[str] = []
+        for block in blocks:
+            path = block[&quot;path&quot;]
+            if not path:
+                continue
+            if not path.endswith(&quot;.sql&quot;):
+                path += &quot;.sql&quot;
+            res = await self._write_file(path, block[&quot;code&quot;], workspace)
+            if res.get(&quot;success&quot;):
+                files.append(path)
+
+        report = self._extract_json(output) or {}
+        if not files:
+            await self._write_file(&quot;schema.sql&quot;, output, workspace)
+            files.append(&quot;schema.sql&quot;)
+
+        return {
+            &quot;files&quot;: files,
+            &quot;tables&quot;: report.get(&quot;tables&quot;, []),
+            &quot;notes&quot;: report.get(&quot;notes&quot;, &quot;&quot;),
+        }
+
+
+class MemoryAgentFacade:
+    &quot;&quot;&quot;对外的 Memory Agent 接口，供 Orchestrator 调用。&quot;&quot;&quot;
+
+    def __init__(self, base_dir: str = &quot;memory_store&quot;):
+        self._impl = MemoryAgent(base_dir=base_dir)
+
+    def run(self, state: Dict[str, Any]) -&gt; Dict[str, Any]:
+        session = state.get(&quot;request_id&quot;, &quot;default&quot;)
+        query = state.get(&quot;input&quot;, &quot;&quot;)
+        memories = self._impl.recall(query, session_id=session, layer=&quot;working&quot;, top_k=5)
+        summary = self._impl.summarize(state.get(&quot;history&quot;, []))
+        return {&quot;agent&quot;: &quot;Memory&quot;, &quot;role&quot;: &quot;记忆&quot;, &quot;memories&quot;: memories, &quot;summary&quot;: summary}
+
+
+def _load_prompt(agent_name: str) -&gt; str:
+    &quot;&quot;&quot;从 prompts.yaml 加载 System Prompt；失败时返回内置提示。&quot;&quot;&quot;
+    prompt_file = Path(__file__).with_name(&quot;prompts.yaml&quot;)
+    try:
+        with open(prompt_file, encoding=&quot;utf-8&quot;) as f:
+            data = yaml.safe_load(f)
+        return data.get(agent_name, _FALLBACK_PROMPTS.get(agent_name, f&quot;你是 {agent_name} Agent。&quot;))
+    except Exception:  # noqa: BLE001
+        return _FALLBACK_PROMPTS.get(agent_name, f&quot;你是 {agent_name} Agent。&quot;)
+
+
+_FALLBACK_PROMPTS: Dict[str, str] = {
+    &quot;architect&quot;: &quot;你是 Architect Agent，负责架构设计。禁止写实现代码。&quot;,
+    &quot;coder&quot;: &quot;你是 Coder Agent，负责生成可运行代码。&quot;,
+    &quot;tester&quot;: &quot;你是 Tester Agent，负责生成并执行测试。&quot;,
+    &quot;reviewer&quot;: &quot;你是 Reviewer Agent，必须独立思考，不信任上游。&quot;,
+    &quot;docs&quot;: &quot;你是 Docs Agent，负责同步文档。&quot;,
+    &quot;devops&quot;: &quot;你是 DevOps Agent，负责 CI/CD 与部署。&quot;,
+    &quot;product_manager&quot;: &quot;你是 Product Manager Agent，负责需求分析与 PRD。&quot;,
+    &quot;security&quot;: &quot;你是 Security Agent，负责独立安全审查。&quot;,
+    &quot;dba&quot;: &quot;你是 DBA Agent，负责数据库 Schema 与迁移。&quot;,
+}
+</code></pre>
+<h2 id="附录-j-langgraph-编排器-orchestrator-py-全文"><a class="anchor" href="#附录-j-langgraph-编排器-orchestrator-py-全文" aria-hidden="true">#</a>附录 J：LangGraph 编排器（<code>orchestrator.py</code> 全文）</h2>
+<pre><code class="language-python">&quot;&quot;&quot;DAG 编排器与迭代调度器（LangGraph StateGraph 实现）。&quot;&quot;&quot;
+from __future__ import annotations
+
+import asyncio
+import json
+import uuid
+from datetime import datetime
+from pathlib import Path
+from typing import Any, AsyncIterator, Dict, List, Optional
+
+from langgraph.graph import END, StateGraph
+
+from dev_agent_system.agents import (
+    ArchitectAgent,
+    CoderAgent,
+    DBAAgent,
+    DevOpsAgent,
+    DocsAgent,
+    MemoryAgentFacade,
+    ProductManagerAgent,
+    ReviewerAgent,
+    SecurityAgent,
+    TesterAgent,
+)
+from dev_agent_system.checkpoint import make_checkpointer
+from dev_agent_system.config import Settings
+from dev_agent_system.devops import DevOpsRunner
+from dev_agent_system.memory import MemoryAgent
+from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY, Telemetry
+from dev_agent_system.schemas import GraphState
+from dev_agent_system.tracker import WorkflowTracker
+
+
+def _review_passed(review: Dict[str, Any]) -&gt; bool:
+    &quot;&quot;&quot;从 Reviewer 结构化输出中判断是否通过。&quot;&quot;&quot;
+    passed = review.get(&quot;passed&quot;)
+    if isinstance(passed, bool):
+        return passed
+    if isinstance(passed, str):
+        return passed.lower() == &quot;true&quot;
+    output = str(review.get(&quot;output&quot;, &quot;&quot;)).lower()
+    return '&quot;passed&quot;: true' in output
+
+
+class IdempotencyGuard:
+    &quot;&quot;&quot;基于 request_id 的幂等请求去重。&quot;&quot;&quot;
+
+    def __init__(self, max_size: int = 200):
+        self._seen: set = set()
+        self._max_size = max_size
+
+    def is_duplicate(self, request_id: str) -&gt; bool:
+        if request_id in self._seen:
+            return True
+        self._seen.add(request_id)
+        if len(self._seen) &gt; self._max_size:
+            self._seen.pop()
+        return False
+
+
+class Orchestrator:
+    &quot;&quot;&quot;LangGraph 状态图编排器：Architect → Coder → {Tester, Docs} 并行 → Reviewer → 条件迭代。&quot;&quot;&quot;
+
+    def __init__(
+        self,
+        max_iterations: int = 10,
+        enable_devops: bool = False,
+        devops_runner: Optional[Any] = None,
+        enable_product_manager: bool = False,
+        enable_security: bool = False,
+        enable_dba: bool = False,
+        telemetry: Optional[Telemetry] = None,
+        tracker: Optional[WorkflowTracker] = None,
+    ):
+        self.max_iterations = max_iterations
+        self.enable_devops = enable_devops
+        self.devops_runner = devops_runner
+        self.enable_product_manager = enable_product_manager
+        self.enable_security = enable_security
+        self.enable_dba = enable_dba
+        self.telemetry = telemetry or DEFAULT_TELEMETRY
+        self.tracker = tracker or WorkflowTracker()
+        self.guard = IdempotencyGuard()
+        self.memory = MemoryAgent()
+        self.checkpointer = make_checkpointer()
+        self.agents = {
+            &quot;architect&quot;: ArchitectAgent(),
+            &quot;coder&quot;: CoderAgent(),
+            &quot;tester&quot;: TesterAgent(),
+            &quot;docs&quot;: DocsAgent(),
+            &quot;reviewer&quot;: ReviewerAgent(),
+            &quot;devops&quot;: DevOpsAgent(),
+            &quot;product_manager&quot;: ProductManagerAgent(),
+            &quot;security&quot;: SecurityAgent(),
+            &quot;dba&quot;: DBAAgent(),
+            &quot;memory&quot;: MemoryAgentFacade(),
+        }
+
+    def _build_state(
+        self,
+        requirement: str,
+        request_id: Optional[str] = None,
+        language: Optional[str] = &quot;python&quot;,
+    ) -&gt; GraphState:
+        request_id = request_id or str(uuid.uuid4())
+        workspace = str(Settings.workspace_dir() / request_id)
+        return {
+            &quot;request_id&quot;: request_id,
+            &quot;input&quot;: requirement,
+            &quot;language&quot;: language or &quot;python&quot;,
+            &quot;workspace&quot;: workspace,
+            &quot;iteration&quot;: 0,
+            &quot;max_iterations&quot;: self.max_iterations,
+            &quot;status&quot;: &quot;submitted&quot;,
+            &quot;history&quot;: [],
+        }
+
+    def _build_graph(self) -&gt; StateGraph:
+        &quot;&quot;&quot;构建并返回编译后的 LangGraph。&quot;&quot;&quot;
+        workflow = StateGraph(GraphState)
+
+        if self.enable_product_manager:
+            workflow.add_node(&quot;product_manager_node&quot;, self._product_manager_node)
+            workflow.add_node(&quot;architect_node&quot;, self._architect_node)
+            workflow.set_entry_point(&quot;product_manager_node&quot;)
+            workflow.add_edge(&quot;product_manager_node&quot;, &quot;architect_node&quot;)
+        else:
+            workflow.set_entry_point(&quot;architect_node&quot;)
+            workflow.add_node(&quot;architect_node&quot;, self._architect_node)
+
+        workflow.add_node(&quot;coder_node&quot;, self._coder_node)
+        workflow.add_node(&quot;tester_docs_node&quot;, self._tester_docs_node)
+        workflow.add_node(&quot;reviewer_node&quot;, self._reviewer_node)
+
+        if self.enable_dba:
+            workflow.add_node(&quot;dba_node&quot;, self._dba_node)
+            workflow.add_edge(&quot;architect_node&quot;, &quot;dba_node&quot;)
+            workflow.add_edge(&quot;dba_node&quot;, &quot;coder_node&quot;)
+        else:
+            workflow.add_edge(&quot;architect_node&quot;, &quot;coder_node&quot;)
+
+        workflow.add_edge(&quot;coder_node&quot;, &quot;tester_docs_node&quot;)
+        workflow.add_edge(&quot;tester_docs_node&quot;, &quot;reviewer_node&quot;)
+
+        # 确定条件边的挂载点
+        if self.enable_security:
+            workflow.add_node(&quot;security_node&quot;, self._security_node)
+            workflow.add_edge(&quot;reviewer_node&quot;, &quot;security_node&quot;)
+            conditional_source = &quot;security_node&quot;
+        else:
+            conditional_source = &quot;reviewer_node&quot;
+
+        if self.enable_devops:
+            workflow.add_node(&quot;devops_node&quot;, self._devops_node)
+            workflow.add_conditional_edges(
+                conditional_source,
+                self._should_continue,
+                {&quot;continue&quot;: &quot;architect_node&quot;, &quot;end&quot;: &quot;devops_node&quot;},
+            )
+            workflow.add_edge(&quot;devops_node&quot;, END)
+        else:
+            workflow.add_conditional_edges(
+                conditional_source,
+                self._should_continue,
+                {&quot;continue&quot;: &quot;architect_node&quot;, &quot;end&quot;: END},
+            )
+
+        return workflow.compile(checkpointer=self.checkpointer)
+
+    def _thread_config(self, request_id: str) -&gt; Dict[str, Any]:
+        return {
+            &quot;configurable&quot;: {&quot;thread_id&quot;: request_id},
+            &quot;recursion_limit&quot;: max(50, self.max_iterations * 5 + 10),
+        }
+
+    async def run(
+        self,
+        requirement: str,
+        request_id: Optional[str] = None,
+        language: Optional[str] = &quot;python&quot;,
+    ) -&gt; Dict[str, Any]:
+        state = self._build_state(requirement, request_id, language=language)
+        if self.guard.is_duplicate(state[&quot;request_id&quot;]):
+            return {&quot;request_id&quot;: state[&quot;request_id&quot;], &quot;status&quot;: &quot;skipped&quot;, &quot;reason&quot;: &quot;duplicate&quot;}
+
+        self.tracker.start(state[&quot;request_id&quot;], requirement)
+        with self.telemetry.span(&quot;orchestrator.run&quot;, {&quot;request_id&quot;: state[&quot;request_id&quot;]}):
+            # 注入工作记忆
+            state[&quot;memory&quot;] = self.agents[&quot;memory&quot;].run(state)
+
+            graph = self._build_graph()
+            config = self._thread_config(state[&quot;request_id&quot;])
+            final_state = await graph.ainvoke(state, config)
+            final_state[&quot;finished_at&quot;] = datetime.now().isoformat()
+            final_state[&quot;artifacts&quot;] = self._collect_artifacts(final_state)
+            self.telemetry.record_event(
+                &quot;workflow.completed&quot;,
+                request_id=state[&quot;request_id&quot;],
+                status=final_state.get(&quot;status&quot;, &quot;unknown&quot;),
+                iterations=str(final_state.get(&quot;iteration&quot;, 0)),
+            )
+            self._record_workflow_metrics(final_state)
+            self.tracker.finish(state[&quot;request_id&quot;], final_state)
+            return final_state
+
+    async def resume(self, request_id: str) -&gt; Dict[str, Any]:
+        &quot;&quot;&quot;从 SQLite checkpoint 恢复并继续执行工作流。&quot;&quot;&quot;
+        self.tracker.update(request_id, status=&quot;resumed&quot;)
+        with self.telemetry.span(&quot;orchestrator.resume&quot;, {&quot;request_id&quot;: request_id}):
+            graph = self._build_graph()
+            config = self._thread_config(request_id)
+            snapshot = await graph.aget_state(config)
+            if snapshot is None or not snapshot.next:
+                # 任务已完成或不存在未执行任务，直接取最新状态
+                final_state = dict(snapshot.values) if snapshot else {}
+            else:
+                final_state = await graph.ainvoke(None, config)
+                if final_state is None:
+                    snapshot = await graph.aget_state(config)
+                    final_state = dict(snapshot.values) if snapshot else {}
+            final_state[&quot;finished_at&quot;] = datetime.now().isoformat()
+            final_state[&quot;artifacts&quot;] = self._collect_artifacts(final_state)
+            self._record_workflow_metrics(final_state)
+            self.tracker.finish(request_id, final_state)
+            return final_state
+
+    def list_checkpoints(self, request_id: str) -&gt; List[Dict[str, Any]]:
+        &quot;&quot;&quot;返回指定 request_id 的历史 checkpoint 列表。&quot;&quot;&quot;
+        config: Dict[str, Any] = {&quot;configurable&quot;: {&quot;thread_id&quot;: request_id}}
+        return [
+            {
+                &quot;checkpoint_id&quot;: tuple_item.config[&quot;configurable&quot;].get(&quot;checkpoint_id&quot;),
+                &quot;metadata&quot;: tuple_item.metadata,
+            }
+            for tuple_item in self.checkpointer.list(config)
+        ]
+
+    async def run_stream(
+        self,
+        requirement: str,
+        request_id: Optional[str] = None,
+        language: Optional[str] = &quot;python&quot;,
+    ) -&gt; AsyncIterator[str]:
+        &quot;&quot;&quot;流式执行编排，SSE 格式输出每个节点的事件。&quot;&quot;&quot;
+        state = self._build_state(requirement, request_id, language=language)
+        if self.guard.is_duplicate(state[&quot;request_id&quot;]):
+            yield f&quot;data: {json.dumps({'event': 'duplicate', 'request_id': state['request_id']}, ensure_ascii=False)}\n\n&quot;
+            return
+
+        state[&quot;memory&quot;] = self.agents[&quot;memory&quot;].run(state)
+        graph = self._build_graph()
+        config = self._thread_config(state[&quot;request_id&quot;])
+
+        yield f&quot;data: {json.dumps({'event': 'start', 'request_id': state['request_id'], 'workspace': state['workspace']}, ensure_ascii=False)}\n\n&quot;
+
+        # LangGraph 0.2.0 支持 astream_events，失败则降级到普通 ainvoke
+        try:
+            async for event in graph.astream_events(state, config, version=&quot;v1&quot;):
+                kind = event.get(&quot;event&quot;)
+                name = event.get(&quot;name&quot;, &quot;&quot;)
+                if kind in (&quot;on_node_start&quot;, &quot;on_node_end&quot;):
+                    payload = {
+                        &quot;event&quot;: kind,
+                        &quot;node&quot;: name,
+                        &quot;request_id&quot;: state[&quot;request_id&quot;],
+                    }
+                    if kind == &quot;on_node_end&quot; and &quot;data&quot; in event and &quot;state&quot; in event[&quot;data&quot;]:
+                        node_state = event[&quot;data&quot;][&quot;state&quot;]
+                        payload[&quot;iteration&quot;] = node_state.get(&quot;iteration&quot;, 0)
+                    yield f&quot;data: {json.dumps(payload, ensure_ascii=False)}\n\n&quot;
+        except Exception as exc:  # noqa: BLE001
+            # 降级：直接执行并输出结果
+            final_state = await graph.ainvoke(state, config=config)
+            yield f&quot;data: {json.dumps({'event': 'fallback', 'error': str(exc), 'status': final_state.get('status')}, ensure_ascii=False)}\n\n&quot;
+            final_state[&quot;finished_at&quot;] = datetime.now().isoformat()
+            final_state[&quot;artifacts&quot;] = self._collect_artifacts(final_state)
+            yield f&quot;data: {json.dumps({'event': 'final', 'request_id': state['request_id'], **final_state}, ensure_ascii=False)}\n\n&quot;
+            return
+
+        final_state = await graph.ainvoke(state, config=config)
+        final_state[&quot;finished_at&quot;] = datetime.now().isoformat()
+        final_state[&quot;artifacts&quot;] = self._collect_artifacts(final_state)
+        yield f&quot;data: {json.dumps({'event': 'final', 'status': final_state.get('status'), 'request_id': state['request_id'], 'workspace': state['workspace']}, ensure_ascii=False)}\n\n&quot;
+
+    async def _architect_node(self, state: GraphState) -&gt; GraphState:
+        state[&quot;iteration&quot;] = state.get(&quot;iteration&quot;, 0) + 1
+        state[&quot;status&quot;] = &quot;working&quot;
+        state[&quot;architect&quot;] = await self._run_agent(&quot;architect&quot;, state)
+        return state
+
+    async def _coder_node(self, state: GraphState) -&gt; GraphState:
+        state[&quot;coder&quot;] = await self._run_agent(&quot;coder&quot;, state)
+        return state
+
+    async def _tester_docs_node(self, state: GraphState) -&gt; GraphState:
+        tester, docs = await asyncio.gather(
+            self._run_agent(&quot;tester&quot;, state),
+            self._run_agent(&quot;docs&quot;, state),
+        )
+        state[&quot;tester&quot;] = tester
+        state[&quot;docs&quot;] = docs
+        return state
+
+    async def _reviewer_node(self, state: GraphState) -&gt; GraphState:
+        state[&quot;reviewer&quot;] = await self._run_agent(&quot;reviewer&quot;, state)
+        record = {
+            &quot;iteration&quot;: state.get(&quot;iteration&quot;, 0),
+            &quot;architect&quot;: state.get(&quot;architect&quot;),
+            &quot;coder&quot;: state.get(&quot;coder&quot;),
+            &quot;tester&quot;: state.get(&quot;tester&quot;),
+            &quot;docs&quot;: state.get(&quot;docs&quot;),
+            &quot;reviewer&quot;: state.get(&quot;reviewer&quot;),
+        }
+        state[&quot;history&quot;] = (state.get(&quot;history&quot;, []) + [record])[-5:]
+        review = state.get(&quot;reviewer&quot;) or {}
+        passed = _review_passed(review)
+        # 在节点内设置状态（条件边函数不应修改状态）
+        if passed:
+            state[&quot;status&quot;] = &quot;completed&quot;
+        elif state.get(&quot;iteration&quot;, 0) &gt;= self.max_iterations:
+            state[&quot;status&quot;] = &quot;failed&quot;
+        else:
+            state[&quot;status&quot;] = &quot;working&quot;
+        self.memory.remember(
+            f&quot;review_iter_{state.get('iteration', 0)}&quot;,
+            review.get(&quot;output&quot;, &quot;&quot;),
+            session_id=state.get(&quot;request_id&quot;, &quot;default&quot;),
+            layer=&quot;working&quot;,
+        )
+        return state
+
+    def _should_continue(self, state: GraphState) -&gt; str:
+        review = state.get(&quot;reviewer&quot;) or {}
+        if not _review_passed(review):
+            if state.get(&quot;iteration&quot;, 0) &gt;= self.max_iterations:
+                return &quot;end&quot;
+            return &quot;continue&quot;
+
+        # reviewer 通过后，若启用 Security Agent，还需通过安全审查
+        if self.enable_security:
+            security = state.get(&quot;security&quot;) or {}
+            if not _review_passed(security):
+                if state.get(&quot;iteration&quot;, 0) &gt;= self.max_iterations:
+                    return &quot;end&quot;
+                return &quot;continue&quot;
+
+        return &quot;end&quot;
+
+    async def _product_manager_node(self, state: GraphState) -&gt; GraphState:
+        state[&quot;product_manager&quot;] = await self._run_agent(&quot;product_manager&quot;, state)
+        return state
+
+    async def _dba_node(self, state: GraphState) -&gt; GraphState:
+        state[&quot;dba&quot;] = await self._run_agent(&quot;dba&quot;, state)
+        return state
+
+    async def _security_node(self, state: GraphState) -&gt; GraphState:
+        state[&quot;security&quot;] = await self._run_agent(&quot;security&quot;, state)
+        return state
+
+    async def _devops_node(self, state: GraphState) -&gt; GraphState:
+        devops_result = await self._run_agent(&quot;devops&quot;, state)
+        runner = self.devops_runner or DevOpsRunner(
+            dry_run=Settings.devops_dry_run(),
+            timeout=Settings.devops_timeout(),
+        )
+        workspace = Path(state.get(&quot;workspace&quot;, Settings.workspace_dir() / state.get(&quot;request_id&quot;, &quot;default&quot;)))
+        deployment = await asyncio.to_thread(
+            runner.run,
+            state.get(&quot;request_id&quot;, &quot;default&quot;),
+            workspace,
+        )
+        devops_result[&quot;deployment&quot;] = deployment
+        state[&quot;devops&quot;] = devops_result
+        return state
+
+    async def _run_agent(self, name: str, state: GraphState) -&gt; Dict[str, Any]:
+        agent = self.agents[name]
+        request_id = state.get(&quot;request_id&quot;, &quot;&quot;)
+        self.tracker.update(
+            request_id,
+            current_agent=name,
+            iteration=state.get(&quot;iteration&quot;, 0),
+            status=&quot;working&quot;,
+        )
+        with self.telemetry.span(f&quot;agent.{name}&quot;, {&quot;agent&quot;: name, &quot;request_id&quot;: request_id}):
+            if asyncio.iscoroutinefunction(agent.run):
+                result = await agent.run(state)
+            else:
+                result = agent.run(state)
+            status = &quot;error&quot; if result and not result.get(&quot;success&quot;, True) else &quot;ok&quot;
+            self.telemetry.collector.counter(
+                &quot;agent_runs_total&quot;,
+                &quot;Total number of agent runs&quot;,
+                labelnames=[&quot;agent&quot;, &quot;status&quot;],
+            ).inc(agent=name, status=status)
+            return result
+
+    def _record_workflow_metrics(self, state: GraphState) -&gt; None:
+        request_id = state.get(&quot;request_id&quot;, &quot;&quot;)
+        iterations = state.get(&quot;iteration&quot;, 0)
+        status = state.get(&quot;status&quot;, &quot;unknown&quot;)
+        review = state.get(&quot;reviewer&quot;) or {}
+        review_passed = _review_passed(review)
+
+        self.telemetry.collector.gauge(&quot;workflow_iterations&quot;, &quot;Workflow iteration count&quot;).set(
+            iterations, request_id=request_id
+        )
+        self.telemetry.collector.counter(
+            &quot;workflow_total&quot;,
+            &quot;Total number of workflow runs&quot;,
+            labelnames=[&quot;status&quot;],
+        ).inc(status=status)
+        self.telemetry.collector.counter(
+            &quot;review_decisions_total&quot;,
+            &quot;Total number of review decisions&quot;,
+            labelnames=[&quot;passed&quot;],
+        ).inc(passed=str(review_passed).lower())
+
+    @staticmethod
+    def _collect_artifacts(state: GraphState) -&gt; Dict[str, Any]:
+        return {
+            &quot;workspace&quot;: state.get(&quot;workspace&quot;, &quot;&quot;),
+            &quot;design&quot;: (state.get(&quot;architect&quot;) or {}).get(&quot;output&quot;, &quot;&quot;),
+            &quot;design_file&quot;: (state.get(&quot;architect&quot;) or {}).get(&quot;design_file&quot;),
+            &quot;code_files&quot;: (state.get(&quot;coder&quot;) or {}).get(&quot;files&quot;, []),
+            &quot;test_files&quot;: (state.get(&quot;tester&quot;) or {}).get(&quot;files&quot;, []),
+            &quot;doc_files&quot;: (state.get(&quot;docs&quot;) or {}).get(&quot;files&quot;, []),
+            &quot;review_report&quot;: (state.get(&quot;reviewer&quot;) or {}).get(&quot;report_file&quot;),
+            &quot;review_passed&quot;: _review_passed(state.get(&quot;reviewer&quot;) or {}),
+            &quot;tests&quot;: (state.get(&quot;tester&quot;) or {}).get(&quot;output&quot;, &quot;&quot;),
+            &quot;docs&quot;: (state.get(&quot;docs&quot;) or {}).get(&quot;output&quot;, &quot;&quot;),
+            &quot;review&quot;: (state.get(&quot;reviewer&quot;) or {}).get(&quot;output&quot;, &quot;&quot;),
+            &quot;devops&quot;: (state.get(&quot;devops&quot;) or {}).get(&quot;output&quot;, &quot;&quot;) if state.get(&quot;devops&quot;) else &quot;&quot;,
+            &quot;product_manager&quot;: (state.get(&quot;product_manager&quot;) or {}).get(&quot;output&quot;, &quot;&quot;) if state.get(&quot;product_manager&quot;) else &quot;&quot;,
+            &quot;prd_file&quot;: (state.get(&quot;product_manager&quot;) or {}).get(&quot;prd_file&quot;),
+            &quot;security_report&quot;: (state.get(&quot;security&quot;) or {}).get(&quot;report_file&quot;),
+            &quot;security_passed&quot;: _review_passed(state.get(&quot;security&quot;) or {}),
+            &quot;schema_files&quot;: (state.get(&quot;dba&quot;) or {}).get(&quot;files&quot;, []),
+        }
+</code></pre>
+<h2 id="附录-k-模型与-mcp-配置"><a class="anchor" href="#附录-k-模型与-mcp-配置" aria-hidden="true">#</a>附录 K：模型与 MCP 配置</h2>
+<h3 id="k-1-config-model-yaml"><a class="anchor" href="#k-1-config-model-yaml" aria-hidden="true">#</a>K.1 <code>config/model.yaml</code></h3>
+<pre><code class="language-yaml"># 各 Agent 使用的 LLM 模型版本，必须锁定到具体版本，禁止出现 &quot;latest&quot;
+
+architect:
+  model: gpt-4-0613
+  temperature: 0.2
+
+coder:
+  model: gpt-4-turbo-2024-04-09
+  temperature: 0.1
+
+reviewer:
+  model: gpt-4o-2024-08-06
+  temperature: 0.2
+
+tester:
+  model: gpt-4-0613
+  temperature: 0.2
+
+docs:
+  model: gpt-3.5-turbo-0125
+  temperature: 0.3
+
+devops:
+  model: gpt-4-0613
+  temperature: 0.2
+
+product_manager:
+  model: gpt-4-0613
+  temperature: 0.3
+
+security:
+  model: gpt-4o-2024-08-06
+  temperature: 0.2
+
+dba:
+  model: gpt-4-0613
+  temperature: 0.2
+</code></pre>
+<h3 id="k-2-config-mcp-yaml"><a class="anchor" href="#k-2-config-mcp-yaml" aria-hidden="true">#</a>K.2 <code>config/mcp.yaml</code></h3>
+<pre><code class="language-yaml">mcp_servers:
+  filesystem:
+    command: python
+    args: [&quot;-m&quot;, &quot;mcp_server_filesystem&quot;, &quot;./workspace&quot;]
+    allowed_paths:
+      - &quot;./workspace&quot;
+  github:
+    api_key_env: GITHUB_TOKEN
+  terminal:
+    timeout: 5
+    whitelist:
+      - python
+      - pytest
+      - git
+      - ls
+      - cat
+      - echo
+      - &quot;docker build&quot;
+  db:
+    connection_env: DATABASE_URL
+  conda:
+    command: conda
+</code></pre>
+<h2 id="附录-l-模块文件清单"><a class="anchor" href="#附录-l-模块文件清单" aria-hidden="true">#</a>附录 L：模块文件清单</h2>
+<ul>
+<li><code>dev_agent_system/__init__.py</code></li>
+<li><code>dev_agent_system/a2a_client.py</code></li>
+<li><code>dev_agent_system/a2a_node.py</code></li>
+<li><code>dev_agent_system/agents.py</code></li>
+<li><code>dev_agent_system/checkpoint.py</code></li>
+<li><code>dev_agent_system/config.py</code></li>
+<li><code>dev_agent_system/dashboard.py</code></li>
+<li><code>dev_agent_system/devops.py</code></li>
+<li><code>dev_agent_system/eval.py</code></li>
+<li><code>dev_agent_system/llm.py</code></li>
+<li><code>dev_agent_system/llm_providers.py</code></li>
+<li><code>dev_agent_system/main.py</code></li>
+<li><code>dev_agent_system/mcp.py</code></li>
+<li><code>dev_agent_system/memory.py</code></li>
+<li><code>dev_agent_system/metrics.py</code></li>
+<li><code>dev_agent_system/orchestrator.py</code></li>
+<li><code>dev_agent_system/router.py</code></li>
+<li><code>dev_agent_system/schemas.py</code></li>
+<li><code>dev_agent_system/security.py</code></li>
+<li><code>dev_agent_system/security_scanner.py</code></li>
+<li><code>dev_agent_system/server.py</code></li>
+<li><code>dev_agent_system/skills.py</code></li>
+<li><code>dev_agent_system/telemetry.py</code></li>
+<li><code>dev_agent_system/templates.py</code></li>
+<li><code>dev_agent_system/tracker.py</code></li>
+<li><code>dev_agent_system/tui.py</code></li>
+<li><code>tests/test_a2a.py</code></li>
+<li><code>tests/test_checkpoint.py</code></li>
+<li><code>tests/test_dashboard.py</code></li>
+<li><code>tests/test_devops.py</code></li>
+<li><code>tests/test_eval.py</code></li>
+<li><code>tests/test_flow.py</code></li>
+<li><code>tests/test_llm.py</code></li>
+<li><code>tests/test_memory.py</code></li>
+<li><code>tests/test_metrics.py</code></li>
+<li><code>tests/test_multilang.py</code></li>
+<li><code>tests/test_new_agents.py</code></li>
+<li><code>tests/test_security.py</code></li>
+<li><code>tests/test_security_scanner.py</code></li>
+<li><code>tests/test_server.py</code></li>
+<li><code>tests/test_server_skills.py</code></li>
+<li><code>tests/test_skills.py</code></li>
+<li><code>tests/test_telemetry.py</code></li>
+<li><code>tests/test_templates.py</code></li>
+<li><code>tests/test_tui.py</code></li>
+</ul>
+
+</main>
+</div>
+</body>
+</html>

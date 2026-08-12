@@ -218,3 +218,10 @@ docker-compose up --build -d
 - 接入真实 LLM 跑分，利用 `RegressionChecker` 做持续回归检测。
 - 进一步扩展语言模板（如 Rust / C# / Kotlin）。
 - 完善 Skill 系统：增加 Skill 签名校验、沙箱执行、版本管理与 Skill 市场协议；支持 Agent 间远程 Skill 调用。
+
+## 10. 生成器规范
+
+要从零复现或生成等价的多 Agent 系统，请参阅：
+
+- [docs/agent_generator_spec.md](docs/agent_generator_spec.md) —— 可复现当前系统的完整生成规范（4-Block Framework + 每个 Agent 的 Prompting 模板 + 源码附录）
+- [docs/agent_generator_spec.html](docs/agent_generator_spec.html) —— 带目录、响应式、暗色模式的离线 HTML 版本
