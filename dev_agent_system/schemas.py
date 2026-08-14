@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import typing
 from typing import Any, Dict, List, Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AgentSkill(BaseModel):
@@ -46,6 +46,8 @@ class JSONRPCResponse(BaseModel):
 
 
 class CoderReport(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     status: Literal["completed", "needs_help"] = "completed"
     files_modified: List[str] = Field(default_factory=list)
     test_result: Literal["passed", "failed"] = "failed"
@@ -53,6 +55,8 @@ class CoderReport(BaseModel):
 
 
 class ReviewReport(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     severity: Literal["low", "medium", "high"] = "low"
     passed: bool = False
     issues: List[Dict[str, Any]] = Field(default_factory=list)
@@ -60,6 +64,8 @@ class ReviewReport(BaseModel):
 
 
 class TestReport(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
     passed: int = 0
     failed: int = 0
     coverage: float = 0.0
@@ -72,7 +78,7 @@ class WorkflowState(BaseModel):
     language: Optional[str] = "python"
     iteration: int = 0
     max_iterations: int = 10
-    status: Literal["submitted", "working", "completed", "failed"] = "submitted"
+    status: Literal["submitted", "working", "completed", "failed", "awaiting_approval"] = "submitted"
     architect: Optional[Dict[str, Any]] = None
     coder: Optional[Dict[str, Any]] = None
     tester: Optional[Dict[str, Any]] = None
@@ -80,6 +86,53 @@ class WorkflowState(BaseModel):
     reviewer: Optional[Dict[str, Any]] = None
     devops: Optional[Dict[str, Any]] = None
     artifacts: Dict[str, Any] = Field(default_factory=dict)
+
+
+class AgentFile(BaseModel):
+    """结构化输出中的单个文件对象。"""
+
+    path: str
+    code: str = ""
+
+
+class AgentOutput(BaseModel):
+    """结构化 Agent 输出：文件列表 + 报告字典。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    files: List[AgentFile] = Field(default_factory=list)
+    report: Dict[str, Any] = Field(default_factory=dict)
+
+
+class DesignOutput(BaseModel):
+    """Architect Agent 的 JSON 输出。"""
+
+    model_config = ConfigDict(extra="ignore")
+
+    modules: List[str] = Field(default_factory=list)
+    api_contract: Dict[str, Any] = Field(default_factory=dict)
+    tech_stack: str = ""
+    mermaid: str = ""
+    notes: str = ""
+
+
+class DBAReport(BaseModel):
+    """DBA Agent 的 JSON 报告。"""
+
+    model_config = ConfigDict(extra="ignore")
+
+    tables: List[str] = Field(default_factory=list)
+    notes: str = ""
+
+
+class PRDOutput(BaseModel):
+    """Product Manager Agent 的 JSON 输出。"""
+
+    model_config = ConfigDict(extra="ignore")
+
+    prd_markdown: str = ""
+    user_stories: List[str] = Field(default_factory=list)
+    acceptance_criteria: List[str] = Field(default_factory=list)
 
 
 class GraphState(typing.TypedDict, total=False):

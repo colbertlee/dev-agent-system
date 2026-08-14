@@ -25,6 +25,7 @@ from dev_agent_system.agents import (
 from dev_agent_system.checkpoint import make_checkpointer
 from dev_agent_system.config import Settings
 from dev_agent_system.devops import DevOpsRunner
+from dev_agent_system.human_approval import HumanApprovalStore
 from dev_agent_system.memory import MemoryAgent
 from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY, Telemetry
 from dev_agent_system.schemas import GraphState
@@ -83,6 +84,7 @@ class Orchestrator:
         self.guard = IdempotencyGuard()
         self.memory = MemoryAgent()
         self.checkpointer = make_checkpointer()
+        self.approval_store = HumanApprovalStore()
         self.agents = {
             "architect": ArchitectAgent(),
             "coder": CoderAgent(),
@@ -224,6 +226,38 @@ class Orchestrator:
             self.tracker.finish(request_id, final_state)
             return final_state
 
+    async def approve_devops(self, request_id: str, approve: bool = True) -> Dict[str, Any]:
+        """审批并继续执行 DevOps 部署节点。
+
+        适用于 workflow 在 _devops_node 因缺少人工审批而进入 awaiting_approval 状态后，
+        由管理员通过 API 调用继续。
+        """
+        if approve:
+            self.approval_store.approve(request_id)
+        else:
+            self.approval_store.reject(request_id)
+            final_state = {"request_id": request_id, "status": "rejected", "devops": {"approved": False}}
+            self.tracker.finish(request_id, final_state)
+            return final_state
+
+        graph = self._build_graph()
+        config = self._thread_config(request_id)
+        snapshot = await graph.aget_state(config)
+        if snapshot is None:
+            return {"request_id": request_id, "status": "not_found", "error": "checkpoint not found"}
+
+        state = dict(snapshot.values)
+        state["status"] = "working"
+        final_state = await self._devops_node(state)
+        final_state["finished_at"] = datetime.now().isoformat()
+        final_state["artifacts"] = self._collect_artifacts(final_state)
+        self._record_workflow_metrics(final_state)
+        self.tracker.finish(request_id, final_state)
+        return final_state
+
+    def get_approval_status(self, request_id: str) -> str:
+        return self.approval_store.get_status(request_id)
+
     def list_checkpoints(self, request_id: str) -> List[Dict[str, Any]]:
         """返回指定 request_id 的历史 checkpoint 列表。"""
         config: Dict[str, Any] = {"configurable": {"thread_id": request_id}}
@@ -360,17 +394,32 @@ class Orchestrator:
 
     async def _devops_node(self, state: GraphState) -> GraphState:
         devops_result = await self._run_agent("devops", state)
+        request_id = state.get("request_id", "default")
         runner = self.devops_runner or DevOpsRunner(
             dry_run=Settings.devops_dry_run(),
             timeout=Settings.devops_timeout(),
         )
-        workspace = Path(state.get("workspace", Settings.workspace_dir() / state.get("request_id", "default")))
-        deployment = await asyncio.to_thread(
-            runner.run,
-            state.get("request_id", "default"),
-            workspace,
-        )
+        workspace = Path(state.get("workspace", Settings.workspace_dir() / request_id))
+
+        # 仅在需要真实执行时触发人工审批
+        dry_run = getattr(runner, "dry_run", Settings.devops_dry_run())
+        if not dry_run and Settings.human_approval_required() and not self.approval_store.is_approved(request_id):
+            self.approval_store.request_approval(request_id)
+            devops_result["needs_approval"] = True
+            devops_result["approved"] = False
+            devops_result["deployment"] = {
+                "deployed": False,
+                "status": "awaiting_approval",
+                "note": "等待人工审批后才能执行真实部署",
+            }
+            state["status"] = "awaiting_approval"
+            state["devops"] = devops_result
+            return state
+
+        deployment = await asyncio.to_thread(runner.run, request_id, workspace)
         devops_result["deployment"] = deployment
+        devops_result["needs_approval"] = False
+        devops_result["approved"] = True
         state["devops"] = devops_result
         return state
 

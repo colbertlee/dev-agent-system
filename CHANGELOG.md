@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.21.0] - 2026-08-14
+
+### Added
+
+- 结构化 JSON 输出与 Pydantic 校验：
+  - `LLMClient` / `LLMProvider` 增加 `json_mode` 参数，OpenAI/DeepSeek 调用时使用 `response_format={"type": "json_object"}`，Ollama 调用时使用 `format="json"`。
+  - `BaseAgent` 新增 `_parse_json_output`，支持解析纯 JSON、Markdown 内嵌 JSON 与 `dict` 校验，失败时仍兼容历史 Markdown 代码块。
+  - `schemas.py` 新增 `AgentOutput`、`AgentFile`、`DesignOutput`、`DBAReport`、`PRDOutput` 等 Pydantic 模型。
+  - `CoderAgent`、`TesterAgent`、`DBAAgent`、`ArchitectAgent`、`ReviewerAgent`、`SecurityAgent`、`ProductManagerAgent` 都配置了对应的 `report_schema`，输出现在会经过 Pydantic 校验。
+- Human-in-the-Loop 人工审批：
+  - 新增 `dev_agent_system/human_approval.py`：`HumanApprovalStore` 基于 SQLite 持久化审批状态（`pending`/`approved`/`rejected`）。
+  - `Orchestrator._devops_node` 在真实部署（`DEVOPS_DRY_RUN=false`）前检查审批状态；未审批时返回 `awaiting_approval` 并暂停。
+  - `Orchestrator` 新增 `approve_devops` 与 `get_approval_status` 方法。
+  - `server.py` 新增 `/tasks/{request_id}/approval`、`/tasks/{request_id}/approve`、`/tasks/{request_id}/reject` 端点。
+
+### Changed
+
+- `prompts.yaml` 中 `coder`、`tester`、`dba` 的系统提示更新为“仅输出合法 JSON”的格式说明。
+- `dev_agent_system/__init__.py` 版本号更新为 `0.21.0`。
+
+### Fixed
+
+- 修复“过分依赖自然语言提示、缺少代码层约束”的雷区：通过 `json_mode` + Pydantic 校验，强制或校验 Agent 结构化输出。
+- 修复“高危操作缺少人类确认”的雷区：DevOps 真实部署前必须通过审批 API 人工确认。
+
+### Security
+
+- `HumanApprovalStore` 将审批记录持久化到本地 SQLite，避免仅依赖内存导致的状态丢失。
+
+### Model Changes
+
+- 无。
+
 ## [0.20.1] - 2026-08-12
 
 ### Added

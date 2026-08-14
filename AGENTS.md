@@ -157,6 +157,9 @@ Mock LLM：测试通过 monkeypatch `LLMClient.chat` 实现，无需真实 API K
 5. 命令执行默认超时 5 秒。
 6. 调用 LLM 前自动脱敏 API Key、手机号、密码。
 7. 涉及部署、资金、删除、发布的操作必须 Human-in-the-Loop（L2 以下）。
+   - DevOps 真实部署（`DEVOPS_DRY_RUN=false`）前会进入 `awaiting_approval` 状态。
+   - 管理员可通过 `POST /tasks/{request_id}/approve` 批准，或 `POST /tasks/{request_id}/reject` 拒绝。
+   - 审批状态由 `HumanApprovalStore` 持久化到 SQLite，路径可通过 `APPROVAL_DB` 环境变量配置。
 8. 进阶安全：`security_scanner.py` 提供 Secret 扫描、依赖漏洞扫描与 `ContainerSandbox` 容器隔离；CI 通过 `.github/workflows/security.yml` 定时扫描。
 
 ## 8. 常用命令

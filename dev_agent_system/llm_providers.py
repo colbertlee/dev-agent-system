@@ -29,6 +29,7 @@ class LLMProvider(abc.ABC):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> str:
         """同步非流式对话，返回完整回复字符串。"""
         raise NotImplementedError
@@ -42,6 +43,7 @@ class LLMProvider(abc.ABC):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> Iterator[str]:
         """同步流式生成器，逐 token 输出。"""
         raise NotImplementedError
@@ -55,6 +57,7 @@ class LLMProvider(abc.ABC):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> AsyncIterator[str]:
         """异步流式生成器，逐 token 输出。"""
         raise NotImplementedError
@@ -109,6 +112,7 @@ class OpenAIProvider(LLMProvider):
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
         stream: bool = False,
+        json_mode: bool = False,
     ) -> Dict[str, Any]:
         kwargs: Dict[str, Any] = {
             "model": model or self.model,
@@ -119,6 +123,8 @@ class OpenAIProvider(LLMProvider):
             kwargs["temperature"] = temperature
         if max_tokens is not None:
             kwargs["max_tokens"] = max_tokens
+        if json_mode and not stream:
+            kwargs["response_format"] = {"type": "json_object"}
         return kwargs
 
     def chat(
@@ -129,8 +135,9 @@ class OpenAIProvider(LLMProvider):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> str:
-        kwargs = self._build_kwargs(system, user, model=model, temperature=temperature, max_tokens=max_tokens)
+        kwargs = self._build_kwargs(system, user, model=model, temperature=temperature, max_tokens=max_tokens, json_mode=json_mode)
         resp = self._client.chat.completions.create(**kwargs)
         return resp.choices[0].message.content or ""
 
@@ -142,8 +149,9 @@ class OpenAIProvider(LLMProvider):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> Iterator[str]:
-        kwargs = self._build_kwargs(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True)
+        kwargs = self._build_kwargs(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True, json_mode=json_mode)
         for chunk in self._client.chat.completions.create(**kwargs):
             delta = (chunk.choices[0].delta.content or "") if chunk.choices else ""
             if delta:
@@ -157,8 +165,9 @@ class OpenAIProvider(LLMProvider):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> AsyncIterator[str]:
-        kwargs = self._build_kwargs(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True)
+        kwargs = self._build_kwargs(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True, json_mode=json_mode)
         response = await self._async_client.chat.completions.create(**kwargs)
         async for chunk in response:
             delta = (chunk.choices[0].delta.content or "") if chunk.choices else ""
@@ -192,12 +201,15 @@ class OllamaProvider(LLMProvider):
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
         stream: bool = False,
+        json_mode: bool = False,
     ) -> Dict[str, Any]:
         body: Dict[str, Any] = {
             "model": model or self.model,
             "messages": self._messages(system, user),
             "stream": stream,
         }
+        if json_mode:
+            body["format"] = "json"
         options: Dict[str, Any] = {}
         if temperature is not None:
             options["temperature"] = temperature
@@ -215,8 +227,9 @@ class OllamaProvider(LLMProvider):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> str:
-        body = self._build_body(system, user, model=model, temperature=temperature, max_tokens=max_tokens)
+        body = self._build_body(system, user, model=model, temperature=temperature, max_tokens=max_tokens, json_mode=json_mode)
         url = f"{self.base_url}/api/chat"
         client = self._client or httpx.Client()
         try:
@@ -251,8 +264,9 @@ class OllamaProvider(LLMProvider):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> Iterator[str]:
-        body = self._build_body(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True)
+        body = self._build_body(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True, json_mode=json_mode)
         url = f"{self.base_url}/api/chat"
         client = self._client or httpx.Client()
         try:
@@ -271,8 +285,9 @@ class OllamaProvider(LLMProvider):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> AsyncIterator[str]:
-        body = self._build_body(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True)
+        body = self._build_body(system, user, model=model, temperature=temperature, max_tokens=max_tokens, stream=True, json_mode=json_mode)
         url = f"{self.base_url}/api/chat"
         client = self._async_client or httpx.AsyncClient()
         try:
@@ -332,6 +347,7 @@ class MockProvider(LLMProvider):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> str:
         return self._render(system, user, model or self.model)
 
@@ -343,6 +359,7 @@ class MockProvider(LLMProvider):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> Iterator[str]:
         text = self._render(system, user, model or self.model)
         yield from self._split(text)
@@ -355,6 +372,7 @@ class MockProvider(LLMProvider):
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> AsyncIterator[str]:
         text = self._render(system, user, model or self.model)
         for token in self._split(text):

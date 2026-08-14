@@ -10,9 +10,10 @@ import os
 import re
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Type
 
 import yaml
+from pydantic import BaseModel
 
 from dev_agent_system.config import Settings
 from dev_agent_system.llm import LLMClient
@@ -23,11 +24,25 @@ from dev_agent_system.security import SafetyScanner, SecretRedactor
 from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY, Telemetry
 from dev_agent_system.templates import get_language, TEMPLATES
 from dev_agent_system.skills import SkillManager
-from dev_agent_system.schemas import AgentCard, AgentSkill
+from dev_agent_system.schemas import (
+    AgentCard,
+    AgentFile,
+    AgentOutput,
+    AgentSkill,
+    CoderReport,
+    DesignOutput,
+    DBAReport,
+    PRDOutput,
+    ReviewReport,
+    TestReport,
+)
 
 
 class BaseAgent:
     """所有业务 Agent 的基类。"""
+
+    json_output: bool = False
+    report_schema: Optional[Type[BaseModel]] = None
 
     def __init__(
         self,
@@ -106,6 +121,88 @@ class BaseAgent:
             blocks.append({"path": path, "code": code})
         return blocks
 
+    @staticmethod
+    def _find_first_json_object(text: str) -> Optional[Any]:
+        """从文本中定位第一个非空的 JSON 对象/数组。
+
+        优先匹配 ```json ... ``` 代码块，再扫描内嵌的 JSON。
+        """
+        # 1) 显式 JSON 代码块
+        for m in re.finditer(r"```(?:json)?\s*\n(.*?)```", text, re.DOTALL | re.I):
+            block = m.group(1).strip()
+            if not block:
+                continue
+            try:
+                data = json.loads(block)
+                if isinstance(data, (dict, list)) and data:
+                    return data
+            except json.JSONDecodeError:
+                continue
+
+        # 2) 用 JSONDecoder 扫描 { } / [ ]，跳过空的 {} / []
+        decoder = json.JSONDecoder()
+        idx = 0
+        n = len(text)
+        while idx < n:
+            # 定位到下一个 { 或 [
+            while idx < n and text[idx] not in "{[":
+                idx += 1
+            if idx >= n:
+                return None
+            try:
+                data, end = decoder.raw_decode(text, idx)
+                if isinstance(data, dict) and data:
+                    return data
+                if isinstance(data, list) and data:
+                    return data
+                idx += max(end, 1)
+            except (json.JSONDecodeError, ValueError):
+                idx += 1
+        return None
+
+    @staticmethod
+    def _parse_json_output(
+        text: Any,
+        schema: Optional[Type[BaseModel]] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """解析 LLM 输出为 JSON 并可选做 Pydantic 校验。
+
+        兼容三种形态：
+        1) 纯 JSON 字符串（结构化输出 / JSON Mode 返回值）
+        2) Markdown 文本中内嵌的 JSON 对象（历史输出/旧 Prompt）
+        3) 已解析的 dict 直接做校验
+        """
+        if text is None:
+            return None
+
+        if isinstance(text, dict):
+            data: Any = text
+        else:
+            cleaned = str(text).strip()
+            # 去除可能的 ```json ... ``` 外层包裹
+            if cleaned.startswith("```"):
+                cleaned = cleaned.strip("`").strip()
+                if cleaned.lower().startswith("json"):
+                    cleaned = cleaned[4:].strip()
+
+            try:
+                data = json.loads(cleaned)
+            except json.JSONDecodeError:
+                data = BaseAgent._find_first_json_object(cleaned)
+                if data is None:
+                    return None
+
+        if not isinstance(data, dict):
+            return None
+
+        if schema is not None:
+            try:
+                return schema.model_validate(data).model_dump()
+            except Exception:  # noqa: BLE001
+                # 校验失败时仍返回原 dict，由调用方决定是否降级
+                return data
+        return data
+
     async def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
         session = state.get("request_id", "default")
         workspace = self._workspace(state)
@@ -131,7 +228,13 @@ class BaseAgent:
             f"agent.{self.name}.llm",
             {"agent": self.name, "model": resolved_model, "request_id": session},
         ):
-            output = self.llm.chat(self.system_prompt, full_prompt, model=resolved_model, **kwargs)
+            output = self.llm.chat(
+                self.system_prompt,
+                full_prompt,
+                model=resolved_model,
+                json_mode=self.json_output,
+                **kwargs,
+            )
 
         output = SecretRedactor.redact(output)
         self.memory.remember("last_output", output, session_id=session, layer="short", ttl=3600)
@@ -175,6 +278,9 @@ class BaseAgent:
 
 
 class ArchitectAgent(BaseAgent):
+    json_output = True
+    report_schema = DesignOutput
+
     def __init__(self, model: Optional[str] = None):
         super().__init__(
             "Architect",
@@ -197,13 +303,16 @@ class ArchitectAgent(BaseAgent):
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
-        design = self._extract_json(output)
+        design = self._parse_json_output(output, self.report_schema)
         if design:
             await self._write_file("design.json", json.dumps(design, ensure_ascii=False, indent=2), workspace)
         return {"design_file": "design.json" if design else None, "parsed": design}
 
 
 class CoderAgent(BaseAgent):
+    json_output = True
+    report_schema = CoderReport
+
     def __init__(self, model: Optional[str] = None):
         super().__init__(
             "Coder",
@@ -216,6 +325,11 @@ class CoderAgent(BaseAgent):
     def build_prompt(self, state: Dict[str, Any]) -> str:
         dba_output = (state.get("dba") or {}).get("output", "")
         template = get_language(state)
+        json_example = (
+            '{"files": [{"path": "main.%s", "code": "..."}], '
+            '"report": {"status": "completed", "files_modified": [...], '
+            '"test_result": "passed", "note": ""}}'
+        ) % template.file_ext
         return (
             f"目标语言/技术栈：{template.display}\n"
             f"构建命令：{template.build_cmd or '无'}\n"
@@ -225,30 +339,47 @@ class CoderAgent(BaseAgent):
             f"架构设计：{(state.get('architect') or {}).get('output', '')[:2000]}\n"
             f"数据库设计：{dba_output[:1500] if dba_output else '无'}\n"
             f"工作目录：{state.get('workspace', '')}\n"
-            "请生成可运行代码。每个代码块前用注释标明文件路径，例如 '# file: main."
-            f"{template.file_ext}'。最后输出 JSON 状态报告："
-            "{status, files_modified, test_result, note}"
+            f"请生成可运行代码。必须输出一个合法的 JSON 对象：\n{json_example}"
         )
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
         template = get_language(state)
-        blocks = self._extract_code_blocks(output)
         files: List[str] = []
         security_issues: List[Dict[str, Any]] = []
-        for idx, block in enumerate(blocks, start=1):
-            path = block["path"]
-            if not path:
-                path = f"module_{idx}.{template.file_ext}"
-            if not path.endswith(f".{template.file_ext}"):
-                path += f".{template.file_ext}"
-            issues = SafetyScanner.scan_code(block["code"])
-            security_issues.extend(issues)
-            res = await self._write_file(path, block["code"], workspace)
-            if res.get("success"):
-                files.append(path)
 
-        report = self._extract_json(output) or {}
+        # 优先解析结构化 JSON 输出（JSON Mode / response_format）
+        structured = self._parse_json_output(output, AgentOutput)
+        report: Dict[str, Any] = {}
+        if structured and "files" in structured and "report" in structured:
+            for f in structured.get("files", []):
+                path = f.get("path", "")
+                code = f.get("code", "")
+                if not path:
+                    continue
+                if not path.endswith(f".{template.file_ext}"):
+                    path += f".{template.file_ext}"
+                issues = SafetyScanner.scan_code(code)
+                security_issues.extend(issues)
+                res = await self._write_file(path, code, workspace)
+                if res.get("success"):
+                    files.append(path)
+            report = self._parse_json_output(structured.get("report"), self.report_schema) or structured.get("report", {})
+        else:
+            # 兼容历史/测试中的 Markdown 代码块 + JSON 报告
+            blocks = self._extract_code_blocks(output)
+            for idx, block in enumerate(blocks, start=1):
+                path = block["path"]
+                if not path:
+                    path = f"module_{idx}.{template.file_ext}"
+                if not path.endswith(f".{template.file_ext}"):
+                    path += f".{template.file_ext}"
+                issues = SafetyScanner.scan_code(block["code"])
+                security_issues.extend(issues)
+                res = await self._write_file(path, block["code"], workspace)
+                if res.get("success"):
+                    files.append(path)
+            report = self._parse_json_output(output, self.report_schema) or {}
 
         # MOCK 降级：没有真实 LLM 时写一段占位代码，方便 CLI/测试继续跑
         if not files and self.llm.is_mock():
@@ -300,6 +431,9 @@ class CoderAgent(BaseAgent):
 
 
 class TesterAgent(BaseAgent):
+    json_output = True
+    report_schema = TestReport
+
     def __init__(self, model: Optional[str] = None):
         super().__init__(
             "Tester",
@@ -318,6 +452,10 @@ class TesterAgent(BaseAgent):
             res = ToolSandbox.read_file(f, base_dir=workspace)  # 同步读取即可
             if res.get("success"):
                 code_snippets.append(f"--- {f} ---\n{res['content'][:1500]}")
+        json_example = (
+            '{"files": [{"path": "test_%s", "code": "..."}], '
+            '"report": {"passed": 0, "failed": 0, "coverage": 0.0, "report": ""}}'
+        ) % template.file_ext
         return (
             f"目标语言：{template.display}\n"
             f"测试框架/命令：{template.test_cmd}\n"
@@ -325,32 +463,48 @@ class TesterAgent(BaseAgent):
             f"代码文件：{code_files}\n"
             f"{''.join(code_snippets)[:2500]}\n"
             f"工作目录：{workspace}\n"
-            "请生成对应语言的测试用例。每个测试代码块前标明文件路径，如 '# file: test_"
-            f"{template.file_ext}'。最后输出 JSON 测试报告："
-            "{passed, failed, coverage, report}"
+            f"请生成对应语言的测试用例。必须输出一个合法的 JSON 对象：\n{json_example}"
         )
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
         template = get_language(state)
-        blocks = self._extract_code_blocks(output)
         files: List[str] = []
-        for idx, block in enumerate(blocks, start=1):
-            path = block["path"]
-            if not path:
-                path = f"test_module_{idx}.{template.test_ext}"
-            if not path.endswith(f".{template.test_ext}"):
-                path += f".{template.test_ext}"
-            res = await self._write_file(path, block["code"], workspace)
-            if res.get("success"):
-                files.append(path)
+
+        # 优先解析结构化 JSON 输出
+        structured = self._parse_json_output(output, AgentOutput)
+        report: Dict[str, Any] = {}
+        if structured and "files" in structured and "report" in structured:
+            for f in structured.get("files", []):
+                path = f.get("path", "")
+                code = f.get("code", "")
+                if not path:
+                    continue
+                if not path.endswith(f".{template.test_ext}"):
+                    path += f".{template.test_ext}"
+                res = await self._write_file(path, code, workspace)
+                if res.get("success"):
+                    files.append(path)
+            report = self._parse_json_output(structured.get("report"), self.report_schema) or structured.get("report", {})
+        else:
+            # 兼容历史/测试中的 Markdown 代码块 + JSON 报告
+            blocks = self._extract_code_blocks(output)
+            for idx, block in enumerate(blocks, start=1):
+                path = block["path"]
+                if not path:
+                    path = f"test_module_{idx}.{template.test_ext}"
+                if not path.endswith(f".{template.test_ext}"):
+                    path += f".{template.test_ext}"
+                res = await self._write_file(path, block["code"], workspace)
+                if res.get("success"):
+                    files.append(path)
+            report = self._parse_json_output(output, self.report_schema) or {}
 
         if files:
             test_res = await self._run_command(f"{template.test_cmd} -q", workspace, timeout=15)
         else:
             test_res = {"success": False, "stdout": "", "stderr": "no tests generated"}
 
-        report = self._extract_json(output) or {}
         passed = report.get("passed")
         failed = report.get("failed")
         if passed is None or failed is None:
@@ -375,6 +529,9 @@ class TesterAgent(BaseAgent):
 
 
 class ReviewerAgent(BaseAgent):
+    json_output = True
+    report_schema = ReviewReport
+
     def __init__(self, model: Optional[str] = None):
         super().__init__(
             "Reviewer",
@@ -395,7 +552,7 @@ class ReviewerAgent(BaseAgent):
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
-        report = self._extract_json(output)
+        report = self._parse_json_output(output, self.report_schema)
         if not report:
             # 无法解析 JSON 时做最保守判断
             report = {
@@ -479,6 +636,8 @@ class DevOpsAgent(BaseAgent):
 
 
 class ProductManagerAgent(BaseAgent):
+    report_schema = PRDOutput
+
     def __init__(self, model: Optional[str] = None):
         super().__init__(
             "ProductManager",
@@ -496,9 +655,11 @@ class ProductManagerAgent(BaseAgent):
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
-        report = self._extract_json(output) or {}
+        report = self._parse_json_output(output, self.report_schema) or {}
         prd_file = "prd.md"
-        await self._write_file(prd_file, output, workspace)
+        # 如果结构化输出里有 prd_markdown，优先写入；否则把原始输出作为 PRD 正文
+        prd_body = report.get("prd_markdown") or output
+        await self._write_file(prd_file, prd_body, workspace)
         return {
             "prd_file": prd_file,
             "user_stories": report.get("user_stories", []),
@@ -508,6 +669,9 @@ class ProductManagerAgent(BaseAgent):
 
 
 class SecurityAgent(BaseAgent):
+    json_output = True
+    report_schema = ReviewReport
+
     def __init__(self, model: Optional[str] = None):
         super().__init__(
             "Security",
@@ -528,7 +692,7 @@ class SecurityAgent(BaseAgent):
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
-        report = self._extract_json(output)
+        report = self._parse_json_output(output, self.report_schema)
         if not report:
             report = {
                 "severity": "medium",
@@ -543,6 +707,9 @@ class SecurityAgent(BaseAgent):
 
 
 class DBAAgent(BaseAgent):
+    json_output = True
+    report_schema = DBAReport
+
     def __init__(self, model: Optional[str] = None):
         super().__init__(
             "DBA",
@@ -556,24 +723,44 @@ class DBAAgent(BaseAgent):
         return (
             f"原始需求：{state.get('input', '')}\n"
             f"架构设计：{(state.get('architect') or {}).get('output', '')[:2000]}\n"
-            "请输出数据库 Schema 与迁移 SQL。"
+            "请输出数据库 Schema 与迁移 SQL。必须输出一个合法的 JSON 对象：\n"
+            "{\"files\": [{\"path\": \"schema.sql\", \"code\": \"...\"}, {\"path\": \"migrations/001_initial.sql\", \"code\": \"...\"}], "
+            "\"report\": {\"tables\": [...], \"notes\": \"\"}}"
         )
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
-        blocks = self._extract_code_blocks(output)
         files: List[str] = []
-        for block in blocks:
-            path = block["path"]
-            if not path:
-                continue
-            if not path.endswith(".sql"):
-                path += ".sql"
-            res = await self._write_file(path, block["code"], workspace)
-            if res.get("success"):
-                files.append(path)
 
-        report = self._extract_json(output) or {}
+        # 优先解析结构化 JSON 输出
+        structured = self._parse_json_output(output, AgentOutput)
+        report: Dict[str, Any] = {}
+        if structured and "files" in structured and "report" in structured:
+            for f in structured.get("files", []):
+                path = f.get("path", "")
+                code = f.get("code", "")
+                if not path:
+                    continue
+                if not path.endswith(".sql"):
+                    path += ".sql"
+                res = await self._write_file(path, code, workspace)
+                if res.get("success"):
+                    files.append(path)
+            report = self._parse_json_output(structured.get("report"), self.report_schema) or structured.get("report", {})
+        else:
+            # 兼容历史/测试中的 Markdown 代码块 + JSON 报告
+            blocks = self._extract_code_blocks(output)
+            for block in blocks:
+                path = block["path"]
+                if not path:
+                    continue
+                if not path.endswith(".sql"):
+                    path += ".sql"
+                res = await self._write_file(path, block["code"], workspace)
+                if res.get("success"):
+                    files.append(path)
+            report = self._parse_json_output(output, self.report_schema) or {}
+
         if not files:
             await self._write_file("schema.sql", output, workspace)
             files.append("schema.sql")

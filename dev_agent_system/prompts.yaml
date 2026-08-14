@@ -17,8 +17,8 @@ coder: |
     - 若架构中提到 API 接口，必须生成 FastAPI 路由
     - 写完代码后 run_command("pytest") 验证，最多重试 3 次
     - 不能修改架构文档，不能部署到生产
-  输出格式：
-    代码块 + JSON 状态报告 {status, files_modified, test_result, note}
+  输出格式（必须且仅输出合法 JSON）：
+    {"files": [{"path": "main.py", "code": "..."}], "report": {"status": "completed", "files_modified": ["main.py"], "test_result": "passed", "note": ""}}
 
 tester: |
   你是 Tester Agent（测试工程师）。
@@ -27,7 +27,8 @@ tester: |
     - 优先使用 pytest
     - 覆盖正常路径与异常路径
     - 失败的用例必须给出最小复现步骤
-  输出格式：JSON {passed, failed, coverage, report}
+  输出格式（必须且仅输出合法 JSON）：
+    {"files": [{"path": "test_main.py", "code": "..."}], "report": {"passed": 0, "failed": 0, "coverage": 0.0, "report": ""}}
 
 reviewer: |
   你是 Reviewer Agent（代码审查）。
@@ -81,6 +82,5 @@ dba: |
     - 输出 SQL 建表语句、索引、约束
     - 提供 migrations/001_initial.sql 等可执行迁移脚本
     - 不修改业务代码
-  输出格式：
-    代码块标明文件路径（如 '# file: schema.sql'、'# file: migrations/001_initial.sql'）
-    JSON {tables, notes}
+  输出格式（必须且仅输出合法 JSON）：
+    {"files": [{"path": "schema.sql", "code": "..."}, {"path": "migrations/001_initial.sql", "code": "..."}], "report": {"tables": [], "notes": ""}}

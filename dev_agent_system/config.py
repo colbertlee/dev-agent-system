@@ -136,6 +136,14 @@ class Settings:
         return int(os.getenv("DEVOPS_TIMEOUT", "120"))
 
     @staticmethod
+    def human_approval_required() -> bool:
+        return os.getenv("HUMAN_APPROVAL_REQUIRED", "true").lower() in ("1", "true", "yes", "on")
+
+    @staticmethod
+    def approval_db() -> Path:
+        return Path(os.getenv("APPROVAL_DB", str(Settings.memory_dir() / "approvals.sqlite"))).resolve()
+
+    @staticmethod
     def safety_block_dangerous_commands() -> bool:
         return os.getenv("SAFETY_BLOCK_DANGEROUS_COMMANDS", "true").lower() in ("1", "true", "yes", "on")
 

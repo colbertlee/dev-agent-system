@@ -4,7 +4,40 @@
 
 ---
 
-## v0.20.1 — Agent 生成器规范（最新）
+## v0.21.0 — 结构化输出强制化与人工审批（最新）
+
+**发布日期**：2026-08-14
+
+### 核心价值
+
+- 从“Prompt 层面劝说”升级到“API + Pydantic 双保险”：LLM 在 `json_mode` 下被强制输出 JSON，Agent 再用 Pydantic 校验字段。
+- 为 DevOps 真实部署加入 Human-in-the-Loop：未人工批准前不会执行任何 Docker/CI/CD 写操作。
+
+### 关键变更
+
+- `LLMClient` / `LLMProvider` 新增 `json_mode`：
+  - OpenAI 兼容接口自动注入 `response_format={"type": "json_object"}`。
+  - Ollama 接口自动注入 `format="json"`。
+- `BaseAgent` 新增 `_parse_json_output`：支持纯 JSON、Markdown 内嵌 JSON、dict 校验，兼容旧版 Markdown 代码块产物。
+- `schemas.py` 新增 `AgentOutput`、`AgentFile`、`DesignOutput`、`DBAReport`、`PRDOutput`，并为既有 report 模型开启 `extra="ignore"`。
+- 为 `Architect`、`Coder`、`Tester`、`DBA`、`Reviewer`、`Security`、`ProductManager` 配置 `report_schema`。
+- `prompts.yaml` 中 `coder`/`tester`/`dba` 的系统提示改为要求“仅输出合法 JSON”。
+- 新增 `dev_agent_system/human_approval.py`：`HumanApprovalStore` 基于 SQLite 记录 `pending`/`approved`/`rejected`。
+- `Orchestrator` 在真实部署前检查审批；未批准返回 `awaiting_approval`，管理员可通过 `approve_devops` 或 Server 端点批准。
+- `server.py` 新增 `/tasks/{request_id}/approval`、`/tasks/{request_id}/approve`、`/tasks/{request_id}/reject`。
+
+### 升级注意
+
+- 现有工作流默认 `DEVOPS_DRY_RUN=true`，干跑模式下不会触发人工审批。
+- 若启用真实部署，请先调用 `/tasks/{request_id}/approve` 或在代码中调用 `Orchestrator.approve_devops`。
+
+### 已知问题
+
+- 无。
+
+---
+
+## v0.20.1 — Agent 生成器规范
 
 **发布日期**：2026-08-12
 

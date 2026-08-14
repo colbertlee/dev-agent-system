@@ -243,6 +243,29 @@ async def resume_task(request_id: str):
     return result
 
 
+@app.get("/tasks/{request_id}/approval")
+def get_approval_status(request_id: str):
+    """查询指定任务的 DevOps 人工审批状态。"""
+    orch = Orchestrator()
+    return {"request_id": request_id, "status": orch.get_approval_status(request_id)}
+
+
+@app.post("/tasks/{request_id}/approve")
+async def approve_task(request_id: str):
+    """批准并继续执行 DevOps 部署。"""
+    orch = Orchestrator()
+    result = await orch.approve_devops(request_id, approve=True)
+    return result
+
+
+@app.post("/tasks/{request_id}/reject")
+async def reject_task(request_id: str):
+    """拒绝 DevOps 部署。"""
+    orch = Orchestrator()
+    result = await orch.approve_devops(request_id, approve=False)
+    return result
+
+
 @app.get("/tasks/{task_id}/stream")
 def stream(task_id: str):
     async def event_generator():

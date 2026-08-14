@@ -83,6 +83,7 @@ class LLMClient:
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> str:
         system = self._mask(system)
         user = self._mask(user)
@@ -93,6 +94,7 @@ class LLMClient:
                 model=model or self.model,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                json_mode=json_mode,
             )
         except Exception as e:  # noqa: BLE001
             return f"[LLM ERROR] {e}"
@@ -105,6 +107,7 @@ class LLMClient:
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> Iterator[str]:
         system = self._mask(system)
         user = self._mask(user)
@@ -115,6 +118,7 @@ class LLMClient:
                 model=model or self.model,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                json_mode=json_mode,
             )
         except Exception as e:  # noqa: BLE001
             yield f"[LLM ERROR] {e}"
@@ -127,6 +131,7 @@ class LLMClient:
         model: Optional[str] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
+        json_mode: bool = False,
     ) -> AsyncIterator[str]:
         system = self._mask(system)
         user = self._mask(user)
@@ -137,6 +142,7 @@ class LLMClient:
                 model=model or self.model,
                 temperature=temperature,
                 max_tokens=max_tokens,
+                json_mode=json_mode,
             ):
                 if token:
                     yield token
