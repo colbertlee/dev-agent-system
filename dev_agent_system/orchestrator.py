@@ -468,16 +468,18 @@ class Orchestrator:
 
     @staticmethod
     def _collect_artifacts(state: GraphState) -> Dict[str, Any]:
+        tester = state.get("tester") or {}
         return {
             "workspace": state.get("workspace", ""),
             "design": (state.get("architect") or {}).get("output", ""),
             "design_file": (state.get("architect") or {}).get("design_file"),
             "code_files": (state.get("coder") or {}).get("files", []),
-            "test_files": (state.get("tester") or {}).get("files", []),
+            "test_files": tester.get("files", []),
             "doc_files": (state.get("docs") or {}).get("files", []),
             "review_report": (state.get("reviewer") or {}).get("report_file"),
             "review_passed": _review_passed(state.get("reviewer") or {}),
-            "tests": (state.get("tester") or {}).get("output", ""),
+            # 保留原始测试 stdout 便于排查；tester.output 已被替换为摘要
+            "tests": tester.get("report", tester.get("output", "")),
             "docs": (state.get("docs") or {}).get("output", ""),
             "review": (state.get("reviewer") or {}).get("output", ""),
             "devops": (state.get("devops") or {}).get("output", "") if state.get("devops") else "",

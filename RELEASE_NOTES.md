@@ -4,7 +4,36 @@
 
 ---
 
-## v0.21.0 — 结构化输出强制化与人工审批（最新）
+## v0.22.0 — 多 Agent 间状态精简传输（最新）
+
+**发布日期**：2026-08-14
+
+### 核心价值
+
+- 把 Agent 间传递的“原始 LLM 输出”升级为“关键信息摘要”：既保留下游需要的状态、产物、报告字段，又避免把长段自然语言或中间产物塞进后续 prompt 和 checkpoint。
+- 每个 Agent 可配置 `summary_budget`，在信息完整与 Token 消耗之间根据场景复杂度动态平衡。
+
+### 关键变更
+
+- `BaseAgent` 新增 `summary_budget` 与 `_summarize_result`：Agent 运行结束后把结果压缩为合法 JSON 摘要，丢弃 `output`/`workspace`/`model`/`llm_kwargs` 等内部字段。
+- `_truncate_for_summary` 递归截断长字符串、长列表与嵌套 dict；`_summarize_result` 自适应调整截断粒度，保证输出始终为合法 JSON。
+- `BaseAgent.run` 把 `result["output"]` 替换为摘要；记忆层 `last_output` 也存摘要。
+- 为各 Agent 配置差异化预算：`Architect`/`DBA` 1500–2000，`Tester`/`Reviewer`/`Security` 1200，`Docs` 800，`DevOps` 1000 等。
+- `Orchestrator._collect_artifacts` 对 `tests` 优先使用 `tester.report` 原始 stdout，方便排障。
+- 新增 `tests/test_context_compression.py` 覆盖摘要过滤、递归截断与自适应压缩。
+
+### 升级注意
+
+- 无破坏性接口变更；`state["xxx"]["output"]` 现在存放的是摘要字符串，仍可被下游 prompt 使用，但不再包含完整原始 LLM 输出。
+- 如需完整原始输出，请读取对应产物文件（如 `design.json`、`review_report.json`、`security_report.json`、`prd.md`）或 `tester.report` 字段。
+
+### 已知问题
+
+- 无。
+
+---
+
+## v0.21.0 — 结构化输出强制化与人工审批
 
 **发布日期**：2026-08-14
 

@@ -43,6 +43,7 @@ class BaseAgent:
 
     json_output: bool = False
     report_schema: Optional[Type[BaseModel]] = None
+    summary_budget: int = 1500
 
     def __init__(
         self,
@@ -203,6 +204,56 @@ class BaseAgent:
                 return data
         return data
 
+    @staticmethod
+    def _truncate_for_summary(
+        value: Any,
+        max_str: int = 400,
+        max_list: int = 10,
+        max_depth: int = 4,
+        current_depth: int = 0,
+    ) -> Any:
+        """递归截断 dict/list/str，用于生成下游 Agent 可读的 summary。"""
+        if current_depth > max_depth:
+            return "..."
+        if isinstance(value, str):
+            if len(value) > max_str:
+                return value[:max_str] + "... [truncated]"
+            return value
+        if isinstance(value, (list, tuple)):
+            truncated = [BaseAgent._truncate_for_summary(v, max_str, max_list, max_depth, current_depth + 1) for v in value[:max_list]]
+            if len(value) > max_list:
+                truncated.append("...")
+            return truncated
+        if isinstance(value, dict):
+            return {
+                k: BaseAgent._truncate_for_summary(v, max_str, max_list, max_depth, current_depth + 1)
+                for k, v in value.items()
+            }
+        return value
+
+    def _summarize_result(self, result: Dict[str, Any]) -> str:
+        """把 Agent 运行结果压缩成下游可传递的关键信息字符串。
+
+        - 丢弃原始 LLM 输出（已解析到产物/文件和 report）
+        - 递归截断长字符串/列表，避免 state 和 checkpoint 膨胀
+        - 保证返回合法 JSON，便于下游直接解析
+        """
+        # 不向下游传递的元数据键
+        excluded = {"output", "workspace", "model", "llm_kwargs", "agent", "role", "raw"}
+        raw = {k: v for k, v in result.items() if k not in excluded and not k.startswith("_")}
+
+        # 自适应截断：在保证合法 JSON 的前提下把 summary 压到 budget 内
+        max_str, max_list = 400, 10
+        while True:
+            data = self._truncate_for_summary(raw, max_str=max_str, max_list=max_list)
+            text = json.dumps(data, ensure_ascii=False, default=str)
+            if len(text) <= self.summary_budget or max_str <= 50:
+                break
+            max_str = max(50, max_str // 2)
+            max_list = max(3, max_list - 2)
+
+        return text
+
     async def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
         session = state.get("request_id", "default")
         workspace = self._workspace(state)
@@ -237,7 +288,6 @@ class BaseAgent:
             )
 
         output = SecretRedactor.redact(output)
-        self.memory.remember("last_output", output, session_id=session, layer="short", ttl=3600)
 
         # 近似 token 数与延迟统计
         self.telemetry.collector.counter(
@@ -266,6 +316,14 @@ class BaseAgent:
         }
         extra = await self.postprocess(output, state)
         result.update(extra)
+
+        # 生成关键信息摘要，替换原始 output，避免无效数据在 Agent 间传递
+        result["output"] = self._summarize_result(result)
+        # llm_kwargs 等内部元数据无需进入 LangGraph state
+        result.pop("llm_kwargs", None)
+        # 记忆层也存摘要，避免后续 recall 把原始大段输出塞进 prompt
+        self.memory.remember("last_output", result["output"], session_id=session, layer="short", ttl=3600)
+
         return result
 
     def agent_card(self, url: str) -> AgentCard:
@@ -280,6 +338,7 @@ class BaseAgent:
 class ArchitectAgent(BaseAgent):
     json_output = True
     report_schema = DesignOutput
+    summary_budget = 2000
 
     def __init__(self, model: Optional[str] = None):
         super().__init__(
@@ -312,6 +371,7 @@ class ArchitectAgent(BaseAgent):
 class CoderAgent(BaseAgent):
     json_output = True
     report_schema = CoderReport
+    summary_budget = 1500
 
     def __init__(self, model: Optional[str] = None):
         super().__init__(
@@ -433,6 +493,7 @@ class CoderAgent(BaseAgent):
 class TesterAgent(BaseAgent):
     json_output = True
     report_schema = TestReport
+    summary_budget = 1200
 
     def __init__(self, model: Optional[str] = None):
         super().__init__(
@@ -531,6 +592,7 @@ class TesterAgent(BaseAgent):
 class ReviewerAgent(BaseAgent):
     json_output = True
     report_schema = ReviewReport
+    summary_budget = 1200
 
     def __init__(self, model: Optional[str] = None):
         super().__init__(
@@ -568,6 +630,8 @@ class ReviewerAgent(BaseAgent):
 
 
 class DocsAgent(BaseAgent):
+    summary_budget = 800
+
     def __init__(self, model: Optional[str] = None):
         super().__init__(
             "Docs",
@@ -603,6 +667,8 @@ class DocsAgent(BaseAgent):
 
 
 class DevOpsAgent(BaseAgent):
+    summary_budget = 1000
+
     def __init__(self, model: Optional[str] = None):
         super().__init__(
             "DevOps",
@@ -637,6 +703,7 @@ class DevOpsAgent(BaseAgent):
 
 class ProductManagerAgent(BaseAgent):
     report_schema = PRDOutput
+    summary_budget = 1200
 
     def __init__(self, model: Optional[str] = None):
         super().__init__(
@@ -671,6 +738,7 @@ class ProductManagerAgent(BaseAgent):
 class SecurityAgent(BaseAgent):
     json_output = True
     report_schema = ReviewReport
+    summary_budget = 1200
 
     def __init__(self, model: Optional[str] = None):
         super().__init__(
@@ -709,6 +777,7 @@ class SecurityAgent(BaseAgent):
 class DBAAgent(BaseAgent):
     json_output = True
     report_schema = DBAReport
+    summary_budget = 1500
 
     def __init__(self, model: Optional[str] = None):
         super().__init__(

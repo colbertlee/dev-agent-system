@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.0] - 2026-08-14
+
+### Added
+
+- 多 Agent 间状态精简传输：
+  - `BaseAgent` 新增 `summary_budget`（按场景复杂度配置）与 `_summarize_result`：每个 Agent 运行后把结果压缩为合法 JSON 摘要，丢弃原始 LLM 输出和内部元数据。
+  - `_truncate_for_summary` 递归截断长字符串/长列表/嵌套 dict，保证摘要既保留关键信息又控制 Token 消耗。
+  - `BaseAgent.run` 把 `result["output"]` 替换为摘要，并把记忆层 `last_output` 也改为摘要，避免无效信息在 prompt 和 checkpoint 中膨胀。
+  - `Orchestrator._collect_artifacts` 对 `tests` 优先使用 `tester.report` 原始 stdout，保留排障信息。
+  - 新增 `tests/test_context_compression.py` 覆盖摘要字段过滤、递归截断与自适应长度。
+
+### Changed
+
+- 为各 Agent 配置差异化 `summary_budget`（Architect/DBA 1500–2000，Tester/Reviewer/Security 1200，Docs 800，DevOps 1000 等），在信息完整与 Token 消耗之间取得平衡。
+- `dev_agent_system/__init__.py` 版本号更新为 `0.22.0`。
+
+### Fixed
+
+- 修复 Agent 间传递原始 LLM 输出导致上下文膨胀的问题。
+
+### Security
+
+- 无。
+
+### Model Changes
+
+- 无。
+
 ## [0.21.0] - 2026-08-14
 
 ### Added

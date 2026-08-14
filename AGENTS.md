@@ -24,6 +24,8 @@
 | Docs | 文档同步 | 架构 + 代码 | README、API 文档 | L3 |
 | DevOps | CI/CD、部署脚本 | 代码 | Dockerfile、CI 配置、部署状态 | L2 |
 
+> **状态传递原则**：Agent 运行后，`GraphState` 中只保留 `summary_budget` 控制的关键信息摘要（JSON 格式）；完整产物写入 `workspace/` 文件，原始 LLM 输出不进入下游 prompt/checkpoint。
+
 支撑组件：
 
 - **Orchestrator**：LangGraph StateGraph 编排器，负责任务分解与状态流转。
