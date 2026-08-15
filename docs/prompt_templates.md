@@ -27,14 +27,17 @@ coder: |
 
 ## 3. 当前 Prompt 清单
 
-| Agent | 文件键 | 核心职责 | 输出约束 |
-|---|---|---|---|
-| Architect | `architect` | 需求分析、架构设计、技术选型 | JSON：`{modules, api_contract, tech_stack, mermaid, notes}` |
-| Coder | `coder` | 代码实现、自测 | 代码块 + JSON 报告：`{status, files_modified, test_result, note}` |
-| Tester | `tester` | 生成并执行 pytest | JSON：`{passed, failed, coverage, report}` |
-| Reviewer | `reviewer` | 独立审查代码/测试/文档 | JSON：`{severity, passed, issues, suggestions}` |
-| Docs | `docs` | 生成 README / API 文档 | Markdown 代码块，文件头：`# file: README.md` |
-| DevOps | `devops` | CI/CD、部署配置 | Dockerfile / docker-compose / GitHub Actions 配置 |
+| Agent | 文件键 | 核心职责 | 输出约束 | JSON Mode / `report_schema` |
+|---|---|---|---|---|
+| ProductManager | `product_manager` | 需求澄清、PRD、用户故事、验收标准 | Markdown 代码块 `# file: prd.md` + JSON | 否 |
+| Architect | `architect` | 需求分析、架构设计、技术选型 | JSON：`{modules, api_contract, tech_stack, mermaid, notes}` | 是 / `DesignOutput` |
+| DBA | `dba` | 数据库 Schema 与迁移脚本 | SQL 代码块 + JSON：`{tables, notes}` | 是 / `DBAReport` |
+| Coder | `coder` | 代码实现、自测 | 代码块 + JSON 报告：`{files, report}` | 是 / `AgentOutput` |
+| Tester | `tester` | 生成并执行 pytest | 代码块 + JSON 测试报告 | 是 / `AgentOutput` |
+| Reviewer | `reviewer` | 独立审查代码/测试/文档 | JSON：`{severity, passed, issues, suggestions}` | 是 / `ReviewReport` |
+| Security | `security` | 独立安全审查 | JSON：`{severity, passed, issues, suggestions}` | 是 / `ReviewReport` |
+| Docs | `docs` | 生成 README / API 文档 | Markdown 代码块，文件头：`# file: README.md` | 否 |
+| DevOps | `devops` | CI/CD、部署配置 | Dockerfile / docker-compose / GitHub Actions 配置 | 否 |
 
 ## 4. 输出格式约定
 
@@ -64,14 +67,21 @@ def add(a, b):
 ```
 ```
 
+### 4.3 JSON Mode 与 Pydantic 校验
+
+- `LLMClient.chat(..., json_mode=True)` 会在 OpenAI/DeepSeek 请求中注入 `response_format={"type": "json_object"}`，在 Ollama 请求中注入 `format="json"`。
+- `BaseAgent` 通过 `report_schema` 字段绑定 Pydantic 模型；收到 LLM 输出后先调用 `_parse_json_output`，解析失败时兼容 Markdown 代码块并给出 fallback。
+- 提示词中应明确要求“必须且仅输出合法 JSON”，避免 LLM 附带说明文字导致解析失败。
+- 兼容策略：即使 `json_mode` 失败，`_extract_json` 仍会从 Markdown 代码块中抢救第一个 `{}` 或 `[]`。
+
 ## 5. Prompt 调优 checklist
 
 修改任一 Prompt 后，请确认：
 
 - [ ] `python -m pytest tests -q` 通过
 - [ ] 相关 Agent 的 `postprocess` 仍能正确解析输出
-- [ ] 如果修改了输出 JSON Schema，同步更新 `tests/` 中的 mock 响应
-- [ ] 在 `CHANGELOG.md` 中记录 Prompt 变更原因与预期影响
+- [ ] 如果启用了 `json_mode` 或修改了 `report_schema`，同步更新 `tests/` 中的 mock 响应
+- [ ] 在 `CHANGELOG.md` / `RELEASE_NOTES.md` 中记录 Prompt 变更原因与预期影响
 
 ## 6. 扩展新 Agent Prompt
 

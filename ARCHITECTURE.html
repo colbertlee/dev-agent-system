@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCHITECTURE.md</title>
+<style>
+:root {
+  --bg: #f6f8fa;
+  --fg: #1f2328;
+  --muted: #656d76;
+  --card: #ffffff;
+  --border: #d1d9e0;
+  --accent: #0969da;
+  --accent-light: #ddf4ff;
+  --code-bg: #f3f4f6;
+  --shadow: 0 2px 8px rgba(31, 35, 40, 0.04);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --fg: #c9d1d9;
+    --muted: #8b949e;
+    --card: #161b22;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-light: #112538;
+    --code-bg: #21262d;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.7;
+}
+header {
+  background: linear-gradient(135deg, var(--accent), #0550ae);
+  color: #fff;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+header h1 { margin: 0 0 .5rem; font-size: 1.9rem; }
+header p { margin: 0; opacity: .9; font-size: 1rem; }
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+}
+aside.toc {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+aside.toc h2 { margin: 0 0 .8rem; font-size: 1rem; color: var(--fg); }
+aside.toc ul { list-style: none; padding: 0; margin: 0; }
+aside.toc li { margin: .35rem 0; }
+aside.toc a { text-decoration: none; color: var(--muted); font-size: .88rem; display: block; padding: .15rem 0; }
+aside.toc a:hover { color: var(--accent); }
+aside.toc ul ul { padding-left: .8rem; }
+main {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 2.4rem;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+main h1 { font-size: 1.75rem; margin-top: 0; border-bottom: 2px solid var(--accent); padding-bottom: .5rem; }
+main h2 { font-size: 1.4rem; margin-top: 2.2rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+main h3 { font-size: 1.15rem; margin-top: 1.6rem; color: var(--accent); }
+main h4 { font-size: 1.05rem; margin-top: 1.3rem; }
+main p { margin: .9rem 0; }
+main a { color: var(--accent); text-decoration: none; }
+main a:hover { text-decoration: underline; }
+main ul, main ol { margin: .8rem 0; padding-left: 1.5rem; }
+main li { margin: .35rem 0; }
+main blockquote {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-light);
+  padding: .75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .92rem;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: .65rem .85rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--bg); font-weight: 600; }
+tr:nth-child(even) { background: rgba(0,0,0,.015); }
+@media (prefers-color-scheme: dark) { tr:nth-child(even) { background: rgba(255,255,255,.025); } }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: .88rem;
+}
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: var(--code-bg);
+  padding: .15rem .35rem;
+  border-radius: 4px;
+  font-size: .9em;
+}
+pre code { background: transparent; padding: 0; font-size: .88rem; }
+main img { max-width: 100%; }
+.anchor {
+  margin-left: .4rem;
+  color: var(--muted);
+  font-size: .8em;
+  text-decoration: none;
+  visibility: hidden;
+}
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor { visibility: visible; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  aside.toc { position: static; max-height: none; margin-bottom: 1rem; }
+  main { padding: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>ARCHITECTURE.md</h1>
+  
+</header>
+<div class="layout">
+<aside class="toc">
+  <h2>目录</h2>
+
+<ul>
+<li><a href="#architecture-md">ARCHITECTURE.md</a><ul>
+<li><a href="#1-系统架构总览">1. 系统架构总览</a></li>
+<li><a href="#2-核心数据流">2. 核心数据流</a></li>
+<li><a href="#3-langgraph-dag-状态图">3. LangGraph DAG 状态图</a></li>
+<li><a href="#4-模块依赖关系">4. 模块依赖关系</a></li>
+<li><a href="#5-核心模块职责">5. 核心模块职责</a></li>
+<li><a href="#6-状态与产物流转">6. 状态与产物流转</a></li>
+<li><a href="#7-安全边界">7. 安全边界</a></li>
+<li><a href="#8-扩展点">8. 扩展点</a></li>
+<li><a href="#9-部署形态">9. 部署形态</a></li>
+</ul>
+</li>
+</ul>
+
+</aside>
+<main>
+<h1 id="architecture-md">ARCHITECTURE.md<a class="anchor" href="#architecture-md" title="Permanent link">&para;</a></h1>
+<h2 id="1-系统架构总览">1. 系统架构总览<a class="anchor" href="#1-系统架构总览" title="Permanent link">&para;</a></h2>
+<p><code>dev-agent-system</code> 是一个面向个人开发者的<strong>多 Agent 软件工程协作系统</strong>。核心设计目标：</p>
+<ul>
+<li><strong>可组合</strong>：每个 Agent 既是独立 A2A 服务，也能被统一网关编排。</li>
+<li><strong>可追踪</strong>：LangGraph DAG 编排所有状态转换，产物落地到 <code>workspace/&lt;request_id&gt;/</code>。</li>
+<li><strong>可降级</strong>：LLM、记忆、向量检索均为可选依赖，缺失时自动降级到本地实现。</li>
+<li><strong>可校验</strong>：LLM 输出通过 <code>json_mode</code> 强制 JSON + Pydantic <code>report_schema</code> 校验，失败时兼容旧版 Markdown。</li>
+<li><strong>可控制</strong>：DevOps 真实部署等高风险操作受 Human-in-the-Loop（<code>HumanApprovalStore</code>）审批门约束。</li>
+<li><strong>可观测</strong>：SSE 流式输出、结构化 JSON 报告、版本化 Prompt 与模型配置。</li>
+</ul>
+<h2 id="2-核心数据流">2. 核心数据流<a class="anchor" href="#2-核心数据流" title="Permanent link">&para;</a></h2>
+<pre><code class="language-text">User / CLI / API
+       │
+       ▼
+┌──────────────────────────────────────────────────────────────────────┐
+│                        Orchestrator                                   │
+│  LangGraph StateGraph:                                               │
+│  [product_manager_node] → architect_node → [dba_node] → coder_node │
+│  → {tester_node, docs_node} → reviewer_node → [security_node]      │
+│  → should_continue / [devops_node / approval gate]                  │
+└──────────────────────────────────────────────────────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                       A2A Agent Layer                       │
+│  Architect / Coder / Tester / Reviewer / Docs / DevOps     │
+│  + optional ProductManager / Security / DBA                  │
+│  统一网关 server.py 或独立节点 a2a_node.py                   │
+└─────────────────────────────────────────────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Capability Layer                         │
+│  LLMClient (OpenAI / DeepSeek / Ollama / MOCK, json_mode)   │
+│  ModelRouter                                                │
+│  MemoryAgent (short / working / long)                       │
+│  ToolSandbox (read_file / write_file / run_command)         │
+│  Schemas (Pydantic report / GraphState TypedDict)           │
+│  HumanApprovalStore (SQLite, optional HITL)                 │
+└─────────────────────────────────────────────────────────────┘
+       │
+       ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Persistence Layer                        │
+│  workspace/    ← 代码、测试、文档产物                        │
+│  memory_store/ ← SQLite / ChromaDB / Redis 记忆            │
+│  config/       ← model.yaml, mcp.yaml                       │
+│  approvals/    ← `APPROVAL_DB` SQLite 审批状态               │
+└─────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 id="3-langgraph-dag-状态图">3. LangGraph DAG 状态图<a class="anchor" href="#3-langgraph-dag-状态图" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mermaid">stateDiagram-v2
+    [*] --&gt; product_manager_node
+    product_manager_node --&gt; architect_node : enable_product_manager
+    [*] --&gt; architect_node : 否则
+    architect_node --&gt; dba_node : enable_dba
+    dba_node --&gt; coder_node
+    architect_node --&gt; coder_node : 否则
+    coder_node --&gt; tester_docs_node
+    tester_docs_node --&gt; reviewer_node
+    reviewer_node --&gt; security_node : enable_security
+    security_node --&gt; should_continue
+    reviewer_node --&gt; should_continue : 否则
+    should_continue --&gt; architect_node : 未通过且未达 max_iterations
+    should_continue --&gt; [*] : 超过 max_iterations
+    should_continue --&gt; approval_gate : 通过且启用 DevOps
+    should_continue --&gt; [*] : 通过且未启用 DevOps
+    approval_gate --&gt; devops_node : approved
+    devops_node --&gt; [*]
+    approval_gate --&gt; [*] : rejected/awaiting
+</code></pre>
+<h2 id="4-模块依赖关系">4. 模块依赖关系<a class="anchor" href="#4-模块依赖关系" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mermaid">graph TD
+    main[main.py CLI] --&gt; orchestrator
+    server[server.py A2A Gateway] --&gt; orchestrator
+    a2a_node[a2a_node.py] --&gt; agents
+    orchestrator --&gt; agents
+    orchestrator --&gt; memory
+    orchestrator --&gt; types
+    agents --&gt; llm
+    agents --&gt; memory
+    agents --&gt; mcp
+    agents --&gt; router
+    agents --&gt; config
+    llm --&gt; config
+    mcp --&gt; config
+    memory --&gt; config
+    router --&gt; config
+</code></pre>
+<h2 id="5-核心模块职责">5. 核心模块职责<a class="anchor" href="#5-核心模块职责" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>模块</th>
+<th>路径</th>
+<th>职责</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Orchestrator</td>
+<td><code>dev_agent_system/orchestrator.py</code></td>
+<td>LangGraph DAG 编排、迭代调度、产物汇总、Human-in-the-Loop 审批门</td>
+</tr>
+<tr>
+<td>Agents</td>
+<td><code>dev_agent_system/agents.py</code></td>
+<td>9 个业务 Agent（含可选 ProductManager/Security/DBA），统一 <code>BaseAgent</code> 生命周期、<code>report_schema</code>、<code>summary_budget</code></td>
+</tr>
+<tr>
+<td>LLM</td>
+<td><code>dev_agent_system/llm.py</code></td>
+<td>OpenAI / DeepSeek / Ollama / MOCK 客户端，支持 <code>json_mode</code>、流式生成、PII 脱敏</td>
+</tr>
+<tr>
+<td>LLM Providers</td>
+<td><code>dev_agent_system/llm_providers.py</code></td>
+<td>各 Provider 的 <code>chat</code>/<code>stream</code>/<code>astream</code> 实现，注入 <code>response_format</code>/<code>format</code></td>
+</tr>
+<tr>
+<td>Router</td>
+<td><code>dev_agent_system/router.py</code></td>
+<td>按 Agent 与提示长度选择模型版本和生成参数</td>
+</tr>
+<tr>
+<td>Memory</td>
+<td><code>dev_agent_system/memory.py</code></td>
+<td>三层记忆：short/working/long，后端可切换 SQLite/Redis/ChromaDB</td>
+</tr>
+<tr>
+<td>MCP</td>
+<td><code>dev_agent_system/mcp.py</code></td>
+<td>工具沙箱：read_file / write_file / run_command，路径隔离+白名单</td>
+</tr>
+<tr>
+<td>Config</td>
+<td><code>dev_agent_system/config.py</code></td>
+<td><code>.env</code> + YAML 统一加载，环境变量覆盖</td>
+</tr>
+<tr>
+<td>Schemas</td>
+<td><code>dev_agent_system/schemas.py</code></td>
+<td>Pydantic 输出模型（<code>AgentOutput</code>/<code>AgentFile</code>/<code>DesignOutput</code>/...）与 <code>GraphState</code> TypedDict</td>
+</tr>
+<tr>
+<td>Human Approval</td>
+<td><code>dev_agent_system/human_approval.py</code></td>
+<td>SQLite 持久化的审批状态存储（<code>pending/approved/rejected</code>）</td>
+</tr>
+<tr>
+<td>Server</td>
+<td><code>dev_agent_system/server.py</code></td>
+<td>统一 FastAPI A2A 网关，含 <code>/orchestrate/stream</code> SSE 与审批端点</td>
+</tr>
+<tr>
+<td>A2A Node</td>
+<td><code>dev_agent_system/a2a_node.py</code></td>
+<td>独立启动单个 Agent 的 FastAPI 服务</td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-状态与产物流转">6. 状态与产物流转<a class="anchor" href="#6-状态与产物流转" title="Permanent link">&para;</a></h2>
+<pre><code class="language-mermaid">sequenceDiagram
+    participant U as User
+    participant O as Orchestrator
+    participant PM as ProductManagerAgent (optional)
+    participant A as ArchitectAgent
+    participant DBA as DBAAgent (optional)
+    participant C as CoderAgent
+    participant T as TesterAgent
+    participant D as DocsAgent
+    participant R as ReviewerAgent
+    participant S as SecurityAgent (optional)
+    participant H as HumanApprovalStore
+
+    U-&gt;&gt;O: 提交需求
+    O-&gt;&gt;O: 创建 workspace/&lt;request_id&gt;/
+    opt enable_product_manager
+        O-&gt;&gt;PM: 调用 product_manager_node
+        PM-&gt;&gt;PM: 写入 prd.md
+    end
+    O-&gt;&gt;A: 调用 architect_node
+    A-&gt;&gt;A: 写入 design.json
+    opt enable_dba
+        O-&gt;&gt;DBA: 调用 dba_node
+        DBA-&gt;&gt;DBA: 写入 schema.sql / migrations/
+    end
+    O-&gt;&gt;C: 调用 coder_node
+    C-&gt;&gt;C: 写入 main.py / module_*.py
+    par Tester 与 Docs 并行
+        O-&gt;&gt;T: 调用 tester
+        T-&gt;&gt;T: 生成 test_*.py 并运行 pytest
+        O-&gt;&gt;D: 调用 docs
+        D-&gt;&gt;D: 写入 docs/README.md / API.md
+    end
+    O-&gt;&gt;R: 调用 reviewer_node
+    R-&gt;&gt;R: 写入 review_report.json
+    opt enable_security
+        O-&gt;&gt;S: 调用 security_node
+        S-&gt;&gt;S: 写入 security_report.json
+    end
+    O-&gt;&gt;O: 判断 passed / 迭代
+    alt 通过且启用 DevOps 真实部署
+        O-&gt;&gt;H: 创建审批请求
+        O-&gt;&gt;U: 返回 awaiting_approval
+        U-&gt;&gt;H: approve / reject
+        H--&gt;&gt;O: 审批结果
+    end
+    O-&gt;&gt;U: 返回结果 + 产物列表
+</code></pre>
+<h2 id="7-安全边界">7. 安全边界<a class="anchor" href="#7-安全边界" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>沙箱路径隔离</strong>：所有 <code>write_file</code> / <code>read_file</code> 必须落在 <code>workspace/</code> 内。</li>
+<li><strong>命令白名单</strong>：仅允许 <code>python</code>、<code>pytest</code>、<code>git</code>、<code>ls</code>、<code>cat</code>、<code>echo</code>、<code>docker build</code> 及 Java/Go/TS 工具链开头命令。</li>
+<li><strong>命令黑名单</strong>：正则拦截 <code>rm -rf</code>、<code>curl | sh</code>、<code>wget -O-</code> 等危险模式。</li>
+<li><strong>PII 脱敏</strong>：<code>LLMClient._mask</code> 在调用 LLM 前移除 API Key、手机号、密码。</li>
+<li><strong>HITL 原则</strong>：DevOps 真实部署（<code>DEVOPS_DRY_RUN=false</code>）等高风险操作默认要求人工确认。</li>
+<li><strong>审批持久化</strong>：<code>HumanApprovalStore</code> 将 <code>pending/approved/rejected</code> 状态持久化到 SQLite，Server 提供 <code>/tasks/{id}/approval</code>、<code>/approve</code>、<code>/reject</code> 端点。</li>
+</ul>
+<h2 id="8-扩展点">8. 扩展点<a class="anchor" href="#8-扩展点" title="Permanent link">&para;</a></h2>
+<ul>
+<li>新增 Agent：继承 <code>BaseAgent</code>，实现 <code>build_prompt</code> 与 <code>postprocess</code>。</li>
+<li>新增工具：在 <code>MCPToolRegistry.register</code> 中注册，或在 <code>ToolSandbox</code> 中新增类方法。</li>
+<li>新增记忆后端：实现 <code>MemoryBackend</code> 协议，在 <code>_create_backend</code> 中注册。</li>
+<li>新增模型路由策略：扩展 <code>ModelRouter.resolve</code> 的复杂度判定逻辑。</li>
+</ul>
+<h2 id="9-部署形态">9. 部署形态<a class="anchor" href="#9-部署形态" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>形态</th>
+<th>入口</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CLI</td>
+<td><code>python -m dev_agent_system.main "需求"</code></td>
+<td>本地单次执行</td>
+</tr>
+<tr>
+<td>统一网关</td>
+<td><code>python -m dev_agent_system.server --port 8000</code></td>
+<td>多 Agent 合一，含 SSE 流式与审批端点</td>
+</tr>
+<tr>
+<td>独立节点</td>
+<td><code>python -m dev_agent_system.a2a_node --agent coder --port 8082</code></td>
+<td>A2A 微服务</td>
+</tr>
+<tr>
+<td>集群</td>
+<td><code>python scripts/run_a2a_cluster.py</code></td>
+<td>同时启动 6 个核心节点（可按需扩展）</td>
+</tr>
+<tr>
+<td>Docker</td>
+<td><code>docker-compose up --build -d</code></td>
+<td>容器化部署</td>
+</tr>
+</tbody>
+</table>
+</main>
+</div>
+</body>
+</html>

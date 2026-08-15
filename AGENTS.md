@@ -76,13 +76,14 @@ should_continue? （条件边）
 ## 4. 如何新增一个 Agent
 
 1. 在 `dev_agent_system/agents.py` 中继承 `BaseAgent` 实现新 Agent。
-2. 在 `dev_agent_system/prompts.yaml` 中添加该 Agent 的 system prompt。
-3. 在 `dev_agent_system/agent_cards.json` 中添加 A2A Agent Card。
-4. 在 `dev_agent_system/orchestrator.py` 的 `__init__` 中注册 Agent 实例。
-5. 如果该 Agent 需要在工作流中显式执行，在 `orchestrator.py` 的 `StateGraph` 中添加节点与边。
-6. 在 `config/model.yaml` 中锁定该 Agent 使用的模型版本。
-7. 在 `tests/` 中补充对该 Agent 输入输出格式的单元测试。
-8. 更新 `README.md` 与 `CHANGELOG.md`。
+2. 在 `dev_agent_system/prompts.yaml` 中添加该 Agent 的 system prompt，要求输出合法 JSON。
+3. 可选：在 `BaseAgent.__init__` 中为该 Agent 设置 `report_schema`（Pydantic 模型）与 `summary_budget`（摘要长度上限）。
+4. 在 `dev_agent_system/agent_cards.json` 中添加 A2A Agent Card。
+5. 在 `dev_agent_system/orchestrator.py` 的 `__init__` 中注册 Agent 实例。
+6. 如果该 Agent 需要在工作流中显式执行，在 `orchestrator.py` 的 `StateGraph` 中添加节点与边。
+7. 在 `config/model.yaml` 中锁定该 Agent 使用的模型版本。
+8. 在 `tests/` 中补充对该 Agent 输入输出格式与摘要行为的单元测试。
+9. 更新 `README.md`、对应 `docs/` 文档与 `CHANGELOG.md`。
 
 ## 5. 配置、版本管理与 Git 分支 SOP
 
@@ -95,8 +96,11 @@ should_continue? （条件边）
 | Agent Card | `dev_agent_system/agent_cards.json` | Capability 变更时更新 |
 | 模型版本 | `config/model.yaml` | 锁定到具体版本号，禁止 `latest` |
 | MCP 配置 | `config/mcp.yaml` | 工具增删时更新 |
-| 评估数据集 | `tests/eval_dataset.json` | 当前 15 条，新增用例时更新 |
+| 评估数据集 | `tests/eval_dataset.json` | 当前 18 条，新增用例时更新 |
 | 运行环境 | `requirements.txt` | 锁定依赖版本 |
+| 生成器规范 | `docs/agent_generator_spec.md` / `.html` | Agent/Prompt/源码约定变更时更新 |
+| 架构回顾 | `docs/agent_framework_retrospective.md` / `.html` | 架构四要素映射变化时更新 |
+| 文档生成器 | `scripts/generate_docs.py` | HTML 生成逻辑或样式变化时更新 |
 
 ### 5.2 语义化版本规范
 

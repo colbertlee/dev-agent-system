@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AGENTS.md — 多 Agent 系统开发过程指导</title>
+<style>
+:root {
+  --bg: #f6f8fa;
+  --fg: #1f2328;
+  --muted: #656d76;
+  --card: #ffffff;
+  --border: #d1d9e0;
+  --accent: #0969da;
+  --accent-light: #ddf4ff;
+  --code-bg: #f3f4f6;
+  --shadow: 0 2px 8px rgba(31, 35, 40, 0.04);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --fg: #c9d1d9;
+    --muted: #8b949e;
+    --card: #161b22;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-light: #112538;
+    --code-bg: #21262d;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.7;
+}
+header {
+  background: linear-gradient(135deg, var(--accent), #0550ae);
+  color: #fff;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+header h1 { margin: 0 0 .5rem; font-size: 1.9rem; }
+header p { margin: 0; opacity: .9; font-size: 1rem; }
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+}
+aside.toc {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+aside.toc h2 { margin: 0 0 .8rem; font-size: 1rem; color: var(--fg); }
+aside.toc ul { list-style: none; padding: 0; margin: 0; }
+aside.toc li { margin: .35rem 0; }
+aside.toc a { text-decoration: none; color: var(--muted); font-size: .88rem; display: block; padding: .15rem 0; }
+aside.toc a:hover { color: var(--accent); }
+aside.toc ul ul { padding-left: .8rem; }
+main {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 2.4rem;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+main h1 { font-size: 1.75rem; margin-top: 0; border-bottom: 2px solid var(--accent); padding-bottom: .5rem; }
+main h2 { font-size: 1.4rem; margin-top: 2.2rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+main h3 { font-size: 1.15rem; margin-top: 1.6rem; color: var(--accent); }
+main h4 { font-size: 1.05rem; margin-top: 1.3rem; }
+main p { margin: .9rem 0; }
+main a { color: var(--accent); text-decoration: none; }
+main a:hover { text-decoration: underline; }
+main ul, main ol { margin: .8rem 0; padding-left: 1.5rem; }
+main li { margin: .35rem 0; }
+main blockquote {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-light);
+  padding: .75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .92rem;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: .65rem .85rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--bg); font-weight: 600; }
+tr:nth-child(even) { background: rgba(0,0,0,.015); }
+@media (prefers-color-scheme: dark) { tr:nth-child(even) { background: rgba(255,255,255,.025); } }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: .88rem;
+}
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: var(--code-bg);
+  padding: .15rem .35rem;
+  border-radius: 4px;
+  font-size: .9em;
+}
+pre code { background: transparent; padding: 0; font-size: .88rem; }
+main img { max-width: 100%; }
+.anchor {
+  margin-left: .4rem;
+  color: var(--muted);
+  font-size: .8em;
+  text-decoration: none;
+  visibility: hidden;
+}
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor { visibility: visible; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  aside.toc { position: static; max-height: none; margin-bottom: 1rem; }
+  main { padding: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>AGENTS.md — 多 Agent 系统开发过程指导</h1>
+  
+</header>
+<div class="layout">
+<aside class="toc">
+  <h2>目录</h2>
+
+<ul>
+<li><a href="#agents-md-多-agent-系统开发过程指导">AGENTS.md — 多 Agent 系统开发过程指导</a><ul>
+<li><a href="#1-系统目标">1. 系统目标</a></li>
+<li><a href="#2-角色与职责">2. 角色与职责</a></li>
+<li><a href="#3-状态图-dag">3. 状态图（DAG）</a></li>
+<li><a href="#4-如何新增一个-agent">4. 如何新增一个 Agent</a></li>
+<li><a href="#5-配置-版本管理与-git-分支-sop">5. 配置、版本管理与 Git 分支 SOP</a><ul>
+<li><a href="#5-1-需要版本化的资产">5.1 需要版本化的资产</a></li>
+<li><a href="#5-2-语义化版本规范">5.2 语义化版本规范</a></li>
+<li><a href="#5-3-git-分支策略">5.3 Git 分支策略</a></li>
+<li><a href="#5-4-发布流程脚本">5.4 发布流程脚本</a></li>
+</ul>
+</li>
+<li><a href="#6-测试策略">6. 测试策略</a></li>
+<li><a href="#7-安全规则">7. 安全规则</a></li>
+<li><a href="#8-常用命令">8. 常用命令</a><ul>
+<li><a href="#跨平台部署">跨平台部署</a></li>
+</ul>
+</li>
+<li><a href="#9-扩展方向">9. 扩展方向</a></li>
+<li><a href="#10-生成器规范">10. 生成器规范</a></li>
+</ul>
+</li>
+</ul>
+
+</aside>
+<main>
+<h1 id="agents-md-多-agent-系统开发过程指导">AGENTS.md — 多 Agent 系统开发过程指导<a class="anchor" href="#agents-md-多-agent-系统开发过程指导" title="Permanent link">&para;</a></h1>
+<p>本文件记录 <code>dev_agent_system</code> 的协作规则、状态图、Agent 扩展方式与版本管理要求，用于指导后续多 Agent 开发。</p>
+<h2 id="1-系统目标">1. 系统目标<a class="anchor" href="#1-系统目标" title="Permanent link">&para;</a></h2>
+<p>构建一个面向个人开发者的软件工程多 Agent 协作系统：</p>
+<ul>
+<li>通过 A2A 协议让 Agent 互相发现与通信。</li>
+<li>通过 MCP 工具沙箱让 Agent 安全地读写文件、执行命令。</li>
+<li>通过 LangGraph DAG 编排复杂工作流，实现可追踪、可迭代、可并行的开发过程。</li>
+</ul>
+<h2 id="2-角色与职责">2. 角色与职责<a class="anchor" href="#2-角色与职责" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Agent</th>
+<th>职责</th>
+<th>输入</th>
+<th>输出</th>
+<th>自治级别</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ProductManager</td>
+<td>需求澄清、PRD、用户故事、验收标准</td>
+<td>用户自然语言需求</td>
+<td><code>prd.md</code>、用户故事列表</td>
+<td>L2</td>
+</tr>
+<tr>
+<td>Architect</td>
+<td>需求分析、架构设计、技术选型</td>
+<td>用户自然语言需求 / ProductManager PRD</td>
+<td>架构文档、API 契约、Mermaid 图</td>
+<td>L2</td>
+</tr>
+<tr>
+<td>DBA</td>
+<td>数据库 Schema 与迁移脚本</td>
+<td>Architect 架构设计</td>
+<td><code>schema.sql</code>、迁移脚本</td>
+<td>L2</td>
+</tr>
+<tr>
+<td>Coder</td>
+<td>代码实现、自测</td>
+<td>Architect 输出 / DBA 设计</td>
+<td>可运行代码、CoderReport JSON</td>
+<td>L2</td>
+</tr>
+<tr>
+<td>Tester</td>
+<td>测试生成与执行</td>
+<td>Coder 输出、API 契约</td>
+<td>测试报告、覆盖率 JSON</td>
+<td>L3</td>
+</tr>
+<tr>
+<td>Reviewer</td>
+<td>独立审查代码、测试、文档</td>
+<td>需求 + 中间产物</td>
+<td>审查报告 JSON</td>
+<td>L2</td>
+</tr>
+<tr>
+<td>Security</td>
+<td>独立安全审查</td>
+<td>需求 + 代码 + 测试 + 架构</td>
+<td><code>security_report.json</code></td>
+<td>L2</td>
+</tr>
+<tr>
+<td>Docs</td>
+<td>文档同步</td>
+<td>架构 + 代码</td>
+<td>README、API 文档</td>
+<td>L3</td>
+</tr>
+<tr>
+<td>DevOps</td>
+<td>CI/CD、部署脚本</td>
+<td>代码</td>
+<td>Dockerfile、CI 配置、部署状态</td>
+<td>L2</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>状态传递原则</strong>：Agent 运行后，<code>GraphState</code> 中只保留 <code>summary_budget</code> 控制的关键信息摘要（JSON 格式）；完整产物写入 <code>workspace/</code> 文件，原始 LLM 输出不进入下游 prompt/checkpoint。</p>
+</blockquote>
+<p>支撑组件：</p>
+<ul>
+<li><strong>Orchestrator</strong>：LangGraph StateGraph 编排器，负责任务分解与状态流转。</li>
+<li><strong>Memory</strong>：三层记忆（短期/工作/长期），默认内存+SQLite 降级。</li>
+<li><strong>Scheduler</strong>：通过 LangGraph 条件边控制迭代，最多 10 轮。</li>
+</ul>
+<h2 id="3-状态图-dag">3. 状态图（DAG）<a class="anchor" href="#3-状态图-dag" title="Permanent link">&para;</a></h2>
+<pre><code>start
+ │
+ ▼
+product_manager_node  (可选 enable_product_manager)
+ │
+ ▼
+architect_node
+ │
+ ▼
+dba_node  (可选 enable_dba)
+ │
+ ▼
+coder_node
+ │
+ ▼
+tester_docs_node (Tester / Docs 并行)
+ │
+ ▼
+reviewer_node
+ │
+ ▼
+security_node  (可选 enable_security)
+ │
+ ▼
+should_continue? （条件边）
+ ┌──────────┴──────────┐
+ ▼                     ▼
+ end (completed)      architect_node (新一轮，最多 max_iterations 轮)
+</code></pre>
+<p>设计原则：</p>
+<ul>
+<li>无回流边：Reviewer 不直接修改 Coder 输出；未通过时由 Scheduler 发起新一轮。</li>
+<li>顺序依赖：Coder 必须在 Tester 之前（Tester 需要读取代码文件生成测试）。</li>
+<li>并行节点：Tester 与 Docs 在 Coder 完成后 <code>asyncio.gather</code> 并行执行。</li>
+<li>状态集中：所有节点共享 <code>GraphState</code>，节点返回更新后的部分字段。</li>
+<li>产物落地：每个 Agent 通过 <code>ToolSandbox</code> 把产物写入以 <code>request_id</code> 隔离的 <code>workspace/</code>，最终由 Reviewer 写入 <code>review_report.json</code>。</li>
+</ul>
+<h2 id="4-如何新增一个-agent">4. 如何新增一个 Agent<a class="anchor" href="#4-如何新增一个-agent" title="Permanent link">&para;</a></h2>
+<ol>
+<li>在 <code>dev_agent_system/agents.py</code> 中继承 <code>BaseAgent</code> 实现新 Agent。</li>
+<li>在 <code>dev_agent_system/prompts.yaml</code> 中添加该 Agent 的 system prompt，要求输出合法 JSON。</li>
+<li>可选：在 <code>BaseAgent.__init__</code> 中为该 Agent 设置 <code>report_schema</code>（Pydantic 模型）与 <code>summary_budget</code>（摘要长度上限）。</li>
+<li>在 <code>dev_agent_system/agent_cards.json</code> 中添加 A2A Agent Card。</li>
+<li>在 <code>dev_agent_system/orchestrator.py</code> 的 <code>__init__</code> 中注册 Agent 实例。</li>
+<li>如果该 Agent 需要在工作流中显式执行，在 <code>orchestrator.py</code> 的 <code>StateGraph</code> 中添加节点与边。</li>
+<li>在 <code>config/model.yaml</code> 中锁定该 Agent 使用的模型版本。</li>
+<li>在 <code>tests/</code> 中补充对该 Agent 输入输出格式与摘要行为的单元测试。</li>
+<li>更新 <code>README.md</code>、对应 <code>docs/</code> 文档与 <code>CHANGELOG.md</code>。</li>
+</ol>
+<h2 id="5-配置-版本管理与-git-分支-sop">5. 配置、版本管理与 Git 分支 SOP<a class="anchor" href="#5-配置-版本管理与-git-分支-sop" title="Permanent link">&para;</a></h2>
+<h3 id="5-1-需要版本化的资产">5.1 需要版本化的资产<a class="anchor" href="#5-1-需要版本化的资产" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>资产</th>
+<th>位置</th>
+<th>变更时记录</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>代码</td>
+<td><code>dev_agent_system/</code></td>
+<td>常规 Git commit</td>
+</tr>
+<tr>
+<td>System Prompt</td>
+<td><code>dev_agent_system/prompts.yaml</code></td>
+<td>单独 commit，说明原因</td>
+</tr>
+<tr>
+<td>Agent Card</td>
+<td><code>dev_agent_system/agent_cards.json</code></td>
+<td>Capability 变更时更新</td>
+</tr>
+<tr>
+<td>模型版本</td>
+<td><code>config/model.yaml</code></td>
+<td>锁定到具体版本号，禁止 <code>latest</code></td>
+</tr>
+<tr>
+<td>MCP 配置</td>
+<td><code>config/mcp.yaml</code></td>
+<td>工具增删时更新</td>
+</tr>
+<tr>
+<td>评估数据集</td>
+<td><code>tests/eval_dataset.json</code></td>
+<td>当前 18 条，新增用例时更新</td>
+</tr>
+<tr>
+<td>运行环境</td>
+<td><code>requirements.txt</code></td>
+<td>锁定依赖版本</td>
+</tr>
+<tr>
+<td>生成器规范</td>
+<td><code>docs/agent_generator_spec.md</code> / <code>.html</code></td>
+<td>Agent/Prompt/源码约定变更时更新</td>
+</tr>
+<tr>
+<td>架构回顾</td>
+<td><code>docs/agent_framework_retrospective.md</code> / <code>.html</code></td>
+<td>架构四要素映射变化时更新</td>
+</tr>
+<tr>
+<td>文档生成器</td>
+<td><code>scripts/generate_docs.py</code></td>
+<td>HTML 生成逻辑或样式变化时更新</td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-2-语义化版本规范">5.2 语义化版本规范<a class="anchor" href="#5-2-语义化版本规范" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>MAJOR</strong>：Agent 角色增删、A2A 协议不兼容变更</li>
+<li><strong>MINOR</strong>：新增功能/工具、Prompt 重大优化</li>
+<li><strong>PATCH</strong>：Bug 修复、Prompt 微调、依赖更新</li>
+</ul>
+<h3 id="5-3-git-分支策略">5.3 Git 分支策略<a class="anchor" href="#5-3-git-分支策略" title="Permanent link">&para;</a></h3>
+<p>采用 Trunk-Based 简化版：</p>
+<table>
+<thead>
+<tr>
+<th>分支</th>
+<th>用途</th>
+<th>规则</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main</code></td>
+<td>生产就绪版本</td>
+<td>每次合并 = 一次 Release，必须通过全部测试</td>
+</tr>
+<tr>
+<td><code>dev</code></td>
+<td>日常开发分支</td>
+<td>功能完成后 merge 到 main</td>
+</tr>
+<tr>
+<td><code>feature/xxx</code></td>
+<td>新功能/新 Agent 开发</td>
+<td>从 dev 切出，合并回 dev</td>
+</tr>
+<tr>
+<td><code>hotfix/xxx</code></td>
+<td>紧急修复</td>
+<td>从 main 切出，修复后 merge 到 main 和 dev</td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-4-发布流程脚本">5.4 发布流程脚本<a class="anchor" href="#5-4-发布流程脚本" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash"># 1. 预发布检查
+bash pre-release-check.sh
+
+# 2. Git SOP 检查
+bash scripts/git-sop-check.sh
+
+# 3. 提交并推送到 GitHub
+bash scripts/push_to_github.sh &quot;feat: 新增 xxx&quot;
+# Windows 下使用：.\scripts\push_to_github.ps1 -Message &quot;feat: 新增 xxx&quot;
+
+# 4. 升级版本（patch / minor / major）
+python scripts/bump-version.py patch
+
+# 5. 完整发布流程（先检查、后升级版本）
+bash scripts/release.sh patch
+</code></pre>
+<p><code>scripts/bump-version.py</code> 会自动更新 <code>dev_agent_system/__init__.py</code> 与 <code>CHANGELOG.md</code>，请在生成后手动填充 CHANGELOG 内容，再提交并打 tag。</p>
+<p><code>push_to_github.sh</code> / <code>push_to_github.ps1</code> 会自动执行 pytest、检查分支命名、提交、推送，并在 <code>feature/*</code> 或 <code>hotfix/*</code> 分支尝试使用 <code>gh</code> 创建 Pull Request。</p>
+<h2 id="6-测试策略">6. 测试策略<a class="anchor" href="#6-测试策略" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>范围</th>
+<th>命令</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>单元测试</td>
+<td>Agent 输入输出、沙箱规则、幂等</td>
+<td><code>python -m pytest tests -q</code></td>
+</tr>
+<tr>
+<td>集成测试</td>
+<td>完整 DAG 流程</td>
+<td><code>python -m dev_agent_system.main "需求"</code></td>
+</tr>
+<tr>
+<td>评估数据集</td>
+<td>18 条真实需求（含 Java/Go/TypeScript）</td>
+<td>查看 <code>tests/eval_dataset.json</code></td>
+</tr>
+<tr>
+<td>预发布检查</td>
+<td>pytest + model.yaml + CHANGELOG + ChromaDB 备份</td>
+<td><code>bash pre-release-check.sh</code></td>
+</tr>
+</tbody>
+</table>
+<p>Mock LLM：测试通过 monkeypatch <code>LLMClient.chat</code> 实现，无需真实 API Key。</p>
+<h2 id="7-安全规则">7. 安全规则<a class="anchor" href="#7-安全规则" title="Permanent link">&para;</a></h2>
+<ol>
+<li>LLM 生成的代码不直接在宿主机执行，必须经过 <code>ToolSandbox</code>。</li>
+<li>文件操作限制在 <code>workspace/</code> 目录内，禁止目录穿越。</li>
+<li>终端命令白名单：<code>python</code>, <code>pytest</code>, <code>git</code>, <code>ls</code>, <code>cat</code>, <code>echo</code>, <code>docker build</code>，以及 Java/Go/TS 工具链 <code>mvn</code>, <code>gradle</code>, <code>javac</code>, <code>java</code>, <code>go</code>, <code>npm</code>, <code>npx</code>, <code>node</code>。</li>
+<li>黑名单拦截：<code>rm -rf</code>, <code>curl | sh</code>, <code>wget -O-</code> 等危险模式。</li>
+<li>命令执行默认超时 5 秒。</li>
+<li>调用 LLM 前自动脱敏 API Key、手机号、密码。</li>
+<li>涉及部署、资金、删除、发布的操作必须 Human-in-the-Loop（L2 以下）。</li>
+<li>DevOps 真实部署（<code>DEVOPS_DRY_RUN=false</code>）前会进入 <code>awaiting_approval</code> 状态。</li>
+<li>管理员可通过 <code>POST /tasks/{request_id}/approve</code> 批准，或 <code>POST /tasks/{request_id}/reject</code> 拒绝。</li>
+<li>审批状态由 <code>HumanApprovalStore</code> 持久化到 SQLite，路径可通过 <code>APPROVAL_DB</code> 环境变量配置。</li>
+<li>进阶安全：<code>security_scanner.py</code> 提供 Secret 扫描、依赖漏洞扫描与 <code>ContainerSandbox</code> 容器隔离；CI 通过 <code>.github/workflows/security.yml</code> 定时扫描。</li>
+</ol>
+<h2 id="8-常用命令">8. 常用命令<a class="anchor" href="#8-常用命令" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># 安装依赖
+pip install -r requirements.txt
+
+# 运行完整工作流
+python -m dev_agent_system.main &quot;你的需求&quot;
+
+# 启动统一 A2A 网关
+python -m dev_agent_system.server --port 8000
+
+# 启动 6 个独立 A2A Agent 服务
+python scripts/run_a2a_cluster.py
+
+# 或单独启动某个 Agent
+python -m dev_agent_system.a2a_node --agent architect --port 8081
+
+# 运行测试
+python -m pytest tests -q
+
+# 预发布检查
+bash pre-release-check.sh
+</code></pre>
+<p>GitHub Actions <code>.github/workflows/ci.yml</code> 会在 <code>push</code> / <code>pull_request</code> 时自动运行 pytest、语法检查、并校验 <code>config/model.yaml</code> 不含 <code>latest</code>。</p>
+<h3 id="跨平台部署">跨平台部署<a class="anchor" href="#跨平台部署" title="Permanent link">&para;</a></h3>
+<p>Windows:</p>
+<pre><code class="language-powershell">.\scripts\install_windows.ps1
+.\scripts\run_windows.ps1
+</code></pre>
+<p>Linux / macOS:</p>
+<pre><code class="language-bash">bash scripts/install_linux.sh
+bash scripts/run_linux.sh
+</code></pre>
+<p>Docker:</p>
+<pre><code class="language-bash">cp .env.example .env
+# 编辑 .env 填写 LLM_API_KEY
+docker-compose up --build -d
+</code></pre>
+<p>配置由 <code>dev_agent_system/config.py</code> 统一管理：<code>.env</code> 文件 &gt; <code>config/model.yaml</code> &gt; 环境变量 &gt; 默认值。</p>
+<h2 id="9-扩展方向">9. 扩展方向<a class="anchor" href="#9-扩展方向" title="Permanent link">&para;</a></h2>
+<ul>
+<li>接入真实 Redis + ChromaDB 替换内存降级实现。</li>
+<li>接入 <code>langgraph.checkpoint</code> 实现状态持久化与重放。</li>
+<li>增加更多垂直角色，如 Performance Agent、Cost Agent、Compliance Agent。</li>
+<li>对接 CI/CD 真实环境（GitHub Actions、Docker Registry）。</li>
+<li>接入真实 LLM 跑分，利用 <code>RegressionChecker</code> 做持续回归检测。</li>
+<li>进一步扩展语言模板（如 Rust / C# / Kotlin）。</li>
+<li>完善 Skill 系统：增加 Skill 签名校验、沙箱执行、版本管理与 Skill 市场协议；支持 Agent 间远程 Skill 调用。</li>
+</ul>
+<h2 id="10-生成器规范">10. 生成器规范<a class="anchor" href="#10-生成器规范" title="Permanent link">&para;</a></h2>
+<p>要从零复现或生成等价的多 Agent 系统，请参阅：</p>
+<ul>
+<li><a href="docs/agent_generator_spec.md">docs/agent_generator_spec.md</a> —— 可复现当前系统的完整生成规范（4-Block Framework + 每个 Agent 的 Prompting 模板 + 源码附录）</li>
+<li><a href="docs/agent_generator_spec.html">docs/agent_generator_spec.html</a> —— 带目录、响应式、暗色模式的离线 HTML 版本</li>
+</ul>
+</main>
+</div>
+</body>
+</html>

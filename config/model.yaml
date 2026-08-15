@@ -1,4 +1,4 @@
-# 各 Agent 使用的 LLM 模型版本，必须锁定到具体版本，禁止出现 "latest"
+# 各 Agent 使用的 LLM 模型版本，必须锁定到具体版本号，禁止使用滚动标签
 
 architect:
   model: gpt-4-0613

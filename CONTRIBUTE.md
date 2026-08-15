@@ -138,8 +138,10 @@ bash scripts/release.sh minor
 
 - [ ] `python -m pytest tests -q` 全绿
 - [ ] `config/model.yaml` 无 `latest`
-- [ ] `CHANGELOG.md` 已填充本次变更
+- [ ] `CHANGELOG.md` / `RELEASE_NOTES.md` 已填充本次变更
 - [ ] `AGENTS.md` / `README.md` / `ARCHITECTURE.md` 已同步
+- [ ] 文档变更涉及 `docs/*.md` 时，配套 `.html` 已通过 `python scripts/generate_docs.py` 重新生成（或同步手工更新）
+- [ ] `<ref_snippet>` 行号引用在重大代码改动后已重新核对
 
 ## 7. Pull Request 模板
 
@@ -156,8 +158,9 @@ bash scripts/release.sh minor
 - [ ] 手动验证 CLI / API / A2A 节点
 
 ## 文档
-- [ ] CHANGELOG.md 已更新
-- [ ] AGENTS.md / README.md 已同步（如适用）
+- [ ] CHANGELOG.md / RELEASE_NOTES.md 已更新
+- [ ] AGENTS.md / README.md / ARCHITECTURE.md 已同步（如适用）
+- [ ] `docs/*.md` 及配套 `docs/*.html` 已同步（如适用）
 - [ ] Prompt / Agent Card / 模型版本已版本化（如适用）
 ```
 

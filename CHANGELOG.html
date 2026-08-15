@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Changelog</title>
+<style>
+:root {
+  --bg: #f6f8fa;
+  --fg: #1f2328;
+  --muted: #656d76;
+  --card: #ffffff;
+  --border: #d1d9e0;
+  --accent: #0969da;
+  --accent-light: #ddf4ff;
+  --code-bg: #f3f4f6;
+  --shadow: 0 2px 8px rgba(31, 35, 40, 0.04);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --fg: #c9d1d9;
+    --muted: #8b949e;
+    --card: #161b22;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-light: #112538;
+    --code-bg: #21262d;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.7;
+}
+header {
+  background: linear-gradient(135deg, var(--accent), #0550ae);
+  color: #fff;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+header h1 { margin: 0 0 .5rem; font-size: 1.9rem; }
+header p { margin: 0; opacity: .9; font-size: 1rem; }
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+}
+aside.toc {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+aside.toc h2 { margin: 0 0 .8rem; font-size: 1rem; color: var(--fg); }
+aside.toc ul { list-style: none; padding: 0; margin: 0; }
+aside.toc li { margin: .35rem 0; }
+aside.toc a { text-decoration: none; color: var(--muted); font-size: .88rem; display: block; padding: .15rem 0; }
+aside.toc a:hover { color: var(--accent); }
+aside.toc ul ul { padding-left: .8rem; }
+main {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 2.4rem;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+main h1 { font-size: 1.75rem; margin-top: 0; border-bottom: 2px solid var(--accent); padding-bottom: .5rem; }
+main h2 { font-size: 1.4rem; margin-top: 2.2rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+main h3 { font-size: 1.15rem; margin-top: 1.6rem; color: var(--accent); }
+main h4 { font-size: 1.05rem; margin-top: 1.3rem; }
+main p { margin: .9rem 0; }
+main a { color: var(--accent); text-decoration: none; }
+main a:hover { text-decoration: underline; }
+main ul, main ol { margin: .8rem 0; padding-left: 1.5rem; }
+main li { margin: .35rem 0; }
+main blockquote {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-light);
+  padding: .75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .92rem;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: .65rem .85rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--bg); font-weight: 600; }
+tr:nth-child(even) { background: rgba(0,0,0,.015); }
+@media (prefers-color-scheme: dark) { tr:nth-child(even) { background: rgba(255,255,255,.025); } }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: .88rem;
+}
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: var(--code-bg);
+  padding: .15rem .35rem;
+  border-radius: 4px;
+  font-size: .9em;
+}
+pre code { background: transparent; padding: 0; font-size: .88rem; }
+main img { max-width: 100%; }
+.anchor {
+  margin-left: .4rem;
+  color: var(--muted);
+  font-size: .8em;
+  text-decoration: none;
+  visibility: hidden;
+}
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor { visibility: visible; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  aside.toc { position: static; max-height: none; margin-bottom: 1rem; }
+  main { padding: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Changelog</h1>
+  
+</header>
+<div class="layout">
+<aside class="toc">
+  <h2>目录</h2>
+
+<ul>
+<li><a href="#changelog">Changelog</a><ul>
+<li><a href="#0-22-1-2026-08-14">[0.22.1] - 2026-08-14</a><ul>
+<li><a href="#added">Added</a></li>
+<li><a href="#changed">Changed</a></li>
+<li><a href="#fixed">Fixed</a></li>
+<li><a href="#security">Security</a></li>
+<li><a href="#model-changes">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-22-0-2026-08-14">[0.22.0] - 2026-08-14</a><ul>
+<li><a href="#added_1">Added</a></li>
+<li><a href="#changed_1">Changed</a></li>
+<li><a href="#fixed_1">Fixed</a></li>
+<li><a href="#security_1">Security</a></li>
+<li><a href="#model-changes_1">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-21-0-2026-08-14">[0.21.0] - 2026-08-14</a><ul>
+<li><a href="#added_2">Added</a></li>
+<li><a href="#changed_2">Changed</a></li>
+<li><a href="#fixed_2">Fixed</a></li>
+<li><a href="#security_2">Security</a></li>
+<li><a href="#model-changes_2">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-20-1-2026-08-12">[0.20.1] - 2026-08-12</a><ul>
+<li><a href="#added_3">Added</a></li>
+<li><a href="#changed_3">Changed</a></li>
+<li><a href="#model-changes_3">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-20-0-2026-08-11">[0.20.0] - 2026-08-11</a><ul>
+<li><a href="#added_4">Added</a></li>
+<li><a href="#changed_4">Changed</a></li>
+<li><a href="#model-changes_4">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-19-0-2026-08-11">[0.19.0] - 2026-08-11</a><ul>
+<li><a href="#added_5">Added</a></li>
+<li><a href="#changed_5">Changed</a></li>
+<li><a href="#model-changes_5">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-18-0-2026-08-11">[0.18.0] - 2026-08-11</a><ul>
+<li><a href="#added_6">Added</a></li>
+<li><a href="#changed_6">Changed</a></li>
+<li><a href="#model-changes_6">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-17-0-2026-08-11">[0.17.0] - 2026-08-11</a><ul>
+<li><a href="#added_7">Added</a></li>
+<li><a href="#changed_7">Changed</a></li>
+<li><a href="#model-changes_7">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-16-0-2026-08-11">[0.16.0] - 2026-08-11</a><ul>
+<li><a href="#added_8">Added</a></li>
+<li><a href="#changed_8">Changed</a></li>
+<li><a href="#model-changes_8">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-15-0-2026-08-11">[0.15.0] - 2026-08-11</a><ul>
+<li><a href="#added_9">Added</a></li>
+<li><a href="#changed_9">Changed</a></li>
+<li><a href="#model-changes_9">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-14-0-2026-08-11">[0.14.0] - 2026-08-11</a><ul>
+<li><a href="#added_10">Added</a></li>
+<li><a href="#changed_10">Changed</a></li>
+<li><a href="#model-changes_10">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-13-0-2026-08-11">[0.13.0] - 2026-08-11</a><ul>
+<li><a href="#added_11">Added</a></li>
+<li><a href="#changed_11">Changed</a></li>
+<li><a href="#model-changes_11">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-12-0-2026-08-11">[0.12.0] - 2026-08-11</a><ul>
+<li><a href="#added_12">Added</a></li>
+<li><a href="#changed_12">Changed</a></li>
+<li><a href="#fixed_3">Fixed</a></li>
+<li><a href="#model-changes_12">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-11-0-2026-08-11">[0.11.0] - 2026-08-11</a><ul>
+<li><a href="#added_13">Added</a></li>
+<li><a href="#changed_13">Changed</a></li>
+<li><a href="#fixed_4">Fixed</a></li>
+<li><a href="#model-changes_13">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-10-0-2026-08-11">[0.10.0] - 2026-08-11</a><ul>
+<li><a href="#added_14">Added</a></li>
+<li><a href="#changed_14">Changed</a></li>
+<li><a href="#fixed_5">Fixed</a></li>
+<li><a href="#model-changes_14">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-9-0-2026-08-11">[0.9.0] - 2026-08-11</a><ul>
+<li><a href="#added_15">Added</a></li>
+<li><a href="#changed_15">Changed</a></li>
+<li><a href="#fixed_6">Fixed</a></li>
+<li><a href="#model-changes_15">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-8-0-2026-08-11">[0.8.0] - 2026-08-11</a><ul>
+<li><a href="#added_16">Added</a></li>
+<li><a href="#changed_16">Changed</a></li>
+<li><a href="#fixed_7">Fixed</a></li>
+<li><a href="#model-changes_16">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-7-0-2026-08-11">[0.7.0] - 2026-08-11</a><ul>
+<li><a href="#added_17">Added</a></li>
+<li><a href="#changed_17">Changed</a></li>
+<li><a href="#fixed_8">Fixed</a></li>
+<li><a href="#security_3">Security</a></li>
+<li><a href="#model-changes_17">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-6-0-2026-08-11">[0.6.0] - 2026-08-11</a><ul>
+<li><a href="#added_18">Added</a></li>
+<li><a href="#changed_18">Changed</a></li>
+<li><a href="#fixed_9">Fixed</a></li>
+<li><a href="#security_4">Security</a></li>
+<li><a href="#model-changes_18">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-5-0-2026-08-11">[0.5.0] - 2026-08-11</a><ul>
+<li><a href="#added_19">Added</a></li>
+<li><a href="#changed_19">Changed</a></li>
+<li><a href="#fixed_10">Fixed</a></li>
+<li><a href="#security_5">Security</a></li>
+<li><a href="#model-changes_19">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-4-0-2026-08-11">[0.4.0] - 2026-08-11</a><ul>
+<li><a href="#added_20">Added</a></li>
+<li><a href="#changed_20">Changed</a></li>
+<li><a href="#fixed_11">Fixed</a></li>
+<li><a href="#security_6">Security</a></li>
+<li><a href="#model-changes_20">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-3-0-2026-08-11">[0.3.0] - 2026-08-11</a><ul>
+<li><a href="#added_21">Added</a></li>
+<li><a href="#changed_21">Changed</a></li>
+<li><a href="#fixed_12">Fixed</a></li>
+<li><a href="#security_7">Security</a></li>
+<li><a href="#model-changes_21">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-2-0-2026-08-09">[0.2.0] - 2026-08-09</a><ul>
+<li><a href="#added_22">Added</a></li>
+<li><a href="#fixed_13">Fixed</a></li>
+<li><a href="#model-changes_22">Model Changes</a></li>
+</ul>
+</li>
+<li><a href="#0-1-0-2026-08-09">[0.1.0] - 2026-08-09</a><ul>
+<li><a href="#added_23">Added</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+</aside>
+<main>
+<h1 id="changelog">Changelog<a class="anchor" href="#changelog" title="Permanent link">&para;</a></h1>
+<p>All notable changes to this project will be documented in this file.</p>
+<p>The format is based on <a href="https://keepachangelog.com/en/1.0.0/">Keep a Changelog</a>,
+and this project adheres to <a href="https://semver.org/spec/v2.0.0.html">Semantic Versioning</a>.</p>
+<h2 id="0-22-1-2026-08-14">[0.22.1] - 2026-08-14<a class="anchor" href="#0-22-1-2026-08-14" title="Permanent link">&para;</a></h2>
+<h3 id="added">Added<a class="anchor" href="#added" title="Permanent link">&para;</a></h3>
+<ul>
+<li>新增 <code>scripts/generate_docs.py</code>，把项目 Markdown 文档转换为响应式、带目录、支持暗色模式的离线 HTML。</li>
+<li><code>scripts/sync_spec.py</code> 自动同步 <code>docs/agent_generator_spec.md</code> 与 <code>docs/agent_framework_retrospective.md</code> 中的版本号、系统描述与源码附录。</li>
+</ul>
+<h3 id="changed">Changed<a class="anchor" href="#changed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>文档全面更新到 v0.22.0：</li>
+<li><code>README.md</code>：9 个核心/可选 Agent、结构化输出、Human-in-the-Loop、状态摘要等设计要点与项目结构。</li>
+<li><code>AGENTS.md</code>：新增 Agent 步骤加入 <code>report_schema</code> / <code>summary_budget</code> 与 <code>docs/*.html</code> 同步要求；版本化资产表扩充。</li>
+<li><code>ARCHITECTURE.md</code>：DAG 增加 <code>product_manager</code> / <code>dba</code> / <code>security</code> / <code>approval_gate</code>，新增 <code>HumanApprovalStore</code> / <code>Schemas</code> 层，Sequence 图包含 HITL。</li>
+<li><code>CONTRIBUTE.md</code>：发布与 PR checklist 增加 <code>CHANGELOG/RELEASE_NOTES</code>、<code>docs/*.md</code> 与 <code>.html</code> 同步、行号引用核对。</li>
+<li><code>docs/prompt_templates.md</code>：新增 <code>ProductManager</code> / <code>Security</code> / <code>DBA</code> 到 Prompt 清单，增加 JSON Mode / Pydantic 校验章节。</li>
+<li><code>docs/usage_operations.md</code>：补充环境变量、<code>/tasks/{id}/approval</code>、<code>/tasks/{id}/approve</code>、<code>/tasks/{id}/reject</code>、<code>/metrics</code>、<code>/skills</code> 等端点。</li>
+<li><code>docs/agent_generator_spec.md</code>：版本升级到 v0.22.0，重抽全部源码附录，新增 <code>human_approval.py</code> 附录，BaseAgent/Orchestrator 描述加入 <code>json_mode</code>、<code>report_schema</code>、<code>summary_budget</code>、<code>approval_gate</code>。</li>
+<li><code>docs/agent_framework_retrospective.md</code>：版本范围扩展到 v0.22.0，新增 v0.21/v0.22 四要素落地小节，<code>&lt;ref_snippet&gt;</code> 行号引用统一改为 <code>&lt;ref_file&gt;</code> 文件引用，避免代码行号失步。</li>
+<li><code>dev_agent_system/__init__.py</code> 版本号更新为 <code>0.22.1</code>。</li>
+<li><code>requirements.txt</code> 增加 <code>markdown==3.7</code> 作为文档生成依赖。</li>
+</ul>
+<h3 id="fixed">Fixed<a class="anchor" href="#fixed" title="Permanent link">&para;</a></h3>
+<ul>
+<li>修复 <code>docs/agent_generator_spec.md</code> 与 <code>docs/agent_framework_retrospective.md</code> 中源码附录、行号引用、版本号与实际 v0.22.0 代码不一致的问题。</li>
+<li>修复 <code>generate_docs.py</code> 生成 HTML 标题携带 <code>¶</code> 符号的问题，并在生成 HTML 时自动把 <code>&lt;ref_file&gt;</code> / <code>&lt;ref_snippet&gt;</code> 引用转换为相对链接。</li>
+</ul>
+<h3 id="security">Security<a class="anchor" href="#security" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h3 id="model-changes">Model Changes<a class="anchor" href="#model-changes" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-22-0-2026-08-14">[0.22.0] - 2026-08-14<a class="anchor" href="#0-22-0-2026-08-14" title="Permanent link">&para;</a></h2>
+<h3 id="added_1">Added<a class="anchor" href="#added_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>多 Agent 间状态精简传输：</li>
+<li><code>BaseAgent</code> 新增 <code>summary_budget</code>（按场景复杂度配置）与 <code>_summarize_result</code>：每个 Agent 运行后把结果压缩为合法 JSON 摘要，丢弃原始 LLM 输出和内部元数据。</li>
+<li><code>_truncate_for_summary</code> 递归截断长字符串/长列表/嵌套 dict，保证摘要既保留关键信息又控制 Token 消耗。</li>
+<li><code>BaseAgent.run</code> 把 <code>result["output"]</code> 替换为摘要，并把记忆层 <code>last_output</code> 也改为摘要，避免无效信息在 prompt 和 checkpoint 中膨胀。</li>
+<li><code>Orchestrator._collect_artifacts</code> 对 <code>tests</code> 优先使用 <code>tester.report</code> 原始 stdout，保留排障信息。</li>
+<li>新增 <code>tests/test_context_compression.py</code> 覆盖摘要字段过滤、递归截断与自适应长度。</li>
+</ul>
+<h3 id="changed_1">Changed<a class="anchor" href="#changed_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>为各 Agent 配置差异化 <code>summary_budget</code>（Architect/DBA 1500–2000，Tester/Reviewer/Security 1200，Docs 800，DevOps 1000 等），在信息完整与 Token 消耗之间取得平衡。</li>
+<li><code>dev_agent_system/__init__.py</code> 版本号更新为 <code>0.22.0</code>。</li>
+</ul>
+<h3 id="fixed_1">Fixed<a class="anchor" href="#fixed_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>修复 Agent 间传递原始 LLM 输出导致上下文膨胀的问题。</li>
+</ul>
+<h3 id="security_1">Security<a class="anchor" href="#security_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h3 id="model-changes_1">Model Changes<a class="anchor" href="#model-changes_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-21-0-2026-08-14">[0.21.0] - 2026-08-14<a class="anchor" href="#0-21-0-2026-08-14" title="Permanent link">&para;</a></h2>
+<h3 id="added_2">Added<a class="anchor" href="#added_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>结构化 JSON 输出与 Pydantic 校验：</li>
+<li><code>LLMClient</code> / <code>LLMProvider</code> 增加 <code>json_mode</code> 参数，OpenAI/DeepSeek 调用时使用 <code>response_format={"type": "json_object"}</code>，Ollama 调用时使用 <code>format="json"</code>。</li>
+<li><code>BaseAgent</code> 新增 <code>_parse_json_output</code>，支持解析纯 JSON、Markdown 内嵌 JSON 与 <code>dict</code> 校验，失败时仍兼容历史 Markdown 代码块。</li>
+<li><code>schemas.py</code> 新增 <code>AgentOutput</code>、<code>AgentFile</code>、<code>DesignOutput</code>、<code>DBAReport</code>、<code>PRDOutput</code> 等 Pydantic 模型。</li>
+<li><code>CoderAgent</code>、<code>TesterAgent</code>、<code>DBAAgent</code>、<code>ArchitectAgent</code>、<code>ReviewerAgent</code>、<code>SecurityAgent</code>、<code>ProductManagerAgent</code> 都配置了对应的 <code>report_schema</code>，输出现在会经过 Pydantic 校验。</li>
+<li>Human-in-the-Loop 人工审批：</li>
+<li>新增 <code>dev_agent_system/human_approval.py</code>：<code>HumanApprovalStore</code> 基于 SQLite 持久化审批状态（<code>pending</code>/<code>approved</code>/<code>rejected</code>）。</li>
+<li><code>Orchestrator._devops_node</code> 在真实部署（<code>DEVOPS_DRY_RUN=false</code>）前检查审批状态；未审批时返回 <code>awaiting_approval</code> 并暂停。</li>
+<li><code>Orchestrator</code> 新增 <code>approve_devops</code> 与 <code>get_approval_status</code> 方法。</li>
+<li><code>server.py</code> 新增 <code>/tasks/{request_id}/approval</code>、<code>/tasks/{request_id}/approve</code>、<code>/tasks/{request_id}/reject</code> 端点。</li>
+</ul>
+<h3 id="changed_2">Changed<a class="anchor" href="#changed_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>prompts.yaml</code> 中 <code>coder</code>、<code>tester</code>、<code>dba</code> 的系统提示更新为“仅输出合法 JSON”的格式说明。</li>
+<li><code>dev_agent_system/__init__.py</code> 版本号更新为 <code>0.21.0</code>。</li>
+</ul>
+<h3 id="fixed_2">Fixed<a class="anchor" href="#fixed_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>修复“过分依赖自然语言提示、缺少代码层约束”的雷区：通过 <code>json_mode</code> + Pydantic 校验，强制或校验 Agent 结构化输出。</li>
+<li>修复“高危操作缺少人类确认”的雷区：DevOps 真实部署前必须通过审批 API 人工确认。</li>
+</ul>
+<h3 id="security_2">Security<a class="anchor" href="#security_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>HumanApprovalStore</code> 将审批记录持久化到本地 SQLite，避免仅依赖内存导致的状态丢失。</li>
+</ul>
+<h3 id="model-changes_2">Model Changes<a class="anchor" href="#model-changes_2" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-20-1-2026-08-12">[0.20.1] - 2026-08-12<a class="anchor" href="#0-20-1-2026-08-12" title="Permanent link">&para;</a></h2>
+<h3 id="added_3">Added<a class="anchor" href="#added_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>新增可复现当前多 Agent 系统的生成器规范：</li>
+<li><code>docs/agent_generator_spec.md</code>：逐 Agent 的 4-Block Framework 映射、Prompting Specification Template（Role/Goal / Inputs / SOP / Constraints / Exception）、I/O Schema、异常处理与产物约定。</li>
+<li><code>docs/agent_generator_spec.html</code>：响应式布局、侧边目录、锚点导航、代码块与表格样式、暗色模式支持。</li>
+<li>附录包含完整 <code>prompts.yaml</code>、<code>agent_cards.json</code>、<code>schemas.py</code>、<code>templates.py</code>、<code>mcp.py</code>、<code>security.py</code>、<code>memory.py</code>、<code>llm.py</code>、<code>llm_providers.py</code>、配置 YAML 与模块清单。</li>
+<li>在 <code>README.md</code> 与 <code>AGENTS.md</code> 中增加 <code>agent_generator_spec</code> 导航链接。</li>
+</ul>
+<h3 id="changed_3">Changed<a class="anchor" href="#changed_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>dev_agent_system/__init__.py</code> 版本号更新为 <code>0.20.1</code>。</li>
+</ul>
+<h3 id="model-changes_3">Model Changes<a class="anchor" href="#model-changes_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-20-0-2026-08-11">[0.20.0] - 2026-08-11<a class="anchor" href="#0-20-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_4">Added<a class="anchor" href="#added_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Agent 架构四要素与 Prompting 规范反推文档：</li>
+<li>新增 <code>docs/agent_framework_retrospective.md</code>，系统梳理 4-Block Framework（角色/安全、上下文/IO、工具/能力、工作流/异常）在当前 <code>dev_agent_system</code> 中的映射。</li>
+<li>新增 <code>docs/agent_framework_retrospective.html</code>，提供响应式布局、目录导航、代码块与表格样式、暗色模式支持的离线 HTML 版本。</li>
+</ul>
+<h3 id="changed_4">Changed<a class="anchor" href="#changed_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无代码功能变更。</li>
+</ul>
+<h3 id="model-changes_4">Model Changes<a class="anchor" href="#model-changes_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-19-0-2026-08-11">[0.19.0] - 2026-08-11<a class="anchor" href="#0-19-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_5">Added<a class="anchor" href="#added_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Skill 市场协议与 Agent 自动发现：</li>
+<li><code>SkillManager.find(query)</code>：按 id/name/description 关键词匹配 Skill。</li>
+<li><code>BaseAgent</code> 初始化时自动将已安装 Skill 注册到 <code>MCPToolRegistry</code>，每个 Agent 都能发现调用。</li>
+<li><code>server.py</code> 新增 <code>/skills</code>、<code>/skills/{skill_id}</code>、<code>/skills/{skill_id}/invoke</code> 端点，形成最小 Skill 市场协议。</li>
+<li>新增 <code>tests/test_server_skills.py</code>：覆盖 Skill 市场端点的 list/get/invoke。</li>
+</ul>
+<h3 id="changed_5">Changed<a class="anchor" href="#changed_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>README.md</code> 与 <code>AGENTS.md</code> 更新 Skill 市场协议说明。</li>
+</ul>
+<h3 id="model-changes_5">Model Changes<a class="anchor" href="#model-changes_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-18-0-2026-08-11">[0.18.0] - 2026-08-11<a class="anchor" href="#0-18-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_6">Added<a class="anchor" href="#added_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>最小版 Skill 管理系统：</li>
+<li>新增 <code>dev_agent_system/skills.py</code>：<ul>
+<li><code>Skill</code> 数据类、<code>SkillStore</code> 本地仓库、<code>SkillManager</code> 管理器。</li>
+<li>支持从本地目录或字典安装 Skill，自动生成 <code>SKILL.md</code> + <code>skill.py</code> 骨架。</li>
+<li>支持卸载、列出、调用（<code>invoke</code>）与向 <code>MCPToolRegistry</code> 注册为 MCP 工具。</li>
+</ul>
+</li>
+<li><code>config.py</code> 增加 <code>skills_dir()</code> 与 <code>skills_enabled()</code> 配置。</li>
+<li>新增 <code>tests/test_skills.py</code>，覆盖安装、调用、卸载、本地路径安装与 MCP 注册。</li>
+</ul>
+<h3 id="changed_6">Changed<a class="anchor" href="#changed_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>README.md</code> 与 <code>AGENTS.md</code> 增加 Skill 使用说明。</li>
+</ul>
+<h3 id="model-changes_6">Model Changes<a class="anchor" href="#model-changes_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-17-0-2026-08-11">[0.17.0] - 2026-08-11<a class="anchor" href="#0-17-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_7">Added<a class="anchor" href="#added_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>安全加固进阶（路线图第 6 条）：</li>
+<li>新增 <code>dev_agent_system/security_scanner.py</code>：<ul>
+<li><code>SecretScanner</code>：基于正则扫描工作区文件中的 API Key、Token、密码、私钥等 Secret。</li>
+<li><code>DependencyScanner</code>：调用 <code>safety</code> 或 <code>pip-audit</code> 对 <code>requirements.txt</code> 做依赖漏洞扫描。</li>
+<li><code>ContainerSandbox</code>：把命令包装成 <code>docker run --rm --network none ...</code> 容器执行，增强隔离。</li>
+<li><code>SecurityPipeline</code>：组合 Secret 扫描、依赖扫描与命令执行，输出 <code>safe</code> 判定。</li>
+</ul>
+</li>
+<li>新增 <code>.github/workflows/security.yml</code>：TruffleHog Secret 扫描、Safety 依赖漏洞扫描、Bandit 静态代码安全扫描，并定时每周运行。</li>
+<li>新增 <code>tests/test_security_scanner.py</code>。</li>
+</ul>
+<h3 id="changed_7">Changed<a class="anchor" href="#changed_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>README.md</code> 与 <code>AGENTS.md</code> 增加安全扫描使用说明与 CI 说明。</li>
+</ul>
+<h3 id="model-changes_7">Model Changes<a class="anchor" href="#model-changes_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-16-0-2026-08-11">[0.16.0] - 2026-08-11<a class="anchor" href="#0-16-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_8">Added<a class="anchor" href="#added_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>多语言支持（路线图第 5 条）：</li>
+<li>新增 <code>dev_agent_system/templates.py</code>：Python、Java、Go、TypeScript 语言模板，包含文件扩展名、主文件/测试文件命名、构建/测试命令、包管理文件与默认骨架。</li>
+<li><code>GraphState</code> / <code>WorkflowState</code> / <code>Task</code> 增加 <code>language</code> 字段，支持按任务指定目标语言。</li>
+<li><code>Orchestrator.run</code> / <code>run_stream</code> / <code>resume</code> 与 <code>EvaluationRunner</code> 透传 <code>language</code>。</li>
+<li><code>ArchitectAgent</code>、<code>CoderAgent</code>、<code>TesterAgent</code> 根据 <code>language</code> 动态生成对应语言产物与测试命令。</li>
+<li><code>ToolSandbox</code> 命令白名单扩展 <code>mvn</code>、<code>gradle</code>、<code>javac</code>、<code>java</code>、<code>go</code>、<code>npm</code>、<code>npx</code>、<code>node</code>。</li>
+<li><code>main.py</code> 与 <code>tui.py</code> 增加 <code>--language</code> 参数。</li>
+<li><code>tests/eval_dataset.json</code> 增加 Java / Go / TypeScript 多语言 benchmark 用例。</li>
+<li>新增 <code>tests/test_templates.py</code>、<code>tests/test_multilang.py</code>。</li>
+</ul>
+<h3 id="changed_8">Changed<a class="anchor" href="#changed_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>tests/test_flow.py</code> 的 <code>_mock_chat</code> 改用更精确的系统 prompt 关键词匹配，避免 Coder/Tester 子串误匹配。</li>
+<li><code>README.md</code> 与 <code>AGENTS.md</code> 更新多语言使用说明。</li>
+</ul>
+<h3 id="model-changes_8">Model Changes<a class="anchor" href="#model-changes_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>GraphState</code>、<code>WorkflowState</code>、<code>Task</code> 新增 <code>language: Optional[str]</code>。</li>
+</ul>
+<h2 id="0-15-0-2026-08-11">[0.15.0] - 2026-08-11<a class="anchor" href="#0-15-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_9">Added<a class="anchor" href="#added_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>评估与 benchmark 调优（路线图第 4 条）：</li>
+<li><code>tests/eval_dataset.json</code> 从 10 条扩充到 15 条，覆盖 CSV 处理、LRU 缓存、邮件服务、限流器、配置中心等场景。</li>
+<li><code>dev_agent_system/eval.py</code> 新增 <code>RegressionChecker</code>：支持 <code>--baseline</code>、<code>--update-baseline</code>、<code>--tolerance</code>，自动检测指标回退。</li>
+<li><code>python -m dev_agent_system.eval</code> 默认与 <code>output_dir/eval_baseline.json</code> 对比，回退超过阈值时退出码 1。</li>
+<li>新增 <code>tests/test_eval.py</code>：覆盖 <code>MetricCalculator</code>、文件召回、覆盖率提取、回归检测与 <code>EvaluationRunner</code> mock 端到端。</li>
+</ul>
+<h3 id="changed_9">Changed<a class="anchor" href="#changed_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>README.md</code> 更新 eval 使用说明，增加 <code>--update-baseline</code> 与回归检测示例。</li>
+</ul>
+<h3 id="model-changes_9">Model Changes<a class="anchor" href="#model-changes_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-14-0-2026-08-11">[0.14.0] - 2026-08-11<a class="anchor" href="#0-14-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_10">Added<a class="anchor" href="#added_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CLI / UI 增强（路线图第 3 条）：</li>
+<li>新增 <code>dev_agent_system/tracker.py</code>：全局工作流状态追踪器，支持 <code>start</code>/<code>update</code>/<code>finish</code>/<code>list</code>/<code>snapshot</code>。</li>
+<li><code>Orchestrator</code> 集成 <code>WorkflowTracker</code>，实时记录当前 Agent、迭代、状态与产物。</li>
+<li>新增 <code>dev_agent_system/tui.py</code>：基于 <code>rich</code> 的终端进度面板，展示 Agent 执行状态、工作流指标与最近事件；支持 <code>python -m dev_agent_system.tui "需求"</code>。</li>
+<li>新增 <code>dev_agent_system/dashboard.py</code>：Web Dashboard HTML 模板与数据聚合。</li>
+<li><code>server.py</code> 新增 <code>/dashboard</code>、<code>/api/status</code>、<code>/api/status/{request_id}</code> 端点。</li>
+<li>新增 <code>tests/test_dashboard.py</code>、<code>tests/test_tui.py</code>；<code>requirements.txt</code> 增加 <code>rich==13.9.4</code>。</li>
+</ul>
+<h3 id="changed_10">Changed<a class="anchor" href="#changed_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>README.md</code> 增加 TUI 与 Dashboard 使用说明。</li>
+</ul>
+<h3 id="model-changes_10">Model Changes<a class="anchor" href="#model-changes_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-13-0-2026-08-11">[0.13.0] - 2026-08-11<a class="anchor" href="#0-13-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_11">Added<a class="anchor" href="#added_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li>真实 LLM 联调（路线图第 2 条）：</li>
+<li>新增 <code>dev_agent_system/llm_providers.py</code>：OpenAI/DeepSeek、Ollama 本地模型、Mock 的统一 Provider 抽象。</li>
+<li><code>LLMClient</code> 支持通过 <code>LLM_PROVIDER</code> 环境变量或模型名前缀 <code>ollama/&lt;model&gt;</code> 自动选择 Provider。</li>
+<li><code>OpenAIProvider</code> 兼容 OpenAI 风格 API，支持同步/异步流式输出。</li>
+<li><code>OllamaProvider</code> 通过 <code>/api/chat</code> 调用本地 Ollama，支持 stream 与非 stream 模式。</li>
+<li><code>MockProvider</code> 支持自定义返回与流式 token 拆分。</li>
+<li>新增 <code>LLM_TIMEOUT</code>、<code>LLM_MAX_RETRIES</code>、<code>OLLAMA_URL</code> 配置项。</li>
+<li>新增 <code>tests/test_llm.py</code>：覆盖 Provider 选择、Mock 流式、Ollama 请求体构建与 Chat 调用。</li>
+</ul>
+<h3 id="changed_11">Changed<a class="anchor" href="#changed_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>dev_agent_system/llm.py</code> 重写为基于 Provider 的调度器，保留 <code>chat</code>/<code>stream</code>/<code>astream</code> 接口与 <code>MockLLM</code> 兼容类。</li>
+<li><code>dev_agent_system/config.py</code> 增加 <code>llm_model()</code>、<code>llm_provider()</code>、<code>ollama_url()</code> 配置读取。</li>
+<li><code>.env.example</code> 增加 <code>LLM_PROVIDER</code> 与 <code>OLLAMA_URL</code> 示例。</li>
+<li><code>dev_agent_system/agents.py</code> 中 <code>CoderAgent</code> 的 MOCK 降级判断改为 <code>self.llm.is_mock()</code>。</li>
+</ul>
+<h3 id="model-changes_11">Model Changes<a class="anchor" href="#model-changes_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-12-0-2026-08-11">[0.12.0] - 2026-08-11<a class="anchor" href="#0-12-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_12">Added<a class="anchor" href="#added_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>监控与可观测性（路线图第 9 条）：</li>
+<li>新增 <code>dev_agent_system/metrics.py</code>：轻量级内存指标收集器，支持 Counter / Gauge / Histogram，输出 Prometheus 文本协议。</li>
+<li>新增 <code>dev_agent_system/telemetry.py</code>：OpenTelemetry 风格 <code>Span</code> 与 <code>Telemetry</code>，支持嵌套链路、结构化 JSON 日志与事件记录。</li>
+<li><code>Orchestrator</code> 集成 Telemetry：自动记录 <code>orchestrator.run</code> / <code>orchestrator.resume</code> 跨度，以及每个 Agent 节点的执行跨度；自动写入 <code>agent_runs_total</code>、<code>workflow_total</code>、<code>review_decisions_total</code>、<code>workflow_iterations</code> 等指标。</li>
+<li><code>BaseAgent.run</code> 集成 LLM 调用追踪：记录 <code>llm_calls_total</code>、近似 prompt / output token 分布。</li>
+<li><code>server.py</code> 新增 <code>/metrics</code> 端点返回 Prometheus 格式指标；<code>/health</code> 返回当前 metrics 计数摘要。</li>
+<li>新增 <code>tests/test_metrics.py</code>、<code>tests/test_telemetry.py</code>、<code>tests/test_server.py</code>，覆盖指标渲染、Span 记录、事件计数与端点可用性。</li>
+</ul>
+<h3 id="changed_12">Changed<a class="anchor" href="#changed_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>将 <code>dev_agent_system/types.py</code> 重命名为 <code>dev_agent_system/schemas.py</code>，彻底避免 <code>types</code> 名称遮蔽 Python 标准库；同步更新所有导入路径与文档。</li>
+<li><code>metrics.py</code> 使用 <code>typing.Union</code> 替代 <code>|</code> 类型联合，兼容 Python 3.9 运行时。</li>
+</ul>
+<h3 id="fixed_3">Fixed<a class="anchor" href="#fixed_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>修复 <code>types.py</code> 名称冲突导致的直接运行入口脚本失败。</li>
+</ul>
+<h3 id="model-changes_12">Model Changes<a class="anchor" href="#model-changes_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-11-0-2026-08-11">[0.11.0] - 2026-08-11<a class="anchor" href="#0-11-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_13">Added<a class="anchor" href="#added_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>新增角色 Agent（路线图第 8 条）：</li>
+<li><code>ProductManagerAgent</code>：把用户需求拆分为 PRD、用户故事、验收标准，输出 <code>prd.md</code>。</li>
+<li><code>SecurityAgent</code>：独立安全审查，输出 <code>security_report.json</code>。</li>
+<li><code>DBAAgent</code>：根据架构设计产出数据库 Schema 与迁移 SQL。</li>
+<li><code>prompts.yaml</code> 新增 <code>product_manager</code>、<code>security</code>、<code>dba</code> 系统提示。</li>
+<li><code>agent_cards.json</code> 新增 3 个 A2A Agent Card。</li>
+<li><code>config/model.yaml</code> 锁定 3 个新 Agent 的模型版本。</li>
+<li><code>Orchestrator</code> 新增 <code>enable_product_manager</code>、<code>enable_security</code>、<code>enable_dba</code> 参数，可把工作流扩展为：<ul>
+<li>Product Manager → Architect → DBA → Coder → {Tester, Docs} → Reviewer → Security → (DevOps/End)。</li>
+</ul>
+</li>
+<li><code>server.py</code> 的 <code>AGENTS</code> 注册中心加入新角色。</li>
+<li>新增 <code>tests/test_new_agents.py</code>，覆盖 3 个新 Agent 的 postprocess 与完整编排流程。</li>
+</ul>
+<h3 id="changed_13">Changed<a class="anchor" href="#changed_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>GraphState</code> 增加 <code>product_manager</code>、<code>security</code>、<code>dba</code> 字段，支持新增节点状态传递。</li>
+<li><code>ArchitectAgent.build_prompt</code> 在启用 Product Manager 时自动读取 PRD 作为输入。</li>
+<li><code>CoderAgent.build_prompt</code> 在启用 DBA 时自动读取数据库设计作为输入。</li>
+</ul>
+<h3 id="fixed_4">Fixed<a class="anchor" href="#fixed_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h3 id="model-changes_13">Model Changes<a class="anchor" href="#model-changes_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>config/model.yaml</code> 新增 <code>product_manager</code>、<code>security</code>、<code>dba</code> 模型配置。</li>
+</ul>
+<h2 id="0-10-0-2026-08-11">[0.10.0] - 2026-08-11<a class="anchor" href="#0-10-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_14">Added<a class="anchor" href="#added_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>安全与沙箱加固：</li>
+<li>新增 <code>dev_agent_system/security.py</code>：<code>SafetyScanner</code>（命令/代码安全扫描）、<code>PathValidator</code>（路径越界校验）、<code>SecretRedactor</code>（敏感信息脱敏）。</li>
+<li><code>ToolSandbox</code> 集成 <code>SafetyScanner</code> 与 <code>PathValidator</code>，命令执行前扫描危险模式，文件读写前校验工作目录边界。</li>
+<li><code>BaseAgent.run</code> 在 LLM 调用前后通过 <code>SecretRedactor</code> 脱敏，防止 API Key、手机号、邮箱、密码进入记忆或返回结果。</li>
+<li><code>CoderAgent.postprocess</code> 对生成的每段代码调用 <code>SafetyScanner.scan_code</code>，将可疑模式（eval/exec/subprocess 等）作为 <code>security_issues</code> 上报。</li>
+<li><code>config.py</code> 新增 <code>safety_block_dangerous_commands()</code>、<code>safety_redact_secrets()</code>、<code>safety_code_scan()</code>；<code>.env.example</code> 同步补充。</li>
+<li>新增 <code>tests/test_security.py</code>，覆盖危险命令拦截、路径穿越、敏感信息脱敏、代码扫描与 ToolSandbox 集成。</li>
+</ul>
+<h3 id="changed_14">Changed<a class="anchor" href="#changed_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>ToolSandbox</code> 路径校验统一收敛到 <code>PathValidator.resolve</code>，错误信息更明确。</li>
+<li><code>Settings.sanitize</code> 复用 <code>SecretRedactor.redact</code>，避免规则重复。</li>
+</ul>
+<h3 id="fixed_5">Fixed<a class="anchor" href="#fixed_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h3 id="model-changes_14">Model Changes<a class="anchor" href="#model-changes_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-9-0-2026-08-11">[0.9.0] - 2026-08-11<a class="anchor" href="#0-9-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_15">Added<a class="anchor" href="#added_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li>DevOps 真实闭环：</li>
+<li>新增 <code>dev_agent_system/devops.py</code>：<code>DevOpsRunner</code> 实现 build → run → health → cleanup 闭环。</li>
+<li>默认 <code>DEVOPS_DRY_RUN=true</code>，仅生成部署报告；关闭后可真实执行 <code>docker build/run</code>。</li>
+<li><code>Orchestrator</code> 在 <code>enable_devops=True</code> 时调用 <code>DevOpsRunner</code>，将部署结果写入 <code>state["devops"]</code>。</li>
+<li><code>config.py</code> 新增 <code>devops_dry_run()</code> 与 <code>devops_timeout()</code>；<code>.env.example</code> 同步补充。</li>
+<li>新增 <code>tests/test_devops.py</code>，覆盖镜像名清洗、dry-run 部署、Orchestrator 集成。</li>
+</ul>
+<h3 id="changed_15">Changed<a class="anchor" href="#changed_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>Orchestrator.__init__</code> 新增 <code>devops_runner</code> 注入参数，便于测试与扩展。</li>
+</ul>
+<h3 id="fixed_6">Fixed<a class="anchor" href="#fixed_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h3 id="model-changes_15">Model Changes<a class="anchor" href="#model-changes_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-8-0-2026-08-11">[0.8.0] - 2026-08-11<a class="anchor" href="#0-8-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_16">Added<a class="anchor" href="#added_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>评估与指标体系：</li>
+<li>新增 <code>dev_agent_system/eval.py</code>：<code>EvaluationRunner</code> + <code>MetricCalculator</code>，跑通 <code>tests/eval_dataset.json</code> benchmark。</li>
+<li>支持指标：Reviewer 通过率、期望文件召回率、测试覆盖率（含 <code>min_test_coverage</code> 达标判定）、平均迭代次数、平均耗时。</li>
+<li>输出 JSON 评估报告与 Markdown 摘要到 <code>EVAL_OUTPUT_DIR</code>（默认 <code>./eval_results</code>）。</li>
+<li>CLI 入口：<code>python -m dev_agent_system.eval --dataset tests/eval_dataset.json --max-iter 3</code>。</li>
+<li>新增 <code>tests/test_eval.py</code> 覆盖 MetricCalculator 与 EvaluationRunner 的指标计算、异常处理。</li>
+<li><code>config.py</code> 新增 <code>eval_output_dir()</code> 与 <code>eval_max_workers()</code>；<code>.env.example</code> 补充 <code>EVAL_OUTPUT_DIR</code> / <code>EVAL_MAX_WORKERS</code>。</li>
+</ul>
+<h3 id="changed_16">Changed<a class="anchor" href="#changed_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无破坏性变更。</li>
+</ul>
+<h3 id="fixed_7">Fixed<a class="anchor" href="#fixed_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h3 id="model-changes_16">Model Changes<a class="anchor" href="#model-changes_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无。</li>
+</ul>
+<h2 id="0-7-0-2026-08-11">[0.7.0] - 2026-08-11<a class="anchor" href="#0-7-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_17">Added<a class="anchor" href="#added_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li>状态持久化与断点续跑：</li>
+<li>新增 <code>dev_agent_system/checkpoint.py</code>：自定义 <code>SQLiteCheckpointSaver</code>，基于 <code>langgraph.checkpoint.base.BaseCheckpointSaver</code> 实现。</li>
+<li>Orchestrator 编译 LangGraph 时传入 <code>checkpointer</code>，以 <code>request_id</code> 作为 <code>thread_id</code> 自动持久化每步状态。</li>
+<li>新增 <code>Orchestrator.resume(request_id)</code> 方法，支持从最近 checkpoint 恢复并继续执行。</li>
+<li>新增 <code>GET /tasks/{request_id}/checkpoints</code> 与 <code>POST /tasks/{request_id}/resume</code> 端点。</li>
+<li>新增 <code>Settings.checkpoint_db()</code> 与 <code>Settings.checkpoint_enabled()</code> 配置项，<code>.env.example</code> 补充 <code>CHECKPOINT_ENABLED</code> / <code>CHECKPOINT_DB</code>。</li>
+<li>新增 <code>tests/test_checkpoint.py</code> 覆盖 checkpoint 读写、writes 持久化、Orchestrator 断点续跑。</li>
+</ul>
+<h3 id="changed_17">Changed<a class="anchor" href="#changed_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>Orchestrator.run</code> 与 <code>run_stream</code> 使用 <code>configurable.thread_id</code> 作为运行配置，触发 LangGraph checkpoint。</li>
+</ul>
+<h3 id="fixed_8">Fixed<a class="anchor" href="#fixed_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无</li>
+</ul>
+<h3 id="security_3">Security<a class="anchor" href="#security_3" title="Permanent link">&para;</a></h3>
+<ul>
+<li>SQLite checkpoint 数据库默认写入 <code>memory_store/</code>（已在 <code>.gitignore</code> 中忽略）。</li>
+</ul>
+<h3 id="model-changes_17">Model Changes<a class="anchor" href="#model-changes_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无</li>
+</ul>
+<h2 id="0-6-0-2026-08-11">[0.6.0] - 2026-08-11<a class="anchor" href="#0-6-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_18">Added<a class="anchor" href="#added_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>文档生态：</li>
+<li>新增 <code>ARCHITECTURE.md</code>：系统架构图、核心数据流、模块依赖、部署形态。</li>
+<li>新增 <code>CONTRIBUTE.md</code>：代码规范、Conventional Commits、分支策略、PR checklist。</li>
+<li>新增 <code>RELEASE_NOTES.md</code>：版本价值、影响矩阵、升级建议。</li>
+<li>新增 <code>docs/tools_spec.md</code>：MCP 工具 JSON Schema、白名单、错误码。</li>
+<li>新增 <code>docs/prompt_templates.md</code>：System Prompt 版本管理、输出格式约定。</li>
+<li>新增 <code>docs/usage_operations.md</code>：安装、部署、监控、备份、故障排查。</li>
+<li><code>README.md</code> 新增文档导航与项目结构补充。</li>
+<li><code>.env.example</code> 补充 <code>MEMORY_BACKEND</code>、<code>REDIS_URL</code>、<code>CONTEXT_COMPRESS_THRESHOLD</code>、<code>CONTEXT_WINDOW_LIMIT</code>。</li>
+</ul>
+<h3 id="changed_18">Changed<a class="anchor" href="#changed_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无</li>
+</ul>
+<h3 id="fixed_9">Fixed<a class="anchor" href="#fixed_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无</li>
+</ul>
+<h3 id="security_4">Security<a class="anchor" href="#security_4" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无</li>
+</ul>
+<h3 id="model-changes_18">Model Changes<a class="anchor" href="#model-changes_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无</li>
+</ul>
+<h2 id="0-5-0-2026-08-11">[0.5.0] - 2026-08-11<a class="anchor" href="#0-5-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_19">Added<a class="anchor" href="#added_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li>记忆后端可插拔：</li>
+<li>新增 <code>MemoryBackend</code> 协议、<code>SQLiteMemoryBackend</code>、<code>RedisMemoryBackend</code>、<code>ChromaMemoryBackend</code>。</li>
+<li>通过 <code>MEMORY_BACKEND</code> 环境变量选择 <code>sqlite</code> / <code>redis</code> / <code>chroma</code>，未配置或依赖缺失时自动降级到 SQLite。</li>
+<li><code>ContextCompressor</code> 上下文压缩：超过 <code>CONTEXT_COMPRESS_THRESHOLD</code> 字符时保留头部/尾部，避免 LLM 上下文过长。</li>
+<li><code>BaseAgent.run</code> 在发送给 LLM 前自动调用上下文压缩。</li>
+<li><code>config.py</code> 新增 <code>memory_backend()</code>、<code>context_compress_threshold()</code>、<code>context_window_limit()</code>。</li>
+<li><code>tests/test_memory.py</code>：覆盖短期/工作记忆、上下文压缩、记忆条数压缩。</li>
+</ul>
+<h3 id="changed_19">Changed<a class="anchor" href="#changed_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>MemoryAgent</code> 重构为统一后端入口，保留旧 <code>MemoryAgentFacade</code> 兼容。</li>
+</ul>
+<h3 id="fixed_10">Fixed<a class="anchor" href="#fixed_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>长提示不再直接传入 LLM，避免触发上下文限制或 Token 浪费。</li>
+</ul>
+<h3 id="security_5">Security<a class="anchor" href="#security_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li>记忆后端切换不影响现有沙箱路径安全策略。</li>
+</ul>
+<h3 id="model-changes_19">Model Changes<a class="anchor" href="#model-changes_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无</li>
+</ul>
+<h2 id="0-4-0-2026-08-11">[0.4.0] - 2026-08-11<a class="anchor" href="#0-4-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_20">Added<a class="anchor" href="#added_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li>模型路由 <code>dev_agent_system/router.py</code>：根据 Agent 与提示长度自适应选择模型版本和温度。</li>
+<li>LLM 流式生成：<code>LLMClient.stream</code> / <code>LLMClient.astream</code> 支持 OpenAI 风格流式输出。</li>
+<li>编排流式端点：</li>
+<li><code>POST /orchestrate/stream</code>：以 SSE 实时推送节点开始/结束/最终结果。</li>
+<li><code>POST /{agent}/stream</code>：单个 Agent 的 token 级 SSE 输出。</li>
+<li><code>JSONRPC</code> <code>method=orchestrate_stream</code> 同样支持 SSE。</li>
+<li><code>LLMClient.chat</code> 支持 <code>model/temperature/max_tokens</code> 运行时覆盖。</li>
+<li><code>BaseAgent</code> 集成 <code>ModelRouter</code>，每次调用自动选择模型参数。</li>
+</ul>
+<h3 id="changed_20">Changed<a class="anchor" href="#changed_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>server.py</code> 路由扩展：新增流式相关端点，保持 <code>/orchestrate</code> 与 <code>/rpc</code> 兼容。</li>
+<li><code>LLMClient</code> 在无 <code>LLM_API_KEY</code> 时仍然生成 <code>[MOCK ...]</code> 降级输出，但保留覆盖参数接口。</li>
+</ul>
+<h3 id="fixed_11">Fixed<a class="anchor" href="#fixed_11" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>LLMClient.chat</code> 现在能正确把 <code>temperature</code> 等生成参数传给后端。</li>
+</ul>
+<h3 id="security_6">Security<a class="anchor" href="#security_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>流式输出仍然通过 <code>LLMClient._mask</code> 做 PII 脱敏。</li>
+</ul>
+<h3 id="model-changes_20">Model Changes<a class="anchor" href="#model-changes_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无</li>
+</ul>
+<h2 id="0-3-0-2026-08-11">[0.3.0] - 2026-08-11<a class="anchor" href="#0-3-0-2026-08-11" title="Permanent link">&para;</a></h2>
+<h3 id="added_21">Added<a class="anchor" href="#added_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Agent 产物落地：</li>
+<li><code>CoderAgent</code> 解析 LLM 输出的代码块并写入 <code>workspace/&lt;request_id&gt;/</code>。</li>
+<li><code>TesterAgent</code> 读取代码文件、生成 <code>test_*.py</code>、调用 <code>pytest -q</code> 并解析测试报告。</li>
+<li><code>DocsAgent</code> 生成 <code>docs/README.md</code> 与 <code>docs/API.md</code>。</li>
+<li><code>ReviewerAgent</code> 解析 JSON 审查报告并写入 <code>review_report.json</code>。</li>
+<li><code>ArchitectAgent</code> 解析 JSON 架构设计并写入 <code>design.json</code>。</li>
+<li><code>BaseAgent</code> 增加 <code>postprocess</code> 生命周期钩子，支持异步 MCP 工具调用。</li>
+<li><code>MCPToolRegistry.ainvoke</code> 异步工具调用接口。</li>
+<li><code>ToolSandbox.run_command</code> 支持 <code>base_dir</code> 参数，允许在不同 workspace 中运行命令。</li>
+<li><code>GraphState</code> 增加 <code>workspace</code> 字段，Orchestrator 为每个请求分配独立工作目录。</li>
+<li><code>test_flow.py</code> 集成测试现在会验证 <code>main.py</code>、<code>test_main.py</code>、<code>review_report.json</code> 是否真实写入。</li>
+</ul>
+<h3 id="changed_21">Changed<a class="anchor" href="#changed_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li>LangGraph DAG 调整为：<code>Architect → Coder → {Tester, Docs} 并行 → Reviewer</code>。</li>
+<li><code>BaseAgent.run</code> 改为 <code>async def</code>，统一支持异步 postprocess。</li>
+<li><code>a2a_node.py</code> 与 <code>server.py</code> 的 Agent 任务端点统一 <code>await agent.run(...)</code>。</li>
+<li><code>orchestrator._should_continue</code> 与 <code>_reviewer_node</code> 优先读取 Reviewer 的 <code>passed</code> 布尔字段。</li>
+</ul>
+<h3 id="fixed_12">Fixed<a class="anchor" href="#fixed_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>修复并行节点中 Tester 无法读取 Coder 产物的问题（先执行 Coder，再并行 Tester/Docs）。</li>
+</ul>
+<h3 id="security_7">Security<a class="anchor" href="#security_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li>文件写入仍受 <code>ToolSandbox</code> 白名单/黑名单/路径限制约束，无法越界。</li>
+</ul>
+<h3 id="model-changes_21">Model Changes<a class="anchor" href="#model-changes_21" title="Permanent link">&para;</a></h3>
+<ul>
+<li>无</li>
+</ul>
+<h2 id="0-2-0-2026-08-09">[0.2.0] - 2026-08-09<a class="anchor" href="#0-2-0-2026-08-09" title="Permanent link">&para;</a></h2>
+<p>首个可运行、可部署、可验证的多 Agent 软件开发系统版本。</p>
+<h3 id="added_22">Added<a class="anchor" href="#added_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li>完整多 Agent 软件开发系统骨架（Architect / Coder / Tester / Reviewer / Docs / DevOps）。</li>
+<li>LangGraph <code>StateGraph</code> 编排器 <code>dev_agent_system/orchestrator.py</code>：支持 <code>Architect → Coder → {Tester, Docs} → Reviewer</code> 流程与条件迭代。</li>
+<li><code>AGENTS.md</code> 多 Agent 开发过程指导文档，含角色职责、DAG、Agent 扩展、版本管理、Git 分支 SOP、测试与安全规则。</li>
+<li><code>GraphState</code> TypedDict 状态类型 <code>dev_agent_system/types.py</code>。</li>
+<li><code>langgraph==0.2.0</code> 与 <code>langchain-core==0.2.27</code> 依赖锁定。</li>
+<li>统一 FastAPI A2A 网关 <code>dev_agent_system/server.py</code>：暴露 <code>/.well-known/agent.json</code>、<code>/tasks</code>、<code>/orchestrate</code>、<code>/rpc</code>、<code>/health</code> 与 SSE 流式端点。</li>
+<li>独立 A2A Agent 节点 <code>dev_agent_system/a2a_node.py</code>：支持 <code>python -m dev_agent_system.a2a_node --agent architect --port 8081</code> 启动单个服务。</li>
+<li>A2A 客户端 <code>dev_agent_system/a2a_client.py</code>：支持 Agent Card 发现与任务发送。</li>
+<li><code>scripts/run_a2a_cluster.py</code>：一键启动 6 个独立 A2A Agent 服务。</li>
+<li>MCP 工具沙箱 <code>dev_agent_system/mcp.py</code>：白名单、黑名单、路径限制、超时。</li>
+<li>Memory Agent <code>dev_agent_system/memory.py</code>：三层记忆（短期/工作/长期）内存+SQLite 降级实现。</li>
+<li>LLM 客户端 <code>dev_agent_system/llm.py</code>：OpenAI 兼容 + MOCK 降级 + PII 脱敏。</li>
+<li>统一配置加载 <code>dev_agent_system/config.py</code>：支持 <code>.env</code> 环境变量 + <code>config/*.yaml</code> 配置，Agent 自动读取 <code>config/model.yaml</code> 中的模型版本。</li>
+<li>Prompt 版本化 <code>dev_agent_system/prompts.yaml</code> 与 Agent Card <code>dev_agent_system/agent_cards.json</code>。</li>
+<li>Docker 部署支持 <code>Dockerfile</code> + <code>docker-compose.yml</code> + <code>.env.example</code>。</li>
+<li>Windows 与 Linux 本地安装/运行脚本 <code>scripts/install_windows.ps1</code>、<code>scripts/run_windows.ps1</code>、<code>scripts/install_linux.sh</code>、<code>scripts/run_linux.sh</code>。</li>
+<li>GitHub 一键推送脚本 <code>scripts/push_to_github.sh</code> 与 <code>scripts/push_to_github.ps1</code>（自动 pytest + 分支检查 + 推送 + PR）。</li>
+<li>GitHub Actions CI <code>.github/workflows/ci.yml</code>（pytest、语法检查、model.yaml 无 <code>latest</code> 校验）。</li>
+<li>版本管理脚本 <code>scripts/bump-version.py</code>、<code>scripts/git-sop-check.sh</code>、<code>scripts/release.sh</code>。</li>
+<li>模型版本锁定 <code>config/model.yaml</code>（禁止 latest）与 MCP 配置 <code>config/mcp.yaml</code>。</li>
+<li>10 条评估数据集 <code>tests/eval_dataset.json</code>。</li>
+<li>预发布检查脚本 <code>pre-release-check.sh</code>。</li>
+<li>单元与集成测试 <code>tests/test_flow.py</code>、<code>tests/test_a2a.py</code>。</li>
+</ul>
+<h3 id="fixed_13">Fixed<a class="anchor" href="#fixed_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>dev_agent_system/server.py</code>：将 Python 3.10 的 <code>str | None</code> 语法替换为 <code>Optional[str]</code>，以兼容 Python 3.9。</li>
+<li><code>dev_agent_system/server.py</code>：修复 Agent 实例作为默认参数导致 FastAPI 深拷贝失败的问题，改为闭包方式注册路由。</li>
+<li><code>dev_agent_system/orchestrator.py</code>：为 LangGraph 设置 <code>recursion_limit</code>，避免 <code>max_iterations</code> 较大时触发递归限制。</li>
+<li><code>dev_agent_system/types.py</code>：为 <code>Task</code> 增加 <code>max_iterations</code> 字段，支持 <code>/orchestrate</code> 和 <code>/rpc</code> 调整最大迭代次数。</li>
+</ul>
+<h3 id="model-changes_22">Model Changes<a class="anchor" href="#model-changes_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Architect: gpt-4-0613</li>
+<li>Coder: gpt-4-turbo-2024-04-09</li>
+<li>Reviewer: gpt-4o-2024-08-06</li>
+<li>Tester: gpt-4-0613</li>
+<li>Docs: gpt-3.5-turbo-0125</li>
+<li>DevOps: gpt-4-0613</li>
+</ul>
+<h2 id="0-1-0-2026-08-09">[0.1.0] - 2026-08-09<a class="anchor" href="#0-1-0-2026-08-09" title="Permanent link">&para;</a></h2>
+<h3 id="added_23">Added<a class="anchor" href="#added_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li>项目初始骨架与目录结构。</li>
+</ul>
+</main>
+</div>
+</body>
+</html>

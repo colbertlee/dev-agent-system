@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>usage_operations.md — 使用与运维手册</title>
+<style>
+:root {
+  --bg: #f6f8fa;
+  --fg: #1f2328;
+  --muted: #656d76;
+  --card: #ffffff;
+  --border: #d1d9e0;
+  --accent: #0969da;
+  --accent-light: #ddf4ff;
+  --code-bg: #f3f4f6;
+  --shadow: 0 2px 8px rgba(31, 35, 40, 0.04);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --fg: #c9d1d9;
+    --muted: #8b949e;
+    --card: #161b22;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-light: #112538;
+    --code-bg: #21262d;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.7;
+}
+header {
+  background: linear-gradient(135deg, var(--accent), #0550ae);
+  color: #fff;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+header h1 { margin: 0 0 .5rem; font-size: 1.9rem; }
+header p { margin: 0; opacity: .9; font-size: 1rem; }
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+}
+aside.toc {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+aside.toc h2 { margin: 0 0 .8rem; font-size: 1rem; color: var(--fg); }
+aside.toc ul { list-style: none; padding: 0; margin: 0; }
+aside.toc li { margin: .35rem 0; }
+aside.toc a { text-decoration: none; color: var(--muted); font-size: .88rem; display: block; padding: .15rem 0; }
+aside.toc a:hover { color: var(--accent); }
+aside.toc ul ul { padding-left: .8rem; }
+main {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 2.4rem;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+main h1 { font-size: 1.75rem; margin-top: 0; border-bottom: 2px solid var(--accent); padding-bottom: .5rem; }
+main h2 { font-size: 1.4rem; margin-top: 2.2rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+main h3 { font-size: 1.15rem; margin-top: 1.6rem; color: var(--accent); }
+main h4 { font-size: 1.05rem; margin-top: 1.3rem; }
+main p { margin: .9rem 0; }
+main a { color: var(--accent); text-decoration: none; }
+main a:hover { text-decoration: underline; }
+main ul, main ol { margin: .8rem 0; padding-left: 1.5rem; }
+main li { margin: .35rem 0; }
+main blockquote {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-light);
+  padding: .75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .92rem;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: .65rem .85rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--bg); font-weight: 600; }
+tr:nth-child(even) { background: rgba(0,0,0,.015); }
+@media (prefers-color-scheme: dark) { tr:nth-child(even) { background: rgba(255,255,255,.025); } }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: .88rem;
+}
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: var(--code-bg);
+  padding: .15rem .35rem;
+  border-radius: 4px;
+  font-size: .9em;
+}
+pre code { background: transparent; padding: 0; font-size: .88rem; }
+main img { max-width: 100%; }
+.anchor {
+  margin-left: .4rem;
+  color: var(--muted);
+  font-size: .8em;
+  text-decoration: none;
+  visibility: hidden;
+}
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor { visibility: visible; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  aside.toc { position: static; max-height: none; margin-bottom: 1rem; }
+  main { padding: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>usage_operations.md — 使用与运维手册</h1>
+  
+</header>
+<div class="layout">
+<aside class="toc">
+  <h2>目录</h2>
+
+<ul>
+<li><a href="#usage_operations-md-使用与运维手册">usage_operations.md — 使用与运维手册</a><ul>
+<li><a href="#1-快速启动">1. 快速启动</a><ul>
+<li><a href="#1-1-环境要求">1.1 环境要求</a></li>
+<li><a href="#1-2-安装依赖">1.2 安装依赖</a></li>
+<li><a href="#1-3-配置环境变量">1.3 配置环境变量</a></li>
+</ul>
+</li>
+<li><a href="#2-运行方式">2. 运行方式</a><ul>
+<li><a href="#2-1-cli-单次执行">2.1 CLI 单次执行</a></li>
+<li><a href="#2-2-启动统一-a2a-网关">2.2 启动统一 A2A 网关</a></li>
+<li><a href="#2-3-启动独立-a2a-节点">2.3 启动独立 A2A 节点</a></li>
+<li><a href="#2-4-启动-6-节点集群">2.4 启动 6 节点集群</a></li>
+</ul>
+</li>
+<li><a href="#3-docker-部署">3. Docker 部署</a></li>
+<li><a href="#4-运维检查清单">4. 运维检查清单</a><ul>
+<li><a href="#4-1-每日检查">4.1 每日检查</a></li>
+<li><a href="#4-2-每周检查">4.2 每周检查</a></li>
+<li><a href="#4-3-发布前检查">4.3 发布前检查</a></li>
+</ul>
+</li>
+<li><a href="#5-监控与告警">5. 监控与告警</a><ul>
+<li><a href="#5-1-结构化日志">5.1 结构化日志</a></li>
+<li><a href="#5-2-关键指标">5.2 关键指标</a></li>
+<li><a href="#5-3-健康检查">5.3 健康检查</a></li>
+</ul>
+</li>
+<li><a href="#6-备份与恢复">6. 备份与恢复</a><ul>
+<li><a href="#6-1-备份内容">6.1 备份内容</a></li>
+<li><a href="#6-2-自动备份脚本示例">6.2 自动备份脚本示例</a></li>
+</ul>
+</li>
+<li><a href="#7-安全运维">7. 安全运维</a></li>
+<li><a href="#8-故障排查">8. 故障排查</a></li>
+<li><a href="#9-升级流程">9. 升级流程</a></li>
+<li><a href="#10-获取帮助">10. 获取帮助</a></li>
+</ul>
+</li>
+</ul>
+
+</aside>
+<main>
+<h1 id="usage_operations-md-使用与运维手册">usage_operations.md — 使用与运维手册<a class="anchor" href="#usage_operations-md-使用与运维手册" title="Permanent link">&para;</a></h1>
+<h2 id="1-快速启动">1. 快速启动<a class="anchor" href="#1-快速启动" title="Permanent link">&para;</a></h2>
+<h3 id="1-1-环境要求">1.1 环境要求<a class="anchor" href="#1-1-环境要求" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Python 3.9+</li>
+<li><code>pip</code> 或 <code>venv</code></li>
+<li>（可选）Redis 用于 production 记忆后端</li>
+<li>（可选）ChromaDB 用于长期语义记忆</li>
+<li>（可选）Docker / Docker Compose 用于容器化部署</li>
+</ul>
+<h3 id="1-2-安装依赖">1.2 安装依赖<a class="anchor" href="#1-2-安装依赖" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash"># 创建虚拟环境（推荐）
+python -m venv .venv
+# Windows
+.\.venv\Scripts\activate
+# Linux / macOS
+source .venv/bin/activate
+
+pip install -r requirements.txt
+</code></pre>
+<h3 id="1-3-配置环境变量">1.3 配置环境变量<a class="anchor" href="#1-3-配置环境变量" title="Permanent link">&para;</a></h3>
+<p>复制模板并编辑：</p>
+<pre><code class="language-bash">cp .env.example .env
+</code></pre>
+<p>必填项：</p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>LLM_API_KEY</code></td>
+<td>真实 LLM API Key</td>
+<td><code>sk-...</code></td>
+</tr>
+<tr>
+<td><code>LLM_BASE_URL</code></td>
+<td>OpenAI 兼容 Base URL</td>
+<td><code>https://api.deepseek.com</code></td>
+</tr>
+<tr>
+<td><code>LLM_MODEL</code></td>
+<td>默认模型</td>
+<td><code>deepseek-chat</code></td>
+</tr>
+</tbody>
+</table>
+<p>可选项：</p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>说明</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>WORKSPACE_DIR</code></td>
+<td>产物输出目录</td>
+<td><code>./workspace</code></td>
+</tr>
+<tr>
+<td><code>MEMORY_DIR</code></td>
+<td>记忆持久化目录</td>
+<td><code>./memory_store</code></td>
+</tr>
+<tr>
+<td><code>MEMORY_BACKEND</code></td>
+<td><code>sqlite</code> / <code>redis</code> / <code>chroma</code></td>
+<td><code>sqlite</code></td>
+</tr>
+<tr>
+<td><code>REDIS_URL</code></td>
+<td>Redis 连接地址</td>
+<td><code>redis://localhost:6379/0</code></td>
+</tr>
+<tr>
+<td><code>CONTEXT_COMPRESS_THRESHOLD</code></td>
+<td>上下文压缩阈值（字符）</td>
+<td><code>6000</code></td>
+</tr>
+<tr>
+<td><code>CONTEXT_WINDOW_LIMIT</code></td>
+<td>上下文最大字符数</td>
+<td><code>8000</code></td>
+</tr>
+<tr>
+<td><code>CHECKPOINT_ENABLED</code></td>
+<td>是否启用 LangGraph checkpoint 持久化</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>CHECKPOINT_DB</code></td>
+<td>checkpoint SQLite 路径</td>
+<td><code>&lt;MEMORY_DIR&gt;/checkpoints.sqlite</code></td>
+</tr>
+<tr>
+<td><code>DEVOPS_DRY_RUN</code></td>
+<td>DevOps 是否只执行 dry-run</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>DEVOPS_TIMEOUT</code></td>
+<td>DevOps 命令超时（秒）</td>
+<td><code>120</code></td>
+</tr>
+<tr>
+<td><code>HUMAN_APPROVAL_REQUIRED</code></td>
+<td>DevOps 真实部署前是否需要人工审批</td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>APPROVAL_DB</code></td>
+<td>审批状态 SQLite 路径</td>
+<td><code>&lt;MEMORY_DIR&gt;/approvals.sqlite</code></td>
+</tr>
+<tr>
+<td><code>LLM_TIMEOUT</code></td>
+<td>LLM 请求超时（秒）</td>
+<td><code>30</code></td>
+</tr>
+<tr>
+<td><code>LLM_MAX_RETRIES</code></td>
+<td>LLM 失败重试次数</td>
+<td><code>2</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-运行方式">2. 运行方式<a class="anchor" href="#2-运行方式" title="Permanent link">&para;</a></h2>
+<h3 id="2-1-cli-单次执行">2.1 CLI 单次执行<a class="anchor" href="#2-1-cli-单次执行" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash">python -m dev_agent_system.main &quot;开发一个加法模块&quot; --max-iter 2 --output result.json
+</code></pre>
+<p>产物将写入 <code>workspace/&lt;request_id&gt;/</code>。</p>
+<h3 id="2-2-启动统一-a2a-网关">2.2 启动统一 A2A 网关<a class="anchor" href="#2-2-启动统一-a2a-网关" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash">python -m dev_agent_system.server --host 0.0.0.0 --port 8000
+</code></pre>
+<p>核心端点：</p>
+<table>
+<thead>
+<tr>
+<th>端点</th>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>/health</code></td>
+<td>GET</td>
+<td>健康检查</td>
+</tr>
+<tr>
+<td><code>/metrics</code></td>
+<td>GET</td>
+<td>Prometheus 指标</td>
+</tr>
+<tr>
+<td><code>/orchestrate</code></td>
+<td>POST</td>
+<td>完整 DAG 编排</td>
+</tr>
+<tr>
+<td><code>/orchestrate/stream</code></td>
+<td>POST</td>
+<td>SSE 流式编排</td>
+</tr>
+<tr>
+<td><code>/tasks/{request_id}/resume</code></td>
+<td>POST</td>
+<td>从 checkpoint 恢复</td>
+</tr>
+<tr>
+<td><code>/tasks/{request_id}/approval</code></td>
+<td>GET</td>
+<td>查询 Human-in-the-Loop 审批状态</td>
+</tr>
+<tr>
+<td><code>/tasks/{request_id}/approve</code></td>
+<td>POST</td>
+<td>批准 DevOps 等高风险操作</td>
+</tr>
+<tr>
+<td><code>/tasks/{request_id}/reject</code></td>
+<td>POST</td>
+<td>拒绝高风险操作</td>
+</tr>
+<tr>
+<td><code>/rpc</code></td>
+<td>POST</td>
+<td>JSON-RPC 风格调用</td>
+</tr>
+<tr>
+<td><code>/{agent}/tasks</code></td>
+<td>POST</td>
+<td>单个 Agent 任务</td>
+</tr>
+<tr>
+<td><code>/{agent}/stream</code></td>
+<td>POST</td>
+<td>单个 Agent SSE 流式</td>
+</tr>
+<tr>
+<td><code>/skills</code></td>
+<td>GET / POST</td>
+<td>Skill 市场发现/调用</td>
+</tr>
+</tbody>
+</table>
+<p>调用示例：</p>
+<pre><code class="language-bash">curl -X POST http://localhost:8000/orchestrate \
+  -H &quot;Content-Type: application/json&quot; \
+  -H &quot;X-Internal-API-Key: dev-internal-key&quot; \
+  -d '{&quot;description&quot;:&quot;开发一个JWT登录模块&quot;,&quot;request_id&quot;:&quot;req-001&quot;,&quot;max_iterations&quot;:3}'
+</code></pre>
+<h3 id="2-3-启动独立-a2a-节点">2.3 启动独立 A2A 节点<a class="anchor" href="#2-3-启动独立-a2a-节点" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash">python -m dev_agent_system.a2a_node --agent coder --port 8082
+</code></pre>
+<h3 id="2-4-启动-6-节点集群">2.4 启动 6 节点集群<a class="anchor" href="#2-4-启动-6-节点集群" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash">python scripts/run_a2a_cluster.py
+</code></pre>
+<h2 id="3-docker-部署">3. Docker 部署<a class="anchor" href="#3-docker-部署" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># 构建并启动
+docker-compose up --build -d
+
+# 查看日志
+docker-compose logs -f dev-agent-system
+
+# 停止
+docker-compose down
+</code></pre>
+<p>挂载卷说明：</p>
+<ul>
+<li><code>./workspace:/app/workspace</code> — 代码产物</li>
+<li><code>./memory_store:/app/memory_store</code> — SQLite 记忆</li>
+<li><code>./.env:/app/.env</code> — 环境变量</li>
+</ul>
+<h2 id="4-运维检查清单">4. 运维检查清单<a class="anchor" href="#4-运维检查清单" title="Permanent link">&para;</a></h2>
+<h3 id="4-1-每日检查">4.1 每日检查<a class="anchor" href="#4-1-每日检查" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] <code>docker-compose ps</code> 或进程是否存活</li>
+<li>[ ] 磁盘空间：<code>workspace/</code> 与 <code>memory_store/</code> 是否持续增长</li>
+<li>[ ] <code>LLM_API_KEY</code> 是否即将过期</li>
+</ul>
+<h3 id="4-2-每周检查">4.2 每周检查<a class="anchor" href="#4-2-每周检查" title="Permanent link">&para;</a></h3>
+<ul>
+<li>[ ] 运行 <code>python -m pytest tests -q</code> 验证核心功能</li>
+<li>[ ] 检查 <code>config/model.yaml</code> 是否存在 <code>latest</code></li>
+<li>[ ] 审查 <code>workspace/</code> 中是否有异常文件或目录穿越</li>
+<li>[ ] 检查日志中 <code>[LLM ERROR]</code> 频率</li>
+</ul>
+<h3 id="4-3-发布前检查">4.3 发布前检查<a class="anchor" href="#4-3-发布前检查" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash">bash pre-release-check.sh
+</code></pre>
+<p>该脚本会执行：</p>
+<ol>
+<li><code>python -m pytest tests -q</code></li>
+<li>Python 语法检查</li>
+<li><code>config/model.yaml</code> 无 <code>latest</code></li>
+<li><code>CHANGELOG.md</code> 非空</li>
+</ol>
+<h2 id="5-监控与告警">5. 监控与告警<a class="anchor" href="#5-监控与告警" title="Permanent link">&para;</a></h2>
+<h3 id="5-1-结构化日志">5.1 结构化日志<a class="anchor" href="#5-1-结构化日志" title="Permanent link">&para;</a></h3>
+<p>所有 Agent 返回结构化 JSON，建议将 <code>orchestrator_result.json</code> 与运行日志收集到 ELK / Loki。</p>
+<h3 id="5-2-关键指标">5.2 关键指标<a class="anchor" href="#5-2-关键指标" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>采集方式</th>
+<th>告警阈值建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>iteration</code></td>
+<td>结果 JSON</td>
+<td><code>&gt;= max_iterations</code> 且未通过</td>
+</tr>
+<tr>
+<td><code>tester.passed</code> / <code>failed</code></td>
+<td>结果 JSON</td>
+<td><code>failed &gt; 0</code></td>
+</tr>
+<tr>
+<td><code>reviewer.passed</code></td>
+<td>结果 JSON</td>
+<td><code>false</code> 连续出现</td>
+</tr>
+<tr>
+<td>LLM 响应时间</td>
+<td>日志</td>
+<td>超过 30s</td>
+</tr>
+<tr>
+<td>沙箱越界尝试</td>
+<td>工具返回 <code>error</code></td>
+<td>任何一次</td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-3-健康检查">5.3 健康检查<a class="anchor" href="#5-3-健康检查" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash">curl http://localhost:8000/health
+</code></pre>
+<h2 id="6-备份与恢复">6. 备份与恢复<a class="anchor" href="#6-备份与恢复" title="Permanent link">&para;</a></h2>
+<h3 id="6-1-备份内容">6.1 备份内容<a class="anchor" href="#6-1-备份内容" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>路径</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>workspace/</code></td>
+<td>生成的代码、测试、文档</td>
+</tr>
+<tr>
+<td><code>memory_store/</code></td>
+<td>SQLite / ChromaDB 记忆、checkpoint、审批状态</td>
+</tr>
+<tr>
+<td><code>config/</code></td>
+<td>模型与 MCP 配置</td>
+</tr>
+<tr>
+<td><code>.env</code></td>
+<td>环境变量（<strong>不含</strong> API Key 时应加密或排除）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="6-2-自动备份脚本示例">6.2 自动备份脚本示例<a class="anchor" href="#6-2-自动备份脚本示例" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash">#!/bin/bash
+# backup.sh
+DEST=&quot;backups/$(date +%Y%m%d-%H%M%S)&quot;
+mkdir -p &quot;$DEST&quot;
+cp -r workspace memory_store config &quot;$DEST/&quot;
+# 不要明文备份 .env
+</code></pre>
+<h2 id="7-安全运维">7. 安全运维<a class="anchor" href="#7-安全运维" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>API Key 管理</strong>：使用环境变量或 secrets manager，禁止提交到 Git。</li>
+<li><strong>网络隔离</strong>：生产环境限制 <code>server.py</code> / <code>a2a_node.py</code> 监听地址，避免 0.0.0.0 直接暴露公网。</li>
+<li><strong>沙箱审计</strong>：定期审查 <code>workspace/</code> 与 <code>memory_store/</code> 权限，确保服务用户无法写入非预期目录。</li>
+<li><strong>模型版本锁定</strong>：<code>config/model.yaml</code> 必须指定具体版本号，禁止 <code>latest</code>。</li>
+</ul>
+<h2 id="8-故障排查">8. 故障排查<a class="anchor" href="#8-故障排查" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>可能原因</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>未配置 LLM_API_KEY</code></td>
+<td>未设置 API Key</td>
+<td>填写 <code>.env</code> 或环境变量</td>
+</tr>
+<tr>
+<td><code>路径越界</code></td>
+<td>Agent 试图写入 workspace 之外</td>
+<td>检查 Prompt 是否生成 <code>../</code> 路径</td>
+</tr>
+<tr>
+<td><code>pytest</code> 无测试</td>
+<td>Tester 未生成 <code>test_*.py</code></td>
+<td>检查 Coder 是否生成可识别代码块</td>
+</tr>
+<tr>
+<td><code>Recursion limit reached</code></td>
+<td>LangGraph 默认递归限制</td>
+<td>已在 <code>config</code> 中设置 <code>recursion_limit</code></td>
+</tr>
+<tr>
+<td><code>无法解析 JSON 审查报告</code></td>
+<td>Reviewer 输出格式异常</td>
+<td>检查 Prompt 与 LLM 输出</td>
+</tr>
+<tr>
+<td><code>状态卡在 awaiting_approval</code></td>
+<td>DevOps 真实部署未审批</td>
+<td>调用 <code>POST /tasks/{request_id}/approve</code> 或在 <code>APPROVAL_DB</code> 中确认</td>
+</tr>
+<tr>
+<td>Redis/ChromaDB 不可用</td>
+<td>依赖未安装或服务未启动</td>
+<td>自动降级到 SQLite，查看日志</td>
+</tr>
+</tbody>
+</table>
+<h2 id="9-升级流程">9. 升级流程<a class="anchor" href="#9-升级流程" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># 拉取最新代码
+git pull origin main
+
+# 安装新依赖
+pip install -r requirements.txt
+
+# 运行测试
+python -m pytest tests -q
+
+# 若有数据库 schema 变更，按 CHANGELOG 说明迁移
+# 重启服务
+</code></pre>
+<h2 id="10-获取帮助">10. 获取帮助<a class="anchor" href="#10-获取帮助" title="Permanent link">&para;</a></h2>
+<ul>
+<li>项目文档：<code>README.md</code>、<code>ARCHITECTURE.md</code>、<code>CONTRIBUTE.md</code></li>
+<li>开发规则：<code>AGENTS.md</code></li>
+<li>工具规范：<code>docs/tools_spec.md</code></li>
+<li>Prompt 管理：<code>docs/prompt_templates.md</code></li>
+<li>Issue 与支持：<a href="https://github.com/colbertlee/dev-agent-system/issues">https://github.com/colbertlee/dev-agent-system/issues</a></li>
+</ul>
+</main>
+</div>
+</body>
+</html>

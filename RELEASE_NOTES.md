@@ -4,7 +4,35 @@
 
 ---
 
-## v0.22.0 — 多 Agent 间状态精简传输（最新）
+## v0.22.1 — 文档同步与 HTML 生成（最新）
+
+**发布日期**：2026-08-14
+
+### 核心价值
+
+- 把项目 Markdown 文档升级为可离线阅读、带目录、响应式暗色模式的 HTML，降低新成员与 Devin 阅读长规范的门槛。
+- 建立 `scripts/sync_spec.py` 机制，让 `agent_generator_spec.md` / `agent_framework_retrospective.md` 的源码附录、版本号、行号引用随代码自动同步，避免“文档刚写完就失步”的维护负担。
+
+### 关键变更
+
+- 新增 `scripts/generate_docs.py`：基于 `markdown` 库生成 `*.html`，自动标题去 `¶`、自动把 `<ref_file>` / `<ref_snippet>` 转为相对链接。
+- 新增 `scripts/sync_spec.py`：重抽 `docs/agent_generator_spec.md` 全部源码附录（含 `human_approval.py`），刷新版本号到 v0.22.0。
+- 刷新 `docs/agent_framework_retrospective.md`：版本范围扩展到 v0.22.0，新增 v0.21/v0.22 四要素落地小节，所有 `<ref_snippet>` 行号引用改为 `<ref_file>` 文件引用。
+- 更新 `README.md`、`AGENTS.md`、`ARCHITECTURE.md`、`CONTRIBUTE.md`、`docs/prompt_templates.md`、`docs/usage_operations.md` 以反映 v0.22.0 的 9 个 Agent、结构化输出、Human-in-the-Loop、状态摘要、新 Server 端点等变化。
+- `requirements.txt` 增加 `markdown==3.7`。
+
+### 升级注意
+
+- 本次为文档/体验 PATCH，无代码接口变更。
+- 发布 `v0.22.1` 后请同步执行 `python scripts/generate_docs.py <markdown>` 重新生成 HTML。
+
+### 已知问题
+
+- 无。
+
+---
+
+## v0.22.0 — 多 Agent 间状态精简传输
 
 **发布日期**：2026-08-14
 

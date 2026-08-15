@@ -9,3 +9,4 @@ pytest-asyncio==0.24.0
 openai==1.42.0
 langgraph==0.2.0
 langchain-core==0.2.27
+markdown==3.7

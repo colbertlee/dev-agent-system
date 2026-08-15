@@ -4,12 +4,14 @@
 
 ## 架构
 
-- **6 个业务 Agent**：Architect、Coder、Tester、Reviewer、Docs、DevOps
+- **9 个业务 Agent**：核心 6 个（Architect、Coder、Tester、Reviewer、Docs、DevOps）+ 可选 3 个（ProductManager、Security、DBA）
 - **3 个支撑组件**：Orchestrator、Memory、Scheduler（迭代控制）
-- **编排**：LangGraph `StateGraph` DAG，`Architect → Coder → {Tester, Docs} → Reviewer`
+- **编排**：LangGraph `StateGraph` DAG，`ProductManager → Architect → DBA → Coder → {Tester, Docs} → Reviewer → Security → DevOps`（可选节点按开关启用）
 - **通信**：A2A 协议，`/.well-known/agent.json` + `/tasks`
 - **工具**：MCP 风格工具沙箱（白名单+黑名单+路径限制+超时）
 - **记忆**：三层记忆（短期/工作/长期），默认内存+SQLite 降级
+- **输出**：结构化 JSON 输出 + Pydantic 校验（`json_mode` 强制/兼容）
+- **审批**：Human-in-the-Loop，DevOps 真实部署前需 `POST /tasks/{id}/approve` 批准
 
 ## 文档导航
 
@@ -194,6 +196,7 @@ docker-compose logs -f
 │   ├── tui.py            # rich 终端进度面板
 │   ├── dashboard.py      # Web Dashboard 页面
 │   ├── devops.py        # DevOps 真实闭环（build/run/health/cleanup）
+│   ├── human_approval.py # Human-in-the-Loop 审批状态持久化（SQLite）
 │   ├── eval.py          # 评估与指标体系
 │   ├── checkpoint.py    # 状态持久化与断点续跑
 │   ├── prompts.yaml     # System Prompt 版本化
@@ -214,7 +217,8 @@ docker-compose logs -f
 │   ├── test_server.py        # Server 端点测试
 │   ├── test_dashboard.py    # Dashboard 端点测试
 │   ├── test_tui.py          # TUI 与 Tracker 测试
-│   └── test_a2a.py          # A2A 协议测试
+│   ├── test_a2a.py          # A2A 协议测试
+│   └── test_context_compression.py # 上下文压缩与 Agent 摘要测试
 ├── scripts/
 │   ├── run_a2a_cluster.py     # 一键启动 6 个独立 A2A Agent
 │   ├── install_windows.ps1    # Windows 安装脚本
@@ -222,6 +226,7 @@ docker-compose logs -f
 │   ├── install_linux.sh       # Linux 安装脚本
 │   ├── run_linux.sh           # Linux 启动脚本
 │   ├── bump-version.py        # 版本升级
+│   ├── generate_docs.py        # Markdown 文档转离线 HTML
 │   ├── git-sop-check.sh       # Git SOP 检查
 │   ├── release.sh             # 发布流程
 │   ├── push_to_github.sh      # Linux/macOS 提交推送
@@ -279,15 +284,18 @@ GitHub Actions：`.github/workflows/ci.yml` 在 push/PR 时自动运行 pytest�
 - **最大迭代**：默认 10 轮，超过后强制结束。
 - **幂等**：所有请求携带 `request_id`，A2A 服务端去重。
 - **安全**：LLM 生成代码不直接在宿主机执行；`security.py` 提供 `SafetyScanner`（命令/代码危险模式扫描）、`PathValidator`（路径越界校验）、`SecretRedactor`（API Key/手机号/邮箱/密码脱敏）；`security_scanner.py` 提供 Secret 扫描、依赖漏洞扫描与 `ContainerSandbox` 容器隔离。
-- **产物落地**：Coder 写入 `main.py`、Tester 写入 `test_*.py` 并执行 `pytest`、Docs 写入 `README.md/API.md`、Reviewer 写入 `review_report.json`，全部落在 `workspace/<request_id>/` 下。
+- **结构化输出**：`LLMClient` / `LLMProvider` 支持 `json_mode`，OpenAI/DeepSeek/Ollama 均强制返回 JSON；`BaseAgent` 通过 `report_schema` 与 `_parse_json_output` 做 Pydantic 校验，失败时兼容旧版 Markdown 代码块。
+- **产物落地**：Coder 写入 `main.py`、Tester 写入 `test_*.py` 并执行 `pytest`、Docs 写入 `README.md/API.md`、Reviewer 写入 `review_report.json`、Security 写入 `security_report.json`、DBA 写入 `schema.sql`/`migrations/`，全部落在 `workspace/<request_id>/` 下。
 - **模型路由**：`config/model.yaml` 配置各 Agent 的模型版本与温度；`router.py` 支持按提示长度自适应切换大模型。
 - **流式输出**：`POST /orchestrate/stream` 与 `POST /{agent}/stream` 返回 `text/event-stream` 实时推送进度。
 - **记忆后端**：支持 Redis / ChromaDB / SQLite 三档记忆，通过 `MEMORY_BACKEND` 切换；自动降级确保可用性。
 - **上下文压缩**：超过 `CONTEXT_COMPRESS_THRESHOLD` 时自动截断中间文本，保护 LLM 上下文窗口。
+- **状态摘要**：`BaseAgent` 为每个 Agent 配置 `summary_budget`，运行后把结果压缩为合法 JSON 摘要；原始 LLM 输出不进入下游 prompt/checkpoint，产物以文件形式保存。
+- **Human-in-the-Loop**：DevOps 真实部署（`DEVOPS_DRY_RUN=false`）前进入 `awaiting_approval`；管理员可通过 `POST /tasks/{request_id}/approve` 批准或 `POST /tasks/{request_id}/reject` 拒绝，状态由 `HumanApprovalStore`（SQLite）持久化。
 - **状态持久化**：LangGraph checkpoint 自动写入 SQLite，支持断点续跑与 `POST /tasks/{request_id}/resume`。
 - **评估指标**：`eval.py` 跑通 `tests/eval_dataset.json` benchmark（18 条任务，含 Java/Go/TypeScript），产出 Review 通过率、文件召回率、覆盖率、迭代次数与耗时等多维报告，支持 `--update-baseline` 与自动回归检测。
 - **DevOps 闭环**：`devops.py` 支持 build → run → health → cleanup 真实 Docker 闭环，默认 dry-run 保障安全。
-- **角色扩展**：默认 6 个核心 Agent（Architect/Coder/Tester/Reviewer/Docs/DevOps），可通过 `Orchestrator` 的 `enable_product_manager`、`enable_security`、`enable_dba` 扩展为产品经理、安全审查、数据库架构等角色。
+- **角色扩展**：默认 6 个核心 Agent（Architect/Coder/Tester/Reviewer/Docs/DevOps），可通过 `Orchestrator` 的 `enable_product_manager`、`enable_security`、`enable_dba` 扩展为 ProductManager、Security、DBA 角色。
 - **可观测性**：`metrics.py` + `telemetry.py` 提供 Prometheus 格式指标、OpenTelemetry 风格 Span 与结构化日志；`server.py` 暴露 `/metrics` 与 `/health` 端点；`tui.py` 与 `dashboard.py` 提供终端/Web 实时进度面板。
 - **Skill 系统**：`skills.py` 提供最小版 Skill 管理器，支持安装/卸载/调用/发现；`server.py` 暴露 `/skills` 市场协议端点；每个 `BaseAgent` 初始化时自动加载已安装 Skill。
 

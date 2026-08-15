@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CONTRIBUTE.md</title>
+<style>
+:root {
+  --bg: #f6f8fa;
+  --fg: #1f2328;
+  --muted: #656d76;
+  --card: #ffffff;
+  --border: #d1d9e0;
+  --accent: #0969da;
+  --accent-light: #ddf4ff;
+  --code-bg: #f3f4f6;
+  --shadow: 0 2px 8px rgba(31, 35, 40, 0.04);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --fg: #c9d1d9;
+    --muted: #8b949e;
+    --card: #161b22;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-light: #112538;
+    --code-bg: #21262d;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.7;
+}
+header {
+  background: linear-gradient(135deg, var(--accent), #0550ae);
+  color: #fff;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+header h1 { margin: 0 0 .5rem; font-size: 1.9rem; }
+header p { margin: 0; opacity: .9; font-size: 1rem; }
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+}
+aside.toc {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+aside.toc h2 { margin: 0 0 .8rem; font-size: 1rem; color: var(--fg); }
+aside.toc ul { list-style: none; padding: 0; margin: 0; }
+aside.toc li { margin: .35rem 0; }
+aside.toc a { text-decoration: none; color: var(--muted); font-size: .88rem; display: block; padding: .15rem 0; }
+aside.toc a:hover { color: var(--accent); }
+aside.toc ul ul { padding-left: .8rem; }
+main {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 2.4rem;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+main h1 { font-size: 1.75rem; margin-top: 0; border-bottom: 2px solid var(--accent); padding-bottom: .5rem; }
+main h2 { font-size: 1.4rem; margin-top: 2.2rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+main h3 { font-size: 1.15rem; margin-top: 1.6rem; color: var(--accent); }
+main h4 { font-size: 1.05rem; margin-top: 1.3rem; }
+main p { margin: .9rem 0; }
+main a { color: var(--accent); text-decoration: none; }
+main a:hover { text-decoration: underline; }
+main ul, main ol { margin: .8rem 0; padding-left: 1.5rem; }
+main li { margin: .35rem 0; }
+main blockquote {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-light);
+  padding: .75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .92rem;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: .65rem .85rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--bg); font-weight: 600; }
+tr:nth-child(even) { background: rgba(0,0,0,.015); }
+@media (prefers-color-scheme: dark) { tr:nth-child(even) { background: rgba(255,255,255,.025); } }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: .88rem;
+}
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: var(--code-bg);
+  padding: .15rem .35rem;
+  border-radius: 4px;
+  font-size: .9em;
+}
+pre code { background: transparent; padding: 0; font-size: .88rem; }
+main img { max-width: 100%; }
+.anchor {
+  margin-left: .4rem;
+  color: var(--muted);
+  font-size: .8em;
+  text-decoration: none;
+  visibility: hidden;
+}
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor { visibility: visible; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  aside.toc { position: static; max-height: none; margin-bottom: 1rem; }
+  main { padding: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>CONTRIBUTE.md</h1>
+  
+</header>
+<div class="layout">
+<aside class="toc">
+  <h2>目录</h2>
+
+<ul>
+<li><a href="#contribute-md">CONTRIBUTE.md</a><ul>
+<li><a href="#1-开发哲学">1. 开发哲学</a></li>
+<li><a href="#2-代码规范">2. 代码规范</a><ul>
+<li><a href="#2-1-python-风格">2.1 Python 风格</a></li>
+<li><a href="#2-2-禁止事项">2.2 禁止事项</a></li>
+<li><a href="#2-3-单元测试">2.3 单元测试</a></li>
+</ul>
+</li>
+<li><a href="#3-git-提交格式">3. Git 提交格式</a><ul>
+<li><a href="#3-1-type-说明">3.1 type 说明</a></li>
+<li><a href="#3-2-scope-建议">3.2 scope 建议</a></li>
+<li><a href="#3-3-示例">3.3 示例</a></li>
+</ul>
+</li>
+<li><a href="#4-分支策略">4. 分支策略</a></li>
+<li><a href="#5-提交与推送脚本">5. 提交与推送脚本</a></li>
+<li><a href="#6-版本发布流程">6. 版本发布流程</a></li>
+<li><a href="#7-pull-request-模板">7. Pull Request 模板</a></li>
+<li><a href="#8-评审-checklist">8. 评审 checklist</a></li>
+</ul>
+</li>
+</ul>
+
+</aside>
+<main>
+<h1 id="contribute-md">CONTRIBUTE.md<a class="anchor" href="#contribute-md" title="Permanent link">&para;</a></h1>
+<h2 id="1-开发哲学">1. 开发哲学<a class="anchor" href="#1-开发哲学" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>先写测试，再写实现</strong>：所有新功能应包含单元/集成测试，并确保 <code>pytest</code> 通过。</li>
+<li><strong>文档先行</strong>：修改 Prompt、模型版本、Agent Card、工具 Schema 前，先更新对应文档。</li>
+<li><strong>可降级优先</strong>：新增依赖应为可选，未安装时系统自动降级到本地实现。</li>
+<li><strong>安全第一</strong>：不得绕过 <code>ToolSandbox</code> 直接执行 LLM 生成的命令或文件操作。</li>
+</ul>
+<h2 id="2-代码规范">2. 代码规范<a class="anchor" href="#2-代码规范" title="Permanent link">&para;</a></h2>
+<h3 id="2-1-python-风格">2.1 Python 风格<a class="anchor" href="#2-1-python-风格" title="Permanent link">&para;</a></h3>
+<ul>
+<li>使用 <strong>4 空格缩进</strong>，最大行宽 <strong>120 字符</strong>（项目未强制，但建议）。</li>
+<li>类型注解：<code>from __future__ import annotations</code>，使用 <code>Optional</code>、<code>Dict</code>、<code>List</code> 等兼容 Python 3.9。</li>
+<li>异常处理：捕获具体异常；若必须 <code>except Exception</code>，加 <code># noqa: BLE001</code> 并记录原因。</li>
+<li>导入顺序：标准库 → 第三方 → 项目内部。</li>
+</ul>
+<h3 id="2-2-禁止事项">2.2 禁止事项<a class="anchor" href="#2-2-禁止事项" title="Permanent link">&para;</a></h3>
+<ul>
+<li>禁止在仓库中提交 API Key、密码、<code>.env</code> 真实值。</li>
+<li>禁止引入未经审计的最新版本依赖；新依赖版本应发布至少 7 天。</li>
+<li>禁止直接修改 <code>main</code> 分支；所有变更通过 <code>dev</code> 或 <code>feature/*</code> 分支合并。</li>
+<li>禁止 <code>rm -rf</code>、<code>| sh</code> 等危险命令绕过沙箱执行。</li>
+</ul>
+<h3 id="2-3-单元测试">2.3 单元测试<a class="anchor" href="#2-3-单元测试" title="Permanent link">&para;</a></h3>
+<pre><code class="language-bash">python -m pytest tests -q
+</code></pre>
+<ul>
+<li>新增 Agent：在 <code>tests/</code> 中补充输入输出格式测试。</li>
+<li>新增工具：在 <code>tests/</code> 中补充权限、路径隔离、黑名单测试。</li>
+<li>修改编排器：运行完整 DAG 集成测试 <code>test_flow.py</code>。</li>
+</ul>
+<h2 id="3-git-提交格式">3. Git 提交格式<a class="anchor" href="#3-git-提交格式" title="Permanent link">&para;</a></h2>
+<p>采用 <a href="https://www.conventionalcommits.org/">Conventional Commits</a>：</p>
+<pre><code>&lt;type&gt;(&lt;scope&gt;): &lt;short description&gt;
+
+&lt;body&gt;
+
+Refs: #issue-id
+</code></pre>
+<h3 id="3-1-type-说明">3.1 type 说明<a class="anchor" href="#3-1-type-说明" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>type</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>feat</code></td>
+<td>新功能、新 Agent、新路由</td>
+</tr>
+<tr>
+<td><code>fix</code></td>
+<td>Bug 修复</td>
+</tr>
+<tr>
+<td><code>docs</code></td>
+<td>仅文档变更</td>
+</tr>
+<tr>
+<td><code>style</code></td>
+<td>代码格式、无逻辑变更</td>
+</tr>
+<tr>
+<td><code>refactor</code></td>
+<td>重构、性能优化</td>
+</tr>
+<tr>
+<td><code>test</code></td>
+<td>测试补充或修复</td>
+</tr>
+<tr>
+<td><code>chore</code></td>
+<td>构建、依赖、脚本更新</td>
+</tr>
+<tr>
+<td><code>model</code></td>
+<td>Prompt、模型版本、Agent Card 变更</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-2-scope-建议">3.2 scope 建议<a class="anchor" href="#3-2-scope-建议" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>agent</code>: Agent 行为</li>
+<li><code>orchestrator</code>: LangGraph 编排</li>
+<li><code>mcp</code>: 工具沙箱</li>
+<li><code>memory</code>: 记忆层</li>
+<li><code>llm</code>: LLM 客户端 / 路由</li>
+<li><code>server</code>: A2A 网关</li>
+<li><code>docs</code>: 文档</li>
+</ul>
+<h3 id="3-3-示例">3.3 示例<a class="anchor" href="#3-3-示例" title="Permanent link">&para;</a></h3>
+<pre><code>feat(agent): CoderAgent 写入代码文件并返回结构化报告
+
+- 解析 LLM 输出的 ``` 代码块
+- 通过 ToolSandbox.write_file 写入 workspace
+- 返回 files / status / test_result / note
+
+Refs: #12
+</code></pre>
+<h2 id="4-分支策略">4. 分支策略<a class="anchor" href="#4-分支策略" title="Permanent link">&para;</a></h2>
+<p>采用 Trunk-Based 简化版：</p>
+<pre><code>main
+  └── dev
+       ├── feature/xxx
+       └── hotfix/xxx
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>分支</th>
+<th>规则</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main</code></td>
+<td>生产就绪版本，每次合并对应一次 Release，必须通过全部测试与 <code>pre-release-check.sh</code></td>
+</tr>
+<tr>
+<td><code>dev</code></td>
+<td>日常开发分支，功能完成后合并到 <code>main</code></td>
+</tr>
+<tr>
+<td><code>feature/*</code></td>
+<td>从 <code>dev</code> 切出，完成后合并回 <code>dev</code></td>
+</tr>
+<tr>
+<td><code>hotfix/*</code></td>
+<td>从 <code>main</code> 切出，修复后合并到 <code>main</code> 并同步回 <code>dev</code></td>
+</tr>
+</tbody>
+</table>
+<h2 id="5-提交与推送脚本">5. 提交与推送脚本<a class="anchor" href="#5-提交与推送脚本" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># 预提交检查
+bash pre-release-check.sh
+
+# 一键提交并推送（Linux/macOS/Git Bash）
+bash scripts/push_to_github.sh &quot;feat(agent): 新增 xxx&quot;
+
+# Windows PowerShell
+.\scripts\push_to_github.ps1 -Message &quot;feat(agent): 新增 xxx&quot;
+</code></pre>
+<p><code>push_to_github.sh</code> / <code>.ps1</code> 会自动执行：</p>
+<ol>
+<li><code>python -m pytest tests -q</code></li>
+<li><code>bash scripts/git-sop-check.sh</code> 分支名检查</li>
+<li><code>git add -A &amp;&amp; git commit</code></li>
+<li><code>git push origin &lt;当前分支&gt;</code></li>
+<li>在 <code>feature/*</code> / <code>hotfix/*</code> 分支尝试 <code>gh pr create</code></li>
+</ol>
+<h2 id="6-版本发布流程">6. 版本发布流程<a class="anchor" href="#6-版本发布流程" title="Permanent link">&para;</a></h2>
+<pre><code class="language-bash"># 升级版本：patch / minor / major
+python scripts/bump-version.py minor
+
+# 手动完善 CHANGELOG.md 后，提交并打 tag
+bash scripts/release.sh minor
+</code></pre>
+<p><code>bump-version.py</code> 会自动：</p>
+<ul>
+<li>更新 <code>dev_agent_system/__init__.py</code> 的 <code>__version__</code></li>
+<li>在 <code>CHANGELOG.md</code> 生成新版本的空模板</li>
+</ul>
+<p>发布前必须完成：</p>
+<ul>
+<li>[ ] <code>python -m pytest tests -q</code> 全绿</li>
+<li>[ ] <code>config/model.yaml</code> 无 <code>latest</code></li>
+<li>[ ] <code>CHANGELOG.md</code> / <code>RELEASE_NOTES.md</code> 已填充本次变更</li>
+<li>[ ] <code>AGENTS.md</code> / <code>README.md</code> / <code>ARCHITECTURE.md</code> 已同步</li>
+<li>[ ] 文档变更涉及 <code>docs/*.md</code> 时，配套 <code>.html</code> 已通过 <code>python scripts/generate_docs.py</code> 重新生成（或同步手工更新）</li>
+<li>[ ] <code>&lt;ref_snippet&gt;</code> 行号引用在重大代码改动后已重新核对</li>
+</ul>
+<h2 id="7-pull-request-模板">7. Pull Request 模板<a class="anchor" href="#7-pull-request-模板" title="Permanent link">&para;</a></h2>
+<p>合并前请在 PR 描述中填写：</p>
+<pre><code class="language-markdown">## 变更摘要
+- 新增/修改/删除了什么
+- 为什么需要这次变更
+
+## 测试
+- [ ] `python -m pytest tests -q` 通过
+- [ ] 新增/更新了相关测试
+- [ ] 手动验证 CLI / API / A2A 节点
+
+## 文档
+- [ ] CHANGELOG.md / RELEASE_NOTES.md 已更新
+- [ ] AGENTS.md / README.md / ARCHITECTURE.md 已同步（如适用）
+- [ ] `docs/*.md` 及配套 `docs/*.html` 已同步（如适用）
+- [ ] Prompt / Agent Card / 模型版本已版本化（如适用）
+</code></pre>
+<h2 id="8-评审-checklist">8. 评审 checklist<a class="anchor" href="#8-评审-checklist" title="Permanent link">&para;</a></h2>
+<ul>
+<li>代码是否遵循本项目安全规则？</li>
+<li>新增依赖是否已锁定版本并在 <code>requirements.txt</code> 中说明？</li>
+<li>是否有降级路径？（LLM/Memory/MCP 等）</li>
+<li>是否影响 A2A 协议兼容性？</li>
+<li>是否更新了测试与文档？</li>
+</ul>
+</main>
+</div>
+</body>
+</html>

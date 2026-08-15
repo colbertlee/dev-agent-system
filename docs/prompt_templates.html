@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>prompt_templates.md</title>
+<style>
+:root {
+  --bg: #f6f8fa;
+  --fg: #1f2328;
+  --muted: #656d76;
+  --card: #ffffff;
+  --border: #d1d9e0;
+  --accent: #0969da;
+  --accent-light: #ddf4ff;
+  --code-bg: #f3f4f6;
+  --shadow: 0 2px 8px rgba(31, 35, 40, 0.04);
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0d1117;
+    --fg: #c9d1d9;
+    --muted: #8b949e;
+    --card: #161b22;
+    --border: #30363d;
+    --accent: #58a6ff;
+    --accent-light: #112538;
+    --code-bg: #21262d;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.7;
+}
+header {
+  background: linear-gradient(135deg, var(--accent), #0550ae);
+  color: #fff;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+header h1 { margin: 0 0 .5rem; font-size: 1.9rem; }
+header p { margin: 0; opacity: .9; font-size: 1rem; }
+.layout {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.5rem;
+}
+aside.toc {
+  position: sticky;
+  top: 1rem;
+  align-self: start;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: var(--shadow);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+aside.toc h2 { margin: 0 0 .8rem; font-size: 1rem; color: var(--fg); }
+aside.toc ul { list-style: none; padding: 0; margin: 0; }
+aside.toc li { margin: .35rem 0; }
+aside.toc a { text-decoration: none; color: var(--muted); font-size: .88rem; display: block; padding: .15rem 0; }
+aside.toc a:hover { color: var(--accent); }
+aside.toc ul ul { padding-left: .8rem; }
+main {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 2.4rem;
+  box-shadow: var(--shadow);
+  min-width: 0;
+}
+main h1 { font-size: 1.75rem; margin-top: 0; border-bottom: 2px solid var(--accent); padding-bottom: .5rem; }
+main h2 { font-size: 1.4rem; margin-top: 2.2rem; padding-bottom: .35rem; border-bottom: 1px solid var(--border); }
+main h3 { font-size: 1.15rem; margin-top: 1.6rem; color: var(--accent); }
+main h4 { font-size: 1.05rem; margin-top: 1.3rem; }
+main p { margin: .9rem 0; }
+main a { color: var(--accent); text-decoration: none; }
+main a:hover { text-decoration: underline; }
+main ul, main ol { margin: .8rem 0; padding-left: 1.5rem; }
+main li { margin: .35rem 0; }
+main blockquote {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-light);
+  padding: .75rem 1rem;
+  margin: 1rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: .92rem;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: .65rem .85rem;
+  text-align: left;
+  vertical-align: top;
+}
+th { background: var(--bg); font-weight: 600; }
+tr:nth-child(even) { background: rgba(0,0,0,.015); }
+@media (prefers-color-scheme: dark) { tr:nth-child(even) { background: rgba(255,255,255,.025); } }
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: .88rem;
+}
+code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: var(--code-bg);
+  padding: .15rem .35rem;
+  border-radius: 4px;
+  font-size: .9em;
+}
+pre code { background: transparent; padding: 0; font-size: .88rem; }
+main img { max-width: 100%; }
+.anchor {
+  margin-left: .4rem;
+  color: var(--muted);
+  font-size: .8em;
+  text-decoration: none;
+  visibility: hidden;
+}
+h1:hover .anchor, h2:hover .anchor, h3:hover .anchor { visibility: visible; }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  aside.toc { position: static; max-height: none; margin-bottom: 1rem; }
+  main { padding: 1.2rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>prompt_templates.md</h1>
+  
+</header>
+<div class="layout">
+<aside class="toc">
+  <h2>目录</h2>
+
+<ul>
+<li><a href="#prompt_templates-md">prompt_templates.md</a><ul>
+<li><a href="#1-版本化管理原则">1. 版本化管理原则</a></li>
+<li><a href="#2-prompt-结构">2. Prompt 结构</a></li>
+<li><a href="#3-当前-prompt-清单">3. 当前 Prompt 清单</a></li>
+<li><a href="#4-输出格式约定">4. 输出格式约定</a><ul>
+<li><a href="#4-1-代码块规范">4.1 代码块规范</a></li>
+<li><a href="#4-3-json-mode-与-pydantic-校验">4.3 JSON Mode 与 Pydantic 校验</a></li>
+</ul>
+</li>
+<li><a href="#5-prompt-调优-checklist">5. Prompt 调优 checklist</a></li>
+<li><a href="#6-扩展新-agent-prompt">6. 扩展新 Agent Prompt</a></li>
+<li><a href="#7-相关文件">7. 相关文件</a></li>
+</ul>
+</li>
+</ul>
+
+</aside>
+<main>
+<h1 id="prompt_templates-md">prompt_templates.md<a class="anchor" href="#prompt_templates-md" title="Permanent link">&para;</a></h1>
+<h2 id="1-版本化管理原则">1. 版本化管理原则<a class="anchor" href="#1-版本化管理原则" title="Permanent link">&para;</a></h2>
+<p><code>dev_agent_system/prompts.yaml</code> 是系统提示词（System Prompt）的唯一真实来源。所有 Agent 在运行时通过 <code>agents.py</code> 的 <code>_load_prompt()</code> 加载对应提示词。</p>
+<p>版本化规则：</p>
+<ol>
+<li><strong>单一来源</strong>：不要硬编码 prompt；所有修改必须写入 <code>prompts.yaml</code>。</li>
+<li><strong>变更可追溯</strong>：修改 Prompt 时应单独 commit，类型使用 <code>model</code> 或 <code>docs</code>，并在 <code>CHANGELOG.md</code> 中说明原因。</li>
+<li><strong>影响评估</strong>：修改 Prompt 后必须运行 <code>pytest</code>，因为它可能改变 Agent 输出格式（尤其是 JSON 结构）。</li>
+<li><strong>备份与回滚</strong>：重要 Prompt 变更前，建议复制旧版本到 <code>docs/prompt_history/&lt;version&gt;/prompts.yaml</code>。</li>
+</ol>
+<h2 id="2-prompt-结构">2. Prompt 结构<a class="anchor" href="#2-prompt-结构" title="Permanent link">&para;</a></h2>
+<p><code>prompts.yaml</code> 使用 YAML 键值对，键为 Agent 小写名称，值为 <code>|</code> 多行字符串：</p>
+<pre><code class="language-yaml">architect: |
+  你是 Architect Agent（系统架构师）。
+  ...
+
+coder: |
+  你是 Coder Agent（代码实现引擎）。
+  ...
+</code></pre>
+<h2 id="3-当前-prompt-清单">3. 当前 Prompt 清单<a class="anchor" href="#3-当前-prompt-清单" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Agent</th>
+<th>文件键</th>
+<th>核心职责</th>
+<th>输出约束</th>
+<th>JSON Mode / <code>report_schema</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ProductManager</td>
+<td><code>product_manager</code></td>
+<td>需求澄清、PRD、用户故事、验收标准</td>
+<td>Markdown 代码块 <code># file: prd.md</code> + JSON</td>
+<td>否</td>
+</tr>
+<tr>
+<td>Architect</td>
+<td><code>architect</code></td>
+<td>需求分析、架构设计、技术选型</td>
+<td>JSON：<code>{modules, api_contract, tech_stack, mermaid, notes}</code></td>
+<td>是 / <code>DesignOutput</code></td>
+</tr>
+<tr>
+<td>DBA</td>
+<td><code>dba</code></td>
+<td>数据库 Schema 与迁移脚本</td>
+<td>SQL 代码块 + JSON：<code>{tables, notes}</code></td>
+<td>是 / <code>DBAReport</code></td>
+</tr>
+<tr>
+<td>Coder</td>
+<td><code>coder</code></td>
+<td>代码实现、自测</td>
+<td>代码块 + JSON 报告：<code>{files, report}</code></td>
+<td>是 / <code>AgentOutput</code></td>
+</tr>
+<tr>
+<td>Tester</td>
+<td><code>tester</code></td>
+<td>生成并执行 pytest</td>
+<td>代码块 + JSON 测试报告</td>
+<td>是 / <code>AgentOutput</code></td>
+</tr>
+<tr>
+<td>Reviewer</td>
+<td><code>reviewer</code></td>
+<td>独立审查代码/测试/文档</td>
+<td>JSON：<code>{severity, passed, issues, suggestions}</code></td>
+<td>是 / <code>ReviewReport</code></td>
+</tr>
+<tr>
+<td>Security</td>
+<td><code>security</code></td>
+<td>独立安全审查</td>
+<td>JSON：<code>{severity, passed, issues, suggestions}</code></td>
+<td>是 / <code>ReviewReport</code></td>
+</tr>
+<tr>
+<td>Docs</td>
+<td><code>docs</code></td>
+<td>生成 README / API 文档</td>
+<td>Markdown 代码块，文件头：<code># file: README.md</code></td>
+<td>否</td>
+</tr>
+<tr>
+<td>DevOps</td>
+<td><code>devops</code></td>
+<td>CI/CD、部署配置</td>
+<td>Dockerfile / docker-compose / GitHub Actions 配置</td>
+<td>否</td>
+</tr>
+</tbody>
+</table>
+<h2 id="4-输出格式约定">4. 输出格式约定<a class="anchor" href="#4-输出格式约定" title="Permanent link">&para;</a></h2>
+<p>为了让下游 Agent 与 <code>postprocess</code> 正确解析，每个 Prompt 必须明确指定输出格式。</p>
+<h3 id="4-1-代码块规范">4.1 代码块规范<a class="anchor" href="#4-1-代码块规范" title="Permanent link">&para;</a></h3>
+<p>代码块必须包含前导文件头，并置于 fenced code block 中：</p>
+<pre><code class="language-markdown"># file: path/to/file.py
+```python
+def add(a, b):
+    return a + b
+</code></pre>
+<pre><code>
+`BaseAgent._extract_code_blocks()` 会同时解析 `file/path/filename:` 头部与 ` ``` ` 之间的内容。
+
+### 4.2 JSON 报告规范
+
+所有 JSON 报告应使用独立的 ` ```json ` 块，并尽量只包含一层嵌套，避免 LLM 生成不可解析的结构：
+
+```markdown
+```json
+{&quot;severity&quot;: &quot;low&quot;, &quot;passed&quot;: true, &quot;issues&quot;: [], &quot;suggestions&quot;: []}
+</code></pre>
+<p>```</p>
+<h3 id="4-3-json-mode-与-pydantic-校验">4.3 JSON Mode 与 Pydantic 校验<a class="anchor" href="#4-3-json-mode-与-pydantic-校验" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>LLMClient.chat(..., json_mode=True)</code> 会在 OpenAI/DeepSeek 请求中注入 <code>response_format={"type": "json_object"}</code>，在 Ollama 请求中注入 <code>format="json"</code>。</li>
+<li><code>BaseAgent</code> 通过 <code>report_schema</code> 字段绑定 Pydantic 模型；收到 LLM 输出后先调用 <code>_parse_json_output</code>，解析失败时兼容 Markdown 代码块并给出 fallback。</li>
+<li>提示词中应明确要求“必须且仅输出合法 JSON”，避免 LLM 附带说明文字导致解析失败。</li>
+<li>兼容策略：即使 <code>json_mode</code> 失败，<code>_extract_json</code> 仍会从 Markdown 代码块中抢救第一个 <code>{}</code> 或 <code>[]</code>。</li>
+</ul>
+<h2 id="5-prompt-调优-checklist">5. Prompt 调优 checklist<a class="anchor" href="#5-prompt-调优-checklist" title="Permanent link">&para;</a></h2>
+<p>修改任一 Prompt 后，请确认：</p>
+<ul>
+<li>[ ] <code>python -m pytest tests -q</code> 通过</li>
+<li>[ ] 相关 Agent 的 <code>postprocess</code> 仍能正确解析输出</li>
+<li>[ ] 如果启用了 <code>json_mode</code> 或修改了 <code>report_schema</code>，同步更新 <code>tests/</code> 中的 mock 响应</li>
+<li>[ ] 在 <code>CHANGELOG.md</code> / <code>RELEASE_NOTES.md</code> 中记录 Prompt 变更原因与预期影响</li>
+</ul>
+<h2 id="6-扩展新-agent-prompt">6. 扩展新 Agent Prompt<a class="anchor" href="#6-扩展新-agent-prompt" title="Permanent link">&para;</a></h2>
+<p>新增 Agent 时：</p>
+<ol>
+<li>在 <code>dev_agent_system/agents.py</code> 中继承 <code>BaseAgent</code>。</li>
+<li>在 <code>prompts.yaml</code> 添加 <code>&lt;agent_name&gt;:</code> 键。</li>
+<li>在 <code>dev_agent_system/agent_cards.json</code> 更新技能描述。</li>
+<li>在 <code>tests/</code> 中补充至少一个输入/解析测试。</li>
+<li>更新本文件 <code>当前 Prompt 清单</code> 表格。</li>
+</ol>
+<h2 id="7-相关文件">7. 相关文件<a class="anchor" href="#7-相关文件" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>dev_agent_system/prompts.yaml</code> —— 真实 Prompt 源文件</li>
+<li><code>dev_agent_system/agents.py</code> —— Prompt 加载与 <code>postprocess</code> 解析</li>
+<li><code>docs/tools_spec.md</code> —— 工具调用输出格式</li>
+<li><code>CONTRIBUTE.md</code> —— Prompt 变更提交规范</li>
+</ul>
+</main>
+</div>
+</body>
+</html>

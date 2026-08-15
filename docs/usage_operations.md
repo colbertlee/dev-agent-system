@@ -49,6 +49,14 @@ cp .env.example .env
 | `REDIS_URL` | Redis 连接地址 | `redis://localhost:6379/0` |
 | `CONTEXT_COMPRESS_THRESHOLD` | 上下文压缩阈值（字符） | `6000` |
 | `CONTEXT_WINDOW_LIMIT` | 上下文最大字符数 | `8000` |
+| `CHECKPOINT_ENABLED` | 是否启用 LangGraph checkpoint 持久化 | `true` |
+| `CHECKPOINT_DB` | checkpoint SQLite 路径 | `<MEMORY_DIR>/checkpoints.sqlite` |
+| `DEVOPS_DRY_RUN` | DevOps 是否只执行 dry-run | `true` |
+| `DEVOPS_TIMEOUT` | DevOps 命令超时（秒） | `120` |
+| `HUMAN_APPROVAL_REQUIRED` | DevOps 真实部署前是否需要人工审批 | `true` |
+| `APPROVAL_DB` | 审批状态 SQLite 路径 | `<MEMORY_DIR>/approvals.sqlite` |
+| `LLM_TIMEOUT` | LLM 请求超时（秒） | `30` |
+| `LLM_MAX_RETRIES` | LLM 失败重试次数 | `2` |
 
 ## 2. 运行方式
 
@@ -71,11 +79,17 @@ python -m dev_agent_system.server --host 0.0.0.0 --port 8000
 | 端点 | 方法 | 说明 |
 |---|---|---|
 | `/health` | GET | 健康检查 |
+| `/metrics` | GET | Prometheus 指标 |
 | `/orchestrate` | POST | 完整 DAG 编排 |
 | `/orchestrate/stream` | POST | SSE 流式编排 |
+| `/tasks/{request_id}/resume` | POST | 从 checkpoint 恢复 |
+| `/tasks/{request_id}/approval` | GET | 查询 Human-in-the-Loop 审批状态 |
+| `/tasks/{request_id}/approve` | POST | 批准 DevOps 等高风险操作 |
+| `/tasks/{request_id}/reject` | POST | 拒绝高风险操作 |
 | `/rpc` | POST | JSON-RPC 风格调用 |
 | `/{agent}/tasks` | POST | 单个 Agent 任务 |
 | `/{agent}/stream` | POST | 单个 Agent SSE 流式 |
+| `/skills` | GET / POST | Skill 市场发现/调用 |
 
 调用示例：
 
@@ -174,7 +188,7 @@ curl http://localhost:8000/health
 | 路径 | 说明 |
 |---|---|
 | `workspace/` | 生成的代码、测试、文档 |
-| `memory_store/` | SQLite / ChromaDB 记忆 |
+| `memory_store/` | SQLite / ChromaDB 记忆、checkpoint、审批状态 |
 | `config/` | 模型与 MCP 配置 |
 | `.env` | 环境变量（**不含** API Key 时应加密或排除） |
 
@@ -205,6 +219,7 @@ cp -r workspace memory_store config "$DEST/"
 | `pytest` 无测试 | Tester 未生成 `test_*.py` | 检查 Coder 是否生成可识别代码块 |
 | `Recursion limit reached` | LangGraph 默认递归限制 | 已在 `config` 中设置 `recursion_limit` |
 | `无法解析 JSON 审查报告` | Reviewer 输出格式异常 | 检查 Prompt 与 LLM 输出 |
+| `状态卡在 awaiting_approval` | DevOps 真实部署未审批 | 调用 `POST /tasks/{request_id}/approve` 或在 `APPROVAL_DB` 中确认 |
 | Redis/ChromaDB 不可用 | 依赖未安装或服务未启动 | 自动降级到 SQLite，查看日志 |
 
 ## 9. 升级流程

@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.22.1] - 2026-08-14
+
+### Added
+
+- 新增 `scripts/generate_docs.py`，把项目 Markdown 文档转换为响应式、带目录、支持暗色模式的离线 HTML。
+- `scripts/sync_spec.py` 自动同步 `docs/agent_generator_spec.md` 与 `docs/agent_framework_retrospective.md` 中的版本号、系统描述与源码附录。
+
+### Changed
+
+- 文档全面更新到 v0.22.0：
+  - `README.md`：9 个核心/可选 Agent、结构化输出、Human-in-the-Loop、状态摘要等设计要点与项目结构。
+  - `AGENTS.md`：新增 Agent 步骤加入 `report_schema` / `summary_budget` 与 `docs/*.html` 同步要求；版本化资产表扩充。
+  - `ARCHITECTURE.md`：DAG 增加 `product_manager` / `dba` / `security` / `approval_gate`，新增 `HumanApprovalStore` / `Schemas` 层，Sequence 图包含 HITL。
+  - `CONTRIBUTE.md`：发布与 PR checklist 增加 `CHANGELOG/RELEASE_NOTES`、`docs/*.md` 与 `.html` 同步、行号引用核对。
+  - `docs/prompt_templates.md`：新增 `ProductManager` / `Security` / `DBA` 到 Prompt 清单，增加 JSON Mode / Pydantic 校验章节。
+  - `docs/usage_operations.md`：补充环境变量、`/tasks/{id}/approval`、`/tasks/{id}/approve`、`/tasks/{id}/reject`、`/metrics`、`/skills` 等端点。
+  - `docs/agent_generator_spec.md`：版本升级到 v0.22.0，重抽全部源码附录，新增 `human_approval.py` 附录，BaseAgent/Orchestrator 描述加入 `json_mode`、`report_schema`、`summary_budget`、`approval_gate`。
+  - `docs/agent_framework_retrospective.md`：版本范围扩展到 v0.22.0，新增 v0.21/v0.22 四要素落地小节，`<ref_snippet>` 行号引用统一改为 `<ref_file>` 文件引用，避免代码行号失步。
+- `dev_agent_system/__init__.py` 版本号更新为 `0.22.1`。
+- `requirements.txt` 增加 `markdown==3.7` 作为文档生成依赖。
+
+### Fixed
+
+- 修复 `docs/agent_generator_spec.md` 与 `docs/agent_framework_retrospective.md` 中源码附录、行号引用、版本号与实际 v0.22.0 代码不一致的问题。
+- 修复 `generate_docs.py` 生成 HTML 标题携带 `¶` 符号的问题，并在生成 HTML 时自动把 `<ref_file>` / `<ref_snippet>` 引用转换为相对链接。
+
+### Security
+
+- 无。
+
+### Model Changes
+
+- 无。
+
 ## [0.22.0] - 2026-08-14
 
 ### Added
