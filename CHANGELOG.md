@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.1] - 2026-08-14
+
+### Added
+
+- `dev_agent_system/memory.py` 全面重构记忆系统：
+  - 统一召回语义：SQLite/Redis/Chroma 后端均按「关键词 + 时效 + 语义（Chroma）」混合打分召回，`query` 不再被忽略。
+  - 关键词分支持中英文混合分词；时效分使用指数衰减；Chroma 语义分从 distance 映射到 0-1 相似度。
+  - 生命周期治理：TTL 过期清理、按容量上限驱逐最旧记忆，写后即时整理。
+  - 并发安全：SQLite 后端使用 `threading.RLock` + WAL + busy_timeout；`MemoryAgent` 新增 `aremember`/`arecall`/`asummarize`/`acompress_context`/`adelete_expired`，通过 `asyncio.Lock` + `asyncio.to_thread` 在 async 编排器中安全执行。
+- `config.py` 新增 `MEMORY_MAX_ENTRIES_PER_LAYER`、`MEMORY_MAX_CANDIDATES`、`MEMORY_SHORT_MAX_ENTRIES` 环境变量。
+- `tests/test_memory.py` 新增关键词召回排序、空 query 时效排序、TTL 过期、容量驱逐、短期记忆容量/TTL、异步接口等测试。
+
+### Changed
+
+- `BaseAgent.run` 改用 `await self.memory.arecall(...)` / `await self.memory.acompress_context(...)` / `await self.memory.aremember(...)`。
+- `MemoryAgentFacade.run` 改为 `async def`，`Orchestrator.run`/`resume` 改为 `await self.agents["memory"].run(state)`。
+- `dev_agent_system/__init__.py` 版本号 bump 到 `0.23.1`。
+
+### Fixed
+
+- 修复 SQLite 后端因单例模式导致 `close()` 后连接被后续测试复用而报 `database is closed` 的问题；改为每个 `MemoryAgent` 实例持有独立连接。
+
+### Security
+
+- 无。
+
+### Model Changes
+
+- 无。
+
 ## [0.23.0] - 2026-08-14
 
 ### Added

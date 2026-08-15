@@ -303,14 +303,14 @@ class BaseAgent:
         workspace.mkdir(parents=True, exist_ok=True)
         state["workspace"] = str(workspace)
 
-        memories = self.memory.recall(state.get("input", ""), session_id=session, layer="working", top_k=3)
+        memories = await self.memory.arecall(state.get("input", ""), session_id=session, layer="working", top_k=3)
         memory_text = "\n".join(str(m["value"]) for m in memories)
         prompt = self.build_prompt(state)
         full_prompt = f"相关记忆：\n{memory_text}\n\n{prompt}" if memory_text else prompt
 
         # 上下文压缩：超过阈值后保留头部和尾部
         if len(full_prompt) > Settings.context_compress_threshold():
-            full_prompt = self.memory.compress_context(
+            full_prompt = await self.memory.acompress_context(
                 full_prompt, max_chars=Settings.context_window_limit()
             )
 
@@ -370,7 +370,7 @@ class BaseAgent:
         # llm_kwargs 等内部元数据无需进入 LangGraph state
         result.pop("llm_kwargs", None)
         # 记忆层也存摘要，避免后续 recall 把原始大段输出塞进 prompt
-        self.memory.remember("last_output", result["output"], session_id=session, layer="short", ttl=3600)
+        await self.memory.aremember("last_output", result["output"], session_id=session, layer="short", ttl=3600)
 
         return result
 
@@ -892,13 +892,13 @@ class DBAAgent(BaseAgent):
 class MemoryAgentFacade:
     """对外的 Memory Agent 接口，供 Orchestrator 调用。"""
 
-    def __init__(self, base_dir: str = "memory_store"):
+    def __init__(self, base_dir: Optional[str] = None):
         self._impl = MemoryAgent(base_dir=base_dir)
 
-    def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
+    async def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
         session = state.get("request_id", "default")
         query = state.get("input", "")
-        memories = self._impl.recall(query, session_id=session, layer="working", top_k=5)
+        memories = await self._impl.arecall(query, session_id=session, layer="working", top_k=5)
         summary = self._impl.summarize(state.get("history", []))
         return {"agent": "Memory", "role": "记忆", "memories": memories, "summary": summary}
 

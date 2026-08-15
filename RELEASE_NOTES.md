@@ -4,7 +4,36 @@
 
 ---
 
-## v0.23.0 — LLM 输出鲁棒性、异步 I/O 与安全沙箱强化（最新）
+## v0.23.1 — Memory 召回一致性、生命周期治理与并发安全（最新）
+
+**发布日期**：2026-08-14
+
+### 核心价值
+
+- 结束不同 memory 后端之间召回语义不一致的问题：SQLite/Redis 不再只是“返回最近 N 条”，而是按 query 关键词与时效混合打分；Chroma 在语义召回之上也补上时效与关键词权重。
+- 让记忆系统具备真正的生命周期治理能力：TTL 自动过期、超过容量自动驱逐最旧、写后即时整理。
+- 让 memory 不再阻塞 async 编排器，也不再因多线程/多实例访问 SQLite 而出现 `database is closed` 或 `database is locked`。
+
+### 关键变更
+
+- `memory.py` 重写 `SQLiteMemoryBackend`/`RedisMemoryBackend`/`ChromaMemoryBackend` 的召回逻辑，统一走 `_score_candidate` 混合打分。
+- `MemoryAgent` 新增 `aremember`/`arecall`/`asummarize`/`acompress_context`/`adelete_expired` 异步接口，内部用 `asyncio.Lock` + `asyncio.to_thread` 保障并发安全。
+- `BaseAgent.run` 与 `Orchestrator.run`/`resume` 全部改用异步 memory 调用。
+- 新增 `MEMORY_MAX_ENTRIES_PER_LAYER`、`MEMORY_MAX_CANDIDATES`、`MEMORY_SHORT_MAX_ENTRIES` 配置。
+- `test_memory.py` 扩充关键词召回、TTL、容量驱逐、异步接口测试。
+
+### 升级注意
+
+- 本次为 **PATCH**，公共接口 `MemoryAgent.remember`/`recall`/`summarize`/`compress_context` 仍兼容；新增异步方法为推荐用法。
+- 新增环境变量默认值较宽松（`MEMORY_MAX_ENTRIES_PER_LAYER=1000`），如需更激进的内存控制可在 `.env` 中调低。
+
+### 已知问题
+
+- 关键词召回目前采用简单字符/词匹配，未引入 BM25/embedding dense retrieval；如记忆规模超过数千条，建议切到 Chroma 后端。
+
+---
+
+## v0.23.0 — LLM 输出鲁棒性、异步 I/O 与安全沙箱强化
 
 **发布日期**：2026-08-14
 

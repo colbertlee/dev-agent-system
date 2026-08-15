@@ -190,7 +190,7 @@ class Orchestrator:
         self.tracker.start(state["request_id"], requirement)
         with self.telemetry.span("orchestrator.run", {"request_id": state["request_id"]}):
             # 注入工作记忆
-            state["memory"] = self.agents["memory"].run(state)
+            state["memory"] = await self.agents["memory"].run(state)
 
             graph = self._build_graph()
             config = self._thread_config(state["request_id"])
@@ -283,7 +283,7 @@ class Orchestrator:
             yield f"data: {json.dumps({'event': 'duplicate', 'request_id': state['request_id']}, ensure_ascii=False)}\n\n"
             return
 
-        state["memory"] = self.agents["memory"].run(state)
+        state["memory"] = await self.agents["memory"].run(state)
         graph = self._build_graph()
         config = self._thread_config(state["request_id"])
 

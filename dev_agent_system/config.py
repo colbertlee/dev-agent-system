@@ -104,6 +104,18 @@ class Settings:
         return os.getenv("MEMORY_BACKEND", "sqlite").lower()
 
     @staticmethod
+    def memory_max_entries_per_layer() -> int:
+        return int(os.getenv("MEMORY_MAX_ENTRIES_PER_LAYER", "1000"))
+
+    @staticmethod
+    def memory_max_candidates() -> int:
+        return int(os.getenv("MEMORY_MAX_CANDIDATES", "100"))
+
+    @staticmethod
+    def memory_short_max_entries() -> int:
+        return int(os.getenv("MEMORY_SHORT_MAX_ENTRIES", "100"))
+
+    @staticmethod
     def context_compress_threshold() -> int:
         return int(os.getenv("CONTEXT_COMPRESS_THRESHOLD", "6000"))
 
