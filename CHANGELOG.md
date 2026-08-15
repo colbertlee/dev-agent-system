@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.2] - 2026-08-15
+
+### Added
+
+- `dev_agent_system/memory.py` 继续深化 memory 召回与治理：
+  - SQLite 后端自动探测 `fts5` 扩展，若存在则创建 `memory_fts` 虚拟表；关键词召回改为先通过 `fts5` 索引取候选，再在 Python 层做混合打分，显著降低大规模记忆下的扫描开销。`fts5` 不可用时透明降级为 Python 关键词匹配。
+  - SQLite `delete_expired`/`evict_oldest` 现在会同步清理 `memory_fts`，避免索引与主表数据不一致。
+  - Chroma 后端 `delete_expired` 与 `evict_oldest` 改为优先使用 `collection.get(where=...)` 精确过滤 TTL 与容量，失败时降级为全量扫描，避免依赖语义 `query` 做 metadata 操作。
+  - 新增 `MEMORY_MAX_ENTRIES_PER_LAYER`/`MEMORY_MAX_CANDIDATES`/`MEMORY_SHORT_MAX_ENTRIES` 通过 `Settings` 注入后端。
+
+### Changed
+
+- `SQLiteMemoryBackend.recall` 改为「时效最近候选 + fts5 候选」双路召回后混合排序，召回覆盖率和相关性更平衡。
+- `ChromaMemoryBackend` 的 `where` 过滤与过期驱逐逻辑更贴近 Chroma metadata API。
+
+### Fixed
+
+- 修复 SQLite `evict_oldest` 中 LIMIT 子查询写法可能不兼容的问题，改为先 `COUNT` 再 `LIMIT`。
+
+### Security
+
+- 无。
+
+### Model Changes
+
+- 无。
+
 ## [0.23.1] - 2026-08-14
 
 ### Added

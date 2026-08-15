@@ -3,7 +3,8 @@
 主要改进：
 - 统一召回语义：SQLite/Redis/Chroma 都支持 query，按「关键词 + 时效 + 语义」混合打分，
   不再因后端不同而在「最近 N 条」和「语义最相关」之间行为突变。
-- 生命周期治理：TTL 过期清理、容量上限驱逐、写后即时整理。
+- SQLite 引入 fts5 全文索引（若可用）做大规模关键词召回，否则降级为 Python 关键词匹配。
+- 生命周期治理：TTL 过期清理、按容量上限驱逐最旧记忆，写后即时整理。
 - 并发安全：SQLite 后端使用 threading 锁 + WAL；MemoryAgent 提供 aremember/arecall，
   在 async 编排器中通过 asyncio.to_thread + asyncio.Lock 避免阻塞和竞争。
 """
@@ -163,7 +164,11 @@ class MemoryBackend(Protocol):
 
 
 class SQLiteMemoryBackend:
-    """SQLite 降级实现：支持关键词/时效混合召回、TTL、容量驱逐、线程安全。"""
+    """SQLite 降级实现：支持关键词/时效混合召回、TTL、容量驱逐、线程安全。
+
+    当 Python sqlite3 编译了 fts5 扩展时，会自动创建 `memory_fts` 虚拟表做全文索引，
+    把关键词召回从 O(N) 的 Python 扫描降到索引查询；若不可用则透明降级。
+    """
 
     def __init__(self, base_dir: Path):
         self.base_dir = Path(base_dir)
@@ -176,6 +181,7 @@ class SQLiteMemoryBackend:
         )
         self._db.execute("PRAGMA journal_mode=WAL")
         self._db.execute("PRAGMA busy_timeout=5000")
+        self._fts5_enabled = False
         self._init_tables()
 
     def _init_tables(self) -> None:
@@ -191,7 +197,81 @@ class SQLiteMemoryBackend:
             self._db.execute(
                 "CREATE INDEX IF NOT EXISTS idx_created_at ON memory(created_at)"
             )
+            self._db.execute(
+                "CREATE INDEX IF NOT EXISTS idx_expires_at ON memory(expires_at)"
+            )
+            try:
+                self._db.execute(
+                    "CREATE VIRTUAL TABLE IF NOT EXISTS memory_fts USING fts5(memory_id UNINDEXED, content)"
+                )
+                self._fts5_enabled = True
+            except sqlite3.OperationalError:
+                self._fts5_enabled = False
             self._db.commit()
+
+    def _searchable_text(self, key: str, value: Any) -> str:
+        return f"{key} {_value_to_text(value)}"
+
+    def _build_fts_query(self, query: str) -> str:
+        """把 query 转换成 fts5 MATCH 表达式，支持中英文混合。"""
+        tokens = _tokenize(query)
+        escaped = []
+        for token in tokens:
+            token = token.replace('"', '""')
+            escaped.append(f'"{token}"')
+        return " ".join(escaped)
+
+    def _index_in_fts(self, memory_id: str, key: str, value: Any) -> None:
+        if not self._fts5_enabled:
+            return
+        with self._lock:
+            text = self._searchable_text(key, value)
+            self._db.execute(
+                "INSERT INTO memory_fts(memory_id, content) VALUES (?, ?)",
+                (memory_id, text),
+            )
+
+    def _delete_from_fts(self, memory_ids: List[str]) -> None:
+        if not self._fts5_enabled or not memory_ids:
+            return
+        with self._lock:
+            self._db.executemany(
+                "DELETE FROM memory_fts WHERE memory_id = ?",
+                [(mid,) for mid in memory_ids],
+            )
+
+    def _fts_candidate_ids(
+        self,
+        query: str,
+        limit: int,
+    ) -> List[str]:
+        """使用 fts5 检索候选 memory_id；不可用或失败时返回空列表。"""
+        if not self._fts5_enabled or not query.strip():
+            return []
+        match_expr = self._build_fts_query(query)
+        if not match_expr:
+            return []
+        try:
+            with self._lock:
+                cursor = self._db.execute(
+                    "SELECT memory_id FROM memory_fts WHERE memory_fts MATCH ? LIMIT ?",
+                    (match_expr, limit),
+                )
+                return [row[0] for row in cursor.fetchall()]
+        except sqlite3.OperationalError:
+            return []
+
+    def _select_ids(
+        self,
+        where: str,
+        params: Tuple[Any, ...],
+    ) -> List[str]:
+        with self._lock:
+            cursor = self._db.execute(
+                f"SELECT id FROM memory WHERE {where}",
+                params,
+            )
+            return [row[0] for row in cursor.fetchall()]
 
     def remember(
         self,
@@ -203,12 +283,14 @@ class SQLiteMemoryBackend:
     ) -> None:
         now = time.time()
         expires = now + ttl if ttl else 0
+        memory_id = str(uuid.uuid4())
         with self._lock:
             self._db.execute(
-                "REPLACE INTO memory (id, session_id, layer, key, value, created_at, expires_at) "
+                "INSERT INTO memory (id, session_id, layer, key, value, created_at, expires_at) "
                 "VALUES (?, ?, ?, ?, ?, ?, ?)",
-                (str(uuid.uuid4()), session_id, layer, key, json.dumps(value, ensure_ascii=False), now, expires),
+                (memory_id, session_id, layer, key, json.dumps(value, ensure_ascii=False), now, expires),
             )
+            self._index_in_fts(memory_id, key, value)
             self._db.commit()
 
     def recall(
@@ -220,27 +302,49 @@ class SQLiteMemoryBackend:
         max_candidates: int = 100,
     ) -> List[Dict[str, Any]]:
         now = time.time()
+        candidate_ids: set = set()
+
+        # 1. 先按时效取一批最近候选，保证空 query 和 keywords 召回都有覆盖
+        recency_limit = max(max_candidates, top_k * 3)
         with self._lock:
             cursor = self._db.execute(
-                "SELECT key, value, created_at FROM memory WHERE session_id=? AND layer=? "
+                "SELECT id, key, value, created_at FROM memory WHERE session_id=? AND layer=? "
                 "AND (expires_at=0 OR expires_at>?) ORDER BY created_at DESC LIMIT ?",
-                (session_id, layer, now, max(max_candidates, top_k * 3)),
+                (session_id, layer, now, recency_limit),
             )
-            candidates = []
-            for key, raw_value, created_at in cursor.fetchall():
-                try:
-                    value = json.loads(raw_value)
-                except json.JSONDecodeError:
-                    value = raw_value
-                candidates.append({"key": key, "value": value, "created_at": created_at})
+            recency_rows = [
+                {"id": row[0], "key": row[1], "value": json.loads(row[2]) if row[2] else row[2], "created_at": row[3]}
+                for row in cursor.fetchall()
+            ]
+        for r in recency_rows:
+            candidate_ids.add(r["id"])
+
+        # 2. 若开启 fts5，用全文索引再取一批候选
+        fts_ids = self._fts_candidate_ids(query, max_candidates)
+        if fts_ids:
+            placeholders = ",".join("?" * len(fts_ids))
+            with self._lock:
+                cursor = self._db.execute(
+                    f"SELECT id, key, value, created_at FROM memory "
+                    f"WHERE session_id=? AND layer=? AND id IN ({placeholders}) "
+                    f"AND (expires_at=0 OR expires_at>?)",
+                    (session_id, layer, *fts_ids, now),
+                )
+                for row in cursor.fetchall():
+                    mid = row[0]
+                    if mid not in candidate_ids:
+                        candidate_ids.add(mid)
+                        recency_rows.append(
+                            {"id": mid, "key": row[1], "value": json.loads(row[2]) if row[2] else row[2], "created_at": row[3]}
+                        )
 
         scored = [
             {
-                "key": c["key"],
-                "value": c["value"],
-                "score": _score_candidate(query, c["key"], c["value"], c["created_at"]),
+                "key": r["key"],
+                "value": r["value"],
+                "score": _score_candidate(query, r["key"], r["value"], r["created_at"]),
             }
-            for c in candidates
+            for r in recency_rows
         ]
         scored.sort(key=lambda x: x["score"], reverse=True)
         return scored[:top_k]
@@ -259,10 +363,15 @@ class SQLiteMemoryBackend:
         if layer:
             where.append("layer=?")
             params.append(layer)
+        ids = self._select_ids(" AND ".join(where), tuple(params))
+        if not ids:
+            return 0
         with self._lock:
+            self._delete_from_fts(ids)
+            placeholders = ",".join("?" * len(ids))
             cursor = self._db.execute(
-                f"DELETE FROM memory WHERE {' AND '.join(where)}",
-                params,
+                f"DELETE FROM memory WHERE id IN ({placeholders})",
+                ids,
             )
             self._db.commit()
             return cursor.rowcount
@@ -279,17 +388,25 @@ class SQLiteMemoryBackend:
                 (session_id, layer),
             ).fetchone()
             total = count_row[0] if count_row else 0
-            if total <= max_entries:
-                return 0
             to_delete = total - max_entries
-            self._db.execute(
-                "DELETE FROM memory WHERE id IN ("
+            if to_delete <= 0:
+                return 0
+            cursor = self._db.execute(
                 "SELECT id FROM memory WHERE session_id=? AND layer=? "
-                "ORDER BY created_at ASC LIMIT ?)",
+                "ORDER BY created_at ASC LIMIT ?",
                 (session_id, layer, to_delete),
             )
+            ids = [row[0] for row in cursor.fetchall()]
+            if not ids:
+                return 0
+            self._delete_from_fts(ids)
+            placeholders = ",".join("?" * len(ids))
+            self._db.execute(
+                f"DELETE FROM memory WHERE id IN ({placeholders})",
+                ids,
+            )
             self._db.commit()
-            return to_delete
+            return len(ids)
 
     def close(self) -> None:
         with self._lock:
@@ -435,6 +552,16 @@ class ChromaMemoryBackend:
         client = chromadb.PersistentClient(path=str(base_dir / "chroma_data"))
         self._collection = client.get_or_create_collection("memory")
 
+    def _where_session_layer(
+        self,
+        session_id: str,
+        layer: str,
+    ) -> Dict[str, Any]:
+        return {"session_id": session_id, "layer": layer}
+
+    def _parse_meta(self, meta: Any) -> Dict[str, Any]:
+        return dict(meta or {})
+
     def remember(
         self,
         key: str,
@@ -466,29 +593,28 @@ class ChromaMemoryBackend:
         max_candidates: int = 100,
     ) -> List[Dict[str, Any]]:
         now = time.time()
-        # Chroma 的 where 语法较严格，先按 session/layer 查询，再在 Python 层过滤 TTL。
-        # 为了召回率，拉取比 top_k 多一些的候选。
+        n_results = min(max_candidates * 2, max(50, top_k * 5))
         results = self._collection.query(
             query_texts=[query or ""],
-            n_results=min(max_candidates * 2, max(50, top_k * 5)),
-            where={"session_id": session_id, "layer": layer},
+            n_results=n_results,
+            where=self._where_session_layer(session_id, layer),
         )
         candidates = []
         for doc_id, doc, meta, dist in zip(
             results["ids"][0], results["documents"][0], results["metadatas"][0], results["distances"][0]
         ):
-            expires_at = meta.get("expires_at") or 0
+            parsed = self._parse_meta(meta)
+            expires_at = parsed.get("expires_at") or 0
             if expires_at > 0 and expires_at <= now:
                 continue
             try:
                 value = json.loads(doc)
             except json.JSONDecodeError:
                 value = doc
-            created_at = meta.get("created_at") or time.time()
-            # Chroma distance 越低越相似，映射到 0-1 的语义分
+            created_at = parsed.get("created_at") or time.time()
             semantic = 1.0 / (1.0 + float(dist))
             candidates.append({
-                "key": meta.get("key", doc_id),
+                "key": parsed.get("key", doc_id),
                 "value": value,
                 "created_at": created_at,
                 "semantic": semantic,
@@ -513,42 +639,51 @@ class ChromaMemoryBackend:
         layer: Optional[str] = None,
     ) -> int:
         now = time.time()
-        where: Dict[str, Any] = {"expires_at": {"$gt": 0, "$lte": now}}
-        if session_id:
-            where["session_id"] = session_id
-        if layer:
-            where["layer"] = layer
-        try:
-            data = self._collection.get(where=where)
-            ids = data.get("ids", [])
-            if ids:
-                self._collection.delete(ids=ids)
-            return len(ids)
-        except Exception:  # noqa: BLE001
-            # Chroma 版本差异可能导致 where 语法不兼容，降级为全量扫描
-            return self._delete_expired_by_scan(session_id, layer, now)
+        ids_to_delete = self._get_expired_ids(session_id, layer, now)
+        if ids_to_delete:
+            self._collection.delete(ids=ids_to_delete)
+        return len(ids_to_delete)
 
-    def _delete_expired_by_scan(
+    def _get_expired_ids(
         self,
         session_id: Optional[str],
         layer: Optional[str],
         now: float,
-    ) -> int:
-        where = {"session_id": session_id, "layer": layer} if session_id and layer else {}
+    ) -> List[str]:
+        """优先用 Chroma get + where 过滤 TTL，失败则全量扫描。"""
+        where: Dict[str, Any] = {"$and": [{"expires_at": {"$gt": 0}}, {"expires_at": {"$lte": now}}]}
+        if session_id:
+            where["$and"].append({"session_id": session_id})
+        if layer:
+            where["$and"].append({"layer": layer})
         try:
-            data = self._collection.get(where=where) if where else self._collection.get()
+            data = self._collection.get(where=where, limit=10000)
+            return data.get("ids", [])
         except Exception:  # noqa: BLE001
-            return 0
+            return self._scan_expired_ids(session_id, layer, now)
+
+    def _scan_expired_ids(
+        self,
+        session_id: Optional[str],
+        layer: Optional[str],
+        now: float,
+    ) -> List[str]:
+        try:
+            data = self._collection.get(
+                where=self._where_session_layer(session_id, layer) if session_id and layer else {},
+                limit=10000,
+            )
+        except Exception:  # noqa: BLE001
+            return []
         ids_to_delete = []
         metas = data.get("metadatas", [])
         ids = data.get("ids", [])
         for doc_id, meta in zip(ids, metas):
-            expires_at = (meta or {}).get("expires_at") or 0
+            parsed = self._parse_meta(meta)
+            expires_at = parsed.get("expires_at") or 0
             if expires_at > 0 and expires_at <= now:
                 ids_to_delete.append(doc_id)
-        if ids_to_delete:
-            self._collection.delete(ids=ids_to_delete)
-        return len(ids_to_delete)
+        return ids_to_delete
 
     def evict_oldest(
         self,
@@ -556,22 +691,34 @@ class ChromaMemoryBackend:
         layer: str,
         max_entries: int,
     ) -> int:
+        ids_to_delete = self._get_oldest_to_evict(session_id, layer, max_entries)
+        if ids_to_delete:
+            self._collection.delete(ids=ids_to_delete)
+        return len(ids_to_delete)
+
+    def _get_oldest_to_evict(
+        self,
+        session_id: str,
+        layer: str,
+        max_entries: int,
+    ) -> List[str]:
+        """优先用 get(where) 取全量再按 created_at 排序驱逐，异常则降级扫描。"""
         try:
-            data = self._collection.get(where={"session_id": session_id, "layer": layer})
+            data = self._collection.get(
+                where=self._where_session_layer(session_id, layer),
+                limit=10000,
+            )
         except Exception:  # noqa: BLE001
-            return 0
+            return []
         metas = data.get("metadatas", [])
         ids = data.get("ids", [])
         if len(ids) <= max_entries:
-            return 0
+            return []
         indexed = sorted(
             zip(ids, metas),
-            key=lambda x: (x[1] or {}).get("created_at", 0),
+            key=lambda x: self._parse_meta(x[1]).get("created_at", 0),
         )
-        to_delete = [doc_id for doc_id, _ in indexed[: len(indexed) - max_entries]]
-        if to_delete:
-            self._collection.delete(ids=to_delete)
-        return len(to_delete)
+        return [doc_id for doc_id, _ in indexed[: len(indexed) - max_entries]]
 
     def close(self) -> None:
         pass
@@ -602,8 +749,6 @@ class MemoryAgent:
         self.base_dir.mkdir(parents=True, exist_ok=True)
         self._short: Dict[str, Dict[str, Any]] = {}
         self._backend = _create_backend(self.base_dir)
-        # 在同步上下文中创建 asyncio.Lock 可能失败（无事件循环），
-        # 因此延迟初始化，首次 aremember/arecall 时再创建。
         self._lock: Optional[asyncio.Lock] = None
         try:
             self._lock = asyncio.Lock()
@@ -613,6 +758,11 @@ class MemoryAgent:
         self._max_candidates = Settings.memory_max_candidates()
         self._short_max = Settings.memory_short_max_entries()
 
+    def _get_lock(self) -> asyncio.Lock:
+        if self._lock is None:
+            self._lock = asyncio.Lock()
+        return self._lock
+
     def _cleanup_short(self, session_id: str) -> None:
         """清理短期记忆中的过期项，并按容量上限移除最旧项。"""
         now = time.time()
@@ -620,7 +770,6 @@ class MemoryAgent:
         expired = [k for k, v in session.items() if v.get("expires_at") is not None and v["expires_at"] <= now]
         for k in expired:
             session.pop(k, None)
-        # Python 3.7+ dict 保持插入顺序，最旧的在前面
         while len(session) > self._short_max:
             session.pop(next(iter(session)), None)
 
@@ -644,11 +793,6 @@ class MemoryAgent:
         self._backend.remember(key, value, session_id, layer, ttl)
         self._backend.delete_expired(session_id, layer)
         self._backend.evict_oldest(session_id, layer, self._max_entries)
-
-    def _get_lock(self) -> asyncio.Lock:
-        if self._lock is None:
-            self._lock = asyncio.Lock()
-        return self._lock
 
     async def aremember(
         self,

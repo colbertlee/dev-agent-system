@@ -4,7 +4,35 @@
 
 ---
 
-## v0.23.1 — Memory 召回一致性、生命周期治理与并发安全（最新）
+## v0.23.2 — Memory fts5 全文索引与 Chroma 精确 metadata 治理（最新）
+
+**发布日期**：2026-08-15
+
+### 核心价值
+
+- SQLite memory 后端在有 `fts5` 扩展时使用虚拟表做关键词召回，显著降低大规模记忆下的全表扫描。
+- 记忆的 TTL 与容量驱逐在 SQLite 端同时清理全文索引，保证索引与数据一致。
+- Chroma 后端不再依赖语义 `query` 来做 metadata 过滤，改为用 `collection.get(where=...)` 精确删除过期与超容文档。
+
+### 关键变更
+
+- `SQLiteMemoryBackend` 自动探测并创建 `memory_fts` 虚拟表；`recall` 先取最近候选再叠加 fts5 候选，最后混合打分。
+- `SQLiteMemoryBackend` 的 `delete_expired`/`evict_oldest` 在删除主表前先删除 `memory_fts` 对应索引行。
+- `ChromaMemoryBackend.delete_expired`/`evict_oldest` 优先使用 `get` + `where` 过滤，异常时降级扫描。
+- `MemoryAgent` 配置从 `Settings` 读取容量/候选数参数注入后端。
+
+### 升级注意
+
+- 本次为 **PATCH**，公共 API 完全兼容。
+- 若环境 sqlite3 已编译 fts5，新创建的数据库会自动启用全文索引；已有 SQLite 文件需要手动删除 `memory_fts` 相关 wal 或重建。
+
+### 已知问题
+
+- 中文分词仍为基础单字/词切分，未引入 Jieba 或 BERT-WSM；在超大中文记忆库中召回精度仍有提升空间。
+
+---
+
+## v0.23.1 — Memory 召回一致性、生命周期治理与并发安全
 
 **发布日期**：2026-08-14
 
