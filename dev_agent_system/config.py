@@ -148,6 +148,14 @@ class Settings:
         return os.getenv("SAFETY_BLOCK_DANGEROUS_COMMANDS", "true").lower() in ("1", "true", "yes", "on")
 
     @staticmethod
+    def use_container_sandbox() -> bool:
+        return os.getenv("USE_CONTAINER_SANDBOX", "false").lower() in ("1", "true", "yes", "on")
+
+    @staticmethod
+    def container_image() -> str:
+        return os.getenv("CONTAINER_IMAGE", "python:3.11-slim")
+
+    @staticmethod
     def safety_redact_secrets() -> bool:
         return os.getenv("SAFETY_REDACT_SECRETS", "true").lower() in ("1", "true", "yes", "on")
 

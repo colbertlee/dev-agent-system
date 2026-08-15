@@ -4,7 +4,39 @@
 
 ---
 
-## v0.22.1 — 文档同步与 HTML 生成（最新）
+## v0.23.0 — LLM 输出鲁棒性、异步 I/O 与安全沙箱强化（最新）
+
+**发布日期**：2026-08-14
+
+### 核心价值
+
+- 把 LLM 输出从“prompt 劝说”升级为“JSON Schema + 自我修复”的硬约束，显著降低结构化输出解析失败率。
+- 让 LLM 调用、文件 IO、命令执行全部走异步非阻塞路径，提升多 Agent 并发能力与编排器响应性。
+- 引入可选 Docker 容器沙箱与 `python -c` 内联代码扫描，补齐命令执行的安全纵深。
+
+### 关键变更
+
+- `LLMClient.achat` + `BaseAgent.run` 异步化，同步 `LLMClient.chat` 作为兼容层保留并在后台线程执行。
+- `BaseAgent` 新增 JSON Schema 自动注入与输出修复循环（`max_repair_attempts=1`）。
+- `ToolSandbox.run_command` 支持 `USE_CONTAINER_SANDBOX` + Docker 隔离；`ContainerSandbox.is_available()` 与 `shlex.quote` 强化命令转义。
+- `SafetyScanner.inspect_command` 对 `python -c` 等内联脚本做二次代码风险扫描。
+- `GraphStateModel` + `Orchestrator._build_state` 启动前状态校验，`TaskResponse` 枚举补齐 `awaiting_approval`。
+- 新增 `tests/test_a2a_interop.py`、`tests/test_security_adv.py`、`tests/test_live_regression.py` 与 `tests/conftest.py` 的 `--live` 开关。
+
+### 升级注意
+
+- 环境变量新增 `USE_CONTAINER_SANDBOX`（默认 `false`）与 `CONTAINER_IMAGE`（默认 `python:3.11-slim`）。启用前请确保运行环境已安装 Docker 并可被当前用户调用。
+- 本次为 **MINOR** 版本，内部接口 `BaseAgent._parse_json_output` 已变为 `async` 实例方法；如外部代码有调用需同步加 `await`。
+- 默认 `pytest` 仍跳过真实 LLM 回归测试；需要时运行 `python -m pytest tests -q --live`。
+
+### 已知问题
+
+- `LLMClient.achat` 当前使用线程池调用同步 `chat`，未使用原生 `AsyncOpenAI`/`httpx.AsyncClient`，后续可进一步优化网络 IO 效率。
+- 容器沙箱依赖 Docker，Windows 非 WSL 环境可能需要额外配置卷映射权限。
+
+---
+
+## v0.22.1 — 文档同步与 HTML 生成
 
 **发布日期**：2026-08-14
 

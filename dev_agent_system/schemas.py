@@ -27,7 +27,7 @@ class Task(BaseModel):
 
 
 class TaskResponse(BaseModel):
-    status: Literal["submitted", "working", "completed", "failed", "skipped"] = "submitted"
+    status: Literal["submitted", "working", "completed", "failed", "skipped", "awaiting_approval"] = "submitted"
     task_id: str
     result: Optional[Any] = None
 
@@ -158,3 +158,34 @@ class GraphState(typing.TypedDict, total=False):
     history: List[Dict[str, Any]]
     artifacts: Dict[str, Any]
     finished_at: Optional[str]
+
+
+class GraphStateModel(BaseModel):
+    """GraphState 的 Pydantic 校验模型，用于启动工作流前做强类型校验。
+
+    保持 `extra="allow"` 以兼容 LangGraph 在运行中注入的额外通道字段，
+    同时确保核心字段类型、状态枚举一致。
+    """
+
+    model_config = ConfigDict(extra="allow")
+
+    request_id: str
+    input: str = ""
+    language: Optional[str] = "python"
+    workspace: Optional[str] = None
+    iteration: int = 0
+    max_iterations: int = 10
+    status: Literal["submitted", "working", "completed", "failed", "awaiting_approval"] = "submitted"
+    architect: Optional[Dict[str, Any]] = None
+    coder: Optional[Dict[str, Any]] = None
+    tester: Optional[Dict[str, Any]] = None
+    docs: Optional[Dict[str, Any]] = None
+    reviewer: Optional[Dict[str, Any]] = None
+    devops: Optional[Dict[str, Any]] = None
+    product_manager: Optional[Dict[str, Any]] = None
+    security: Optional[Dict[str, Any]] = None
+    dba: Optional[Dict[str, Any]] = None
+    memory: Optional[Dict[str, Any]] = None
+    history: List[Dict[str, Any]] = Field(default_factory=list)
+    artifacts: Dict[str, Any] = Field(default_factory=dict)
+    finished_at: Optional[str] = None

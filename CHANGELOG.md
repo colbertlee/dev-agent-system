@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-08-14
+
+### Added
+
+- `dev_agent_system/llm.py` 新增 `LLMClient.achat`，在后台线程调用 `self.chat`，让异步编排器不再被同步网络 IO 阻塞，同时保持对 `LLMClient.chat` 现有 monkeypatch 的兼容。
+- `dev_agent_system/agents.py` 新增 `BaseAgent.max_repair_attempts`（默认 1 次）、`_with_json_schema_prompt`、`_parse_raw_json`、`_parse_json_output`（支持修复循环）与 `_build_repair_prompt`。启用 `json_output` 时，prompt 会自动注入 `report_schema` 的 JSON Schema；解析失败会回传错误信息让 LLM 自我修复，而不是直接降级。
+- `dev_agent_system/mcp.py` 集成 `ContainerSandbox`：当 `USE_CONTAINER_SANDBOX=true` 且 Docker 可用时，`ToolSandbox.run_command` 默认在 `--network none` 的 Docker 容器中执行 LLM 生成的命令。
+- `dev_agent_system/security.py` 新增 `SafetyScanner.inspect_command`，对 `python -c` 内联脚本做二次代码风险扫描，拦截 `eval`、`exec`、`os.system` 等高风险模式。
+- `dev_agent_system/security_scanner.py` 为 `ContainerSandbox` 增加 `is_available()` 检测；`build_command` 使用 `shlex.quote` 对内部命令做安全转义。
+- `dev_agent_system/schemas.py` 新增 `GraphStateModel`，在 `Orchestrator._build_state` 启动工作流前对核心状态字段做 Pydantic 强校验。
+- `tests/conftest.py` 新增 `--live` pytest 选项与 `pytest_runtest_setup` hook，默认跳过真实 LLM 回归测试；新增 `tests/test_live_regression.py` 用于真实模型端到端回归。
+- 新增 `tests/test_a2a_interop.py`：用 `TestClient` 验证 A2A 节点的 Agent Card、`/tasks` 任务投递与 `/health` 端点。
+- 新增 `tests/test_security_adv.py`：针对命令绕过、内联脚本、路径穿越的对抗测试。
+- `dev_agent_system/config.py` 新增 `Settings.use_container_sandbox()` 与 `Settings.container_image()`。
+
+### Changed
+
+- `dev_agent_system/mcp.py` 的 `MCPToolRegistry.ainvoke` 对同步工具使用 `asyncio.to_thread`，彻底移除 `asyncio.run` hack 并避免阻塞事件循环；`call` 同步入口对异步工具的判断更清晰。
+- `dev_agent_system/agents.py` 的 `BaseAgent.run` 从 `self.llm.chat` 改为 `await self.llm.achat()`，所有 Agent postprocess 调用 `_parse_json_output` 处均改为 `await`。
+- `dev_agent_system/orchestrator.py` 的 `_build_state` 现在使用 `GraphStateModel.model_validate(...).model_dump(...)` 做启动前校验。
+- `dev_agent_system/schemas.py` 的 `TaskResponse.status` 枚举补齐 `awaiting_approval`，与 `WorkflowState` 状态枚举保持一致。
+- `dev_agent_system/__init__.py` 版本号更新为 `0.23.0`。
+
+### Fixed
+
+- `config/model.yaml` 顶部注释移除 `latest` 关键字，避免预发布检查误报。
+
+### Security
+
+- 命令执行默认可启用 Docker 容器沙箱隔离，显著降低 `python -c` / `npm` / `npx` 等白名单前缀绕过风险。
+- `SafetyScanner.inspect_command` 对 `python -c` 内联脚本做代码层扫描，阻止常见的高危调用链绕过。
+
+### Model Changes
+
+- 无。
+
 ## [0.22.1] - 2026-08-14
 
 ### Added

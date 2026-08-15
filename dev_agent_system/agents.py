@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Type
 
 import yaml
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from dev_agent_system.config import Settings
 from dev_agent_system.llm import LLMClient
@@ -44,6 +44,7 @@ class BaseAgent:
     json_output: bool = False
     report_schema: Optional[Type[BaseModel]] = None
     summary_budget: int = 1500
+    max_repair_attempts: int = 1  # JSON/Pydantic 校验失败时自动修复的最大次数
 
     def __init__(
         self,
@@ -162,49 +163,6 @@ class BaseAgent:
         return None
 
     @staticmethod
-    def _parse_json_output(
-        text: Any,
-        schema: Optional[Type[BaseModel]] = None,
-    ) -> Optional[Dict[str, Any]]:
-        """解析 LLM 输出为 JSON 并可选做 Pydantic 校验。
-
-        兼容三种形态：
-        1) 纯 JSON 字符串（结构化输出 / JSON Mode 返回值）
-        2) Markdown 文本中内嵌的 JSON 对象（历史输出/旧 Prompt）
-        3) 已解析的 dict 直接做校验
-        """
-        if text is None:
-            return None
-
-        if isinstance(text, dict):
-            data: Any = text
-        else:
-            cleaned = str(text).strip()
-            # 去除可能的 ```json ... ``` 外层包裹
-            if cleaned.startswith("```"):
-                cleaned = cleaned.strip("`").strip()
-                if cleaned.lower().startswith("json"):
-                    cleaned = cleaned[4:].strip()
-
-            try:
-                data = json.loads(cleaned)
-            except json.JSONDecodeError:
-                data = BaseAgent._find_first_json_object(cleaned)
-                if data is None:
-                    return None
-
-        if not isinstance(data, dict):
-            return None
-
-        if schema is not None:
-            try:
-                return schema.model_validate(data).model_dump()
-            except Exception:  # noqa: BLE001
-                # 校验失败时仍返回原 dict，由调用方决定是否降级
-                return data
-        return data
-
-    @staticmethod
     def _truncate_for_summary(
         value: Any,
         max_str: int = 400,
@@ -254,6 +212,91 @@ class BaseAgent:
 
         return text
 
+    def _with_json_schema_prompt(self, prompt: str) -> str:
+        """在 prompt 末尾追加 report_schema 对应的 JSON Schema，强化输出约束。"""
+        if self.report_schema is None:
+            return prompt + "\n\n你必须输出且仅输出一个合法 JSON 对象，不要包含解释文字。"
+        try:
+            schema = self.report_schema.model_json_schema()
+        except Exception:  # noqa: BLE001
+            return prompt + "\n\n你必须输出且仅输出一个合法 JSON 对象，不要包含解释文字。"
+        return (
+            prompt
+            + "\n\n你必须输出且仅输出一个严格符合以下 JSON Schema 的单一 JSON 对象，"
+            "不要包含任何解释文字或 Markdown 代码块包装：\n\n"
+            f"```json\n{json.dumps(schema, ensure_ascii=False, indent=2)}\n```"
+        )
+
+    @staticmethod
+    def _parse_raw_json(text: Any) -> Optional[Any]:
+        """从任意输入中提取 dict/list，不校验 schema（兼容旧版实现）。"""
+        if text is None:
+            return None
+        if isinstance(text, (dict, list)):
+            return text
+        cleaned = str(text).strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.strip("`").strip()
+            if cleaned.lower().startswith("json"):
+                cleaned = cleaned[4:].strip()
+        try:
+            return json.loads(cleaned)
+        except json.JSONDecodeError:
+            return BaseAgent._find_first_json_object(cleaned)
+
+    async def _parse_json_output(
+        self,
+        text: Any,
+        schema: Optional[Type[BaseModel]] = None,
+    ) -> Optional[Dict[str, Any]]:
+        """解析并可选做 Pydantic 校验；失败时尝试自我修复（最多 max_repair_attempts 次）。"""
+        raw = text
+        schema = schema or self.report_schema
+        last_error = ""
+        for attempt in range(self.max_repair_attempts + 1):
+            data = BaseAgent._parse_raw_json(raw)
+            if not isinstance(data, dict):
+                if attempt == self.max_repair_attempts or not self.json_output:
+                    return None
+                last_error = "无法从文本中提取 JSON 对象"
+                raw = await self.llm.achat(
+                    self.system_prompt,
+                    self._build_repair_prompt(str(text), last_error, schema),
+                    json_mode=True,
+                )
+                continue
+            if schema is None:
+                return data
+            try:
+                return schema.model_validate(data).model_dump()
+            except ValidationError as exc:
+                if attempt == self.max_repair_attempts:
+                    # 最后一次仍失败：如果 extra="ignore" 则返回原 dict；否则 None
+                    return data
+                last_error = str(exc)
+                raw = await self.llm.achat(
+                    self.system_prompt,
+                    self._build_repair_prompt(str(text), last_error, schema),
+                    json_mode=True,
+                )
+        return None
+
+    def _build_repair_prompt(self, raw_output: str, error_message: str, schema: Optional[Type[BaseModel]]) -> str:
+        schema_prompt = ""
+        if schema is not None:
+            try:
+                schema_json = schema.model_json_schema()
+                schema_prompt = f"\n必须严格符合的 JSON Schema：\n```json\n{json.dumps(schema_json, ensure_ascii=False, indent=2)}\n```\n"
+            except Exception:  # noqa: BLE001
+                pass
+        return (
+            "你之前生成的 JSON 输出无法通过校验，请重新生成。\n\n"
+            f"原始输出：\n{raw_output}\n\n"
+            f"错误信息：\n{error_message}\n"
+            f"{schema_prompt}\n"
+            "请只输出修复后的合法 JSON，不要解释。"
+        )
+
     async def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
         session = state.get("request_id", "default")
         workspace = self._workspace(state)
@@ -273,13 +316,18 @@ class BaseAgent:
 
         # 敏感信息脱敏：进入 LLM 前与离开 LLM 后都进行 redaction
         full_prompt = SecretRedactor.redact(full_prompt)
+
+        # 如果启用 json_mode 且绑定了 report_schema，把 JSON Schema 注入 prompt 强化约束
+        if self.json_output:
+            full_prompt = self._with_json_schema_prompt(full_prompt)
+
         resolved_model, kwargs = self.router.resolve(self.name, full_prompt)
 
         with self.telemetry.span(
             f"agent.{self.name}.llm",
             {"agent": self.name, "model": resolved_model, "request_id": session},
         ):
-            output = self.llm.chat(
+            output = await self.llm.achat(
                 self.system_prompt,
                 full_prompt,
                 model=resolved_model,
@@ -362,7 +410,7 @@ class ArchitectAgent(BaseAgent):
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
-        design = self._parse_json_output(output, self.report_schema)
+        design = await self._parse_json_output(output, self.report_schema)
         if design:
             await self._write_file("design.json", json.dumps(design, ensure_ascii=False, indent=2), workspace)
         return {"design_file": "design.json" if design else None, "parsed": design}
@@ -409,7 +457,7 @@ class CoderAgent(BaseAgent):
         security_issues: List[Dict[str, Any]] = []
 
         # 优先解析结构化 JSON 输出（JSON Mode / response_format）
-        structured = self._parse_json_output(output, AgentOutput)
+        structured = await self._parse_json_output(output, AgentOutput)
         report: Dict[str, Any] = {}
         if structured and "files" in structured and "report" in structured:
             for f in structured.get("files", []):
@@ -424,7 +472,7 @@ class CoderAgent(BaseAgent):
                 res = await self._write_file(path, code, workspace)
                 if res.get("success"):
                     files.append(path)
-            report = self._parse_json_output(structured.get("report"), self.report_schema) or structured.get("report", {})
+            report = await self._parse_json_output(structured.get("report"), self.report_schema) or structured.get("report", {})
         else:
             # 兼容历史/测试中的 Markdown 代码块 + JSON 报告
             blocks = self._extract_code_blocks(output)
@@ -439,7 +487,7 @@ class CoderAgent(BaseAgent):
                 res = await self._write_file(path, block["code"], workspace)
                 if res.get("success"):
                     files.append(path)
-            report = self._parse_json_output(output, self.report_schema) or {}
+            report = await self._parse_json_output(output, self.report_schema) or {}
 
         # MOCK 降级：没有真实 LLM 时写一段占位代码，方便 CLI/测试继续跑
         if not files and self.llm.is_mock():
@@ -533,7 +581,7 @@ class TesterAgent(BaseAgent):
         files: List[str] = []
 
         # 优先解析结构化 JSON 输出
-        structured = self._parse_json_output(output, AgentOutput)
+        structured = await self._parse_json_output(output, AgentOutput)
         report: Dict[str, Any] = {}
         if structured and "files" in structured and "report" in structured:
             for f in structured.get("files", []):
@@ -546,7 +594,7 @@ class TesterAgent(BaseAgent):
                 res = await self._write_file(path, code, workspace)
                 if res.get("success"):
                     files.append(path)
-            report = self._parse_json_output(structured.get("report"), self.report_schema) or structured.get("report", {})
+            report = await self._parse_json_output(structured.get("report"), self.report_schema) or structured.get("report", {})
         else:
             # 兼容历史/测试中的 Markdown 代码块 + JSON 报告
             blocks = self._extract_code_blocks(output)
@@ -559,7 +607,7 @@ class TesterAgent(BaseAgent):
                 res = await self._write_file(path, block["code"], workspace)
                 if res.get("success"):
                     files.append(path)
-            report = self._parse_json_output(output, self.report_schema) or {}
+            report = await self._parse_json_output(output, self.report_schema) or {}
 
         if files:
             test_res = await self._run_command(f"{template.test_cmd} -q", workspace, timeout=15)
@@ -614,7 +662,7 @@ class ReviewerAgent(BaseAgent):
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
-        report = self._parse_json_output(output, self.report_schema)
+        report = await self._parse_json_output(output, self.report_schema)
         if not report:
             # 无法解析 JSON 时做最保守判断
             report = {
@@ -722,7 +770,7 @@ class ProductManagerAgent(BaseAgent):
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
-        report = self._parse_json_output(output, self.report_schema) or {}
+        report = await self._parse_json_output(output, self.report_schema) or {}
         prd_file = "prd.md"
         # 如果结构化输出里有 prd_markdown，优先写入；否则把原始输出作为 PRD 正文
         prd_body = report.get("prd_markdown") or output
@@ -760,7 +808,7 @@ class SecurityAgent(BaseAgent):
 
     async def postprocess(self, output: str, state: Dict[str, Any]) -> Dict[str, Any]:
         workspace = self._workspace(state)
-        report = self._parse_json_output(output, self.report_schema)
+        report = await self._parse_json_output(output, self.report_schema)
         if not report:
             report = {
                 "severity": "medium",
@@ -802,7 +850,7 @@ class DBAAgent(BaseAgent):
         files: List[str] = []
 
         # 优先解析结构化 JSON 输出
-        structured = self._parse_json_output(output, AgentOutput)
+        structured = await self._parse_json_output(output, AgentOutput)
         report: Dict[str, Any] = {}
         if structured and "files" in structured and "report" in structured:
             for f in structured.get("files", []):
@@ -815,7 +863,7 @@ class DBAAgent(BaseAgent):
                 res = await self._write_file(path, code, workspace)
                 if res.get("success"):
                     files.append(path)
-            report = self._parse_json_output(structured.get("report"), self.report_schema) or structured.get("report", {})
+            report = await self._parse_json_output(structured.get("report"), self.report_schema) or structured.get("report", {})
         else:
             # 兼容历史/测试中的 Markdown 代码块 + JSON 报告
             blocks = self._extract_code_blocks(output)
@@ -828,7 +876,7 @@ class DBAAgent(BaseAgent):
                 res = await self._write_file(path, block["code"], workspace)
                 if res.get("success"):
                     files.append(path)
-            report = self._parse_json_output(output, self.report_schema) or {}
+            report = await self._parse_json_output(output, self.report_schema) or {}
 
         if not files:
             await self._write_file("schema.sql", output, workspace)

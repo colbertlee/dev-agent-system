@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from dev_agent_system.security import PathValidator, SafetyScanner
+from dev_agent_system.security_scanner import ContainerSandbox
 
 
 class ToolSandbox:
@@ -59,9 +60,22 @@ class ToolSandbox:
         safe, issues = SafetyScanner.scan_command(command)
         if not safe:
             return {"success": False, "error": f"命令命中安全规则：{', '.join(issues)}"}
+
+        inline_safe, inline_issues = SafetyScanner.inspect_command(command)
+        if not inline_safe:
+            return {"success": False, "error": f"命令内嵌代码风险：{', '.join(inline_issues)}"}
+
         if not any(command.strip().startswith(prefix) for prefix in cls.ALLOWED_PREFIXES):
             return {"success": False, "error": f"仅允许以 {cls.ALLOWED_PREFIXES} 开头的命令"}
         work = Path(base_dir).resolve() if base_dir else cls.WORK_DIR
+
+        # 如果启用容器沙箱且 Docker 可用，优先在隔离容器中执行
+        if Settings.use_container_sandbox() and ContainerSandbox.is_available():
+            try:
+                return ContainerSandbox.run(command, work, image=Settings.container_image(), timeout=timeout)
+            except Exception as e:  # noqa: BLE001
+                return {"success": False, "error": f"容器沙箱执行失败: {e}"}
+
         try:
             result = subprocess.run(
                 command,
@@ -103,29 +117,34 @@ class MCPToolRegistry:
         self._tools[name] = fn
 
     def call(self, name: str, **kwargs) -> Any:
+        """同步入口：仅调用同步工具；异步工具应使用 ainvoke。"""
         if name not in self._tools:
             return {"success": False, "error": f"未知工具: {name}"}
         fn = self._tools[name]
+        if asyncio.iscoroutinefunction(fn):
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                return asyncio.run(fn(**kwargs))
+            return {
+                "success": False,
+                "error": f"工具 {name} 是异步的，请在异步上下文中调用 ainvoke",
+            }
         try:
-            if asyncio.iscoroutinefunction(fn):
-                # 已在事件循环外时可直接 run；否则应使用 ainvoke
-                try:
-                    return asyncio.run(fn(**kwargs))
-                except RuntimeError:
-                    return {"success": False, "error": f"工具 {name} 是异步的，请在异步上下文中调用 ainvoke"}
             return fn(**kwargs)
         except Exception as e:  # noqa: BLE001
             return {"success": False, "error": str(e)}
 
     async def ainvoke(self, name: str, **kwargs) -> Any:
-        """异步调用工具，供 async run 使用。"""
+        """异步调用工具，同步工具在后台线程执行，避免阻塞事件循环。"""
         if name not in self._tools:
             return {"success": False, "error": f"未知工具: {name}"}
         fn = self._tools[name]
         try:
             if asyncio.iscoroutinefunction(fn):
                 return await fn(**kwargs)
-            return fn(**kwargs)
+            # 同步工具（如 subprocess.run）在后台线程执行，避免阻塞 async 编排器
+            return await asyncio.to_thread(fn, **kwargs)
         except Exception as e:  # noqa: BLE001
             return {"success": False, "error": str(e)}
 

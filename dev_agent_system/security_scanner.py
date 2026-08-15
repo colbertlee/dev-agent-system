@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import shlex
 import subprocess
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -141,6 +142,20 @@ class DependencyScanner:
 class ContainerSandbox:
     """容器沙箱：把命令放到 Docker 容器内执行，进一步隔离 Agent 生成的代码。"""
 
+    @classmethod
+    def is_available(cls) -> bool:
+        try:
+            result = subprocess.run(
+                ["docker", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+                check=False,
+            )
+            return result.returncode == 0
+        except Exception:  # noqa: BLE001
+            return False
+
     @staticmethod
     def build_command(
         command: str,
@@ -149,11 +164,11 @@ class ContainerSandbox:
         workdir: str = "/workspace",
     ) -> str:
         """把原始命令包装成 docker run 命令。"""
-        escaped = command.replace('"', '\\"')
+        quoted = shlex.quote(command)
         return (
             f'docker run --rm --network none '
             f'-v "{workspace.resolve()}:{workdir}" '
-            f'-w {workdir} {image} bash -c "{escaped}"'
+            f'-w {workdir} {image} bash -c {quoted}'
         )
 
     @classmethod

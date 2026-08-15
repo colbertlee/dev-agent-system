@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import shlex
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -61,6 +62,29 @@ class SafetyScanner:
     def is_safe_command(cls, command: str) -> bool:
         safe, _ = cls.scan_command(command)
         return safe
+
+    @classmethod
+    def inspect_command(cls, command: str) -> Tuple[bool, List[str]]:
+        """解析命令中内嵌的代码片段（如 python -c），用 scan_code 做二次扫描。
+
+        返回 (是否安全, 风险描述列表)。当前只对 python -c 内联脚本做检测，
+        命中 high/medium 风险即拦截。
+        """
+        try:
+            tokens = shlex.split(command)
+        except ValueError:
+            return True, []
+        for i, token in enumerate(tokens[:-1]):
+            if token in ("-c", "--command"):
+                snippet = tokens[i + 1]
+                findings = cls.scan_code(snippet)
+                issues = [
+                    f"内联代码风险：{f['reason']}({f['severity']})"
+                    for f in findings
+                    if f["severity"] in ("high", "medium")
+                ]
+                return not issues, list(set(issues))
+        return True, []
 
     @classmethod
     def scan_code(cls, code: str) -> List[Dict[str, Any]]:

@@ -28,7 +28,7 @@ from dev_agent_system.devops import DevOpsRunner
 from dev_agent_system.human_approval import HumanApprovalStore
 from dev_agent_system.memory import MemoryAgent
 from dev_agent_system.telemetry import DEFAULT as DEFAULT_TELEMETRY, Telemetry
-from dev_agent_system.schemas import GraphState
+from dev_agent_system.schemas import GraphState, GraphStateModel
 from dev_agent_system.tracker import WorkflowTracker
 
 
@@ -106,7 +106,7 @@ class Orchestrator:
     ) -> GraphState:
         request_id = request_id or str(uuid.uuid4())
         workspace = str(Settings.workspace_dir() / request_id)
-        return {
+        state = {
             "request_id": request_id,
             "input": requirement,
             "language": language or "python",
@@ -116,6 +116,8 @@ class Orchestrator:
             "status": "submitted",
             "history": [],
         }
+        # 用 Pydantic model 做启动前强校验，及早暴露字段类型错误
+        return GraphStateModel.model_validate(state).model_dump(exclude_none=False)
 
     def _build_graph(self) -> StateGraph:
         """构建并返回编译后的 LangGraph。"""

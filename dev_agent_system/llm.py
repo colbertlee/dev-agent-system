@@ -1,6 +1,7 @@
 """LLM 客户端：自动选择 OpenAI / DeepSeek / Ollama / Mock Provider，支持流式输出。"""
 from __future__ import annotations
 
+import asyncio
 import os
 import re
 from typing import Any, AsyncIterator, Iterator, Optional, Union
@@ -92,6 +93,34 @@ class LLMClient:
                 system,
                 user,
                 model=model or self.model,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                json_mode=json_mode,
+            )
+        except Exception as e:  # noqa: BLE001
+            return f"[LLM ERROR] {e}"
+
+    async def achat(
+        self,
+        system: str,
+        user: str,
+        *,
+        model: Optional[str] = None,
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+        json_mode: bool = False,
+    ) -> str:
+        """异步非流式对话，默认在后台线程调用 self.chat，避免阻塞事件循环。
+
+        这种方式兼容已有对 self.chat 的 monkeypatch，同时让 async 编排器不被网络 IO 阻塞。
+        后续 Provider 可继续实现原生 async chat 接口并在这里优先调用。
+        """
+        try:
+            return await asyncio.to_thread(
+                self.chat,
+                system,
+                user,
+                model=model,
                 temperature=temperature,
                 max_tokens=max_tokens,
                 json_mode=json_mode,
